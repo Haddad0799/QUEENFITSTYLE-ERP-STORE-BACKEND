@@ -1,4 +1,4 @@
-package br.com.erp.api.catalog.application.usecase.category;
+package br.com.erp.api.catalog.application.usecase;
 
 import br.com.erp.api.catalog.domain.entity.Category;
 import br.com.erp.api.catalog.domain.repository.CategoryRepository;

@@ -1,4 +1,4 @@
-package br.com.erp.api.catalog.infrastructure.persistence.category;
+package br.com.erp.api.catalog.infrastructure.persistence;
 
 import br.com.erp.api.catalog.domain.entity.Category;
 import br.com.erp.api.catalog.domain.repository.CategoryRepository;

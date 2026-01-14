@@ -1,16 +1,15 @@
 package br.com.erp.api.catalog.domain.valueobject;
 
-import br.com.erp.api.catalog.domain.exception.InvalidNameException;
+import br.com.erp.api.catalog.domain.exception.category.InvalidNameException;
 
 import java.text.Normalizer;
-import java.util.Objects;
 
-public record Name(
+public record CategoryName(
         String displayName,
         String normalizedName
 ) {
 
-    public Name(String raw) {
+    public CategoryName(String raw) {
         this(validateAndTrim(raw), normalize(raw));
     }
 

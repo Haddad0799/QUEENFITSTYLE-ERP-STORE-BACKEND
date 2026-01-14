@@ -1,6 +1,6 @@
-package br.com.erp.api.catalog.infrastructure.persistence.category;
+package br.com.erp.api.catalog.infrastructure.query;
 
-import br.com.erp.api.catalog.application.query.category.CategoryQueryService;
+import br.com.erp.api.catalog.application.query.CategoryQueryService;
 import br.com.erp.api.catalog.domain.exception.category.CategoryNotFoundException;
 import br.com.erp.api.catalog.presentation.dto.category.response.CategoryDetailsDTO;
 import org.jdbi.v3.core.Jdbi;

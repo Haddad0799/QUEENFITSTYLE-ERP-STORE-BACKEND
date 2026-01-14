@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS colors (
+    id SERIAL PRIMARY KEY,
+    "name" VARCHAR(50) NOT NULL UNIQUE,
+    hex_code CHAR(7) NOT NULL UNIQUE
+);

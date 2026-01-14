@@ -1,9 +1,9 @@
-package br.com.erp.api.catalog.application.usecase.category;
+package br.com.erp.api.catalog.application.usecase;
 
 import br.com.erp.api.catalog.domain.entity.Category;
 import br.com.erp.api.catalog.domain.exception.category.CategoryAlreadyExistsException;
 import br.com.erp.api.catalog.domain.repository.CategoryRepository;
-import br.com.erp.api.catalog.domain.valueobject.Name;
+import br.com.erp.api.catalog.domain.valueobject.CategoryName;
 import br.com.erp.api.shared.domain.exception.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +22,7 @@ public class RenameCategoryUseCase {
         Category category = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria", id));
 
-        Name newName = validateDuplicateName(name);
+        CategoryName newName = validateDuplicateName(name);
 
         category.rename(newName);
 
@@ -30,8 +30,8 @@ public class RenameCategoryUseCase {
         repository.update(category);
     }
 
-    private Name validateDuplicateName(String name) {
-        Name newName = new Name(name);
+    private CategoryName validateDuplicateName(String name) {
+        CategoryName newName = new CategoryName(name);
 
         if(repository.existsByName(newName.normalizedName())){
             throw new CategoryAlreadyExistsException();
