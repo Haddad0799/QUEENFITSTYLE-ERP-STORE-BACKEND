@@ -1,7 +1,7 @@
-package br.com.erp.api.catalog.presentation.mapper.category;
+package br.com.erp.api.catalog.presentation.mapper;
 
-import br.com.erp.api.catalog.application.command.category.CreateCategoryCommand;
-import br.com.erp.api.catalog.application.output.category.CategoryCreatedOutput;
+import br.com.erp.api.catalog.application.command.CreateCategoryCommand;
+import br.com.erp.api.catalog.application.output.CategoryOutput;
 import br.com.erp.api.catalog.presentation.dto.category.request.CreateCategoryDTO;
 import br.com.erp.api.catalog.presentation.dto.category.response.CategoryDetailsDTO;
 import org.springframework.stereotype.Component;
@@ -13,7 +13,7 @@ public class CategoryControllerMapper {
         return new CreateCategoryCommand(dto.name());
     }
 
-    public CategoryDetailsDTO toDetailsDTO(CategoryCreatedOutput output) {
+    public CategoryDetailsDTO toDetailsDTO(CategoryOutput output) {
         return new CategoryDetailsDTO(
                 output.id(),
                 output.name(),

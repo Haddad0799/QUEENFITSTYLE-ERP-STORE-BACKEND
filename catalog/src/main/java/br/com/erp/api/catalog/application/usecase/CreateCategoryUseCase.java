@@ -1,11 +1,11 @@
-package br.com.erp.api.catalog.application.usecase.category;
+package br.com.erp.api.catalog.application.usecase;
 
-import br.com.erp.api.catalog.application.command.category.CreateCategoryCommand;
-import br.com.erp.api.catalog.application.output.category.CategoryCreatedOutput;
+import br.com.erp.api.catalog.application.command.CreateCategoryCommand;
+import br.com.erp.api.catalog.application.output.CategoryOutput;
 import br.com.erp.api.catalog.domain.entity.Category;
 import br.com.erp.api.catalog.domain.exception.category.CategoryAlreadyExistsException;
 import br.com.erp.api.catalog.domain.repository.CategoryRepository;
-import br.com.erp.api.catalog.domain.valueobject.Name;
+import br.com.erp.api.catalog.domain.valueobject.CategoryName;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,8 +20,8 @@ public class CreateCategoryUseCase {
     }
 
     @Transactional
-    public CategoryCreatedOutput execute(CreateCategoryCommand command) {
-        Name name = new Name(command.name());
+    public CategoryOutput execute(CreateCategoryCommand command) {
+        CategoryName name = new CategoryName(command.name());
 
         Optional<Category> existing = categoryRepository.findByNormalizedName(name.normalizedName());
 
@@ -35,7 +35,7 @@ public class CreateCategoryUseCase {
             category.activate();
             Category saved = categoryRepository.save(category);
 
-            return new CategoryCreatedOutput(
+            return new CategoryOutput(
                     saved.getId(),
                     saved.getDisplayName(),
                     saved.isActive()
@@ -45,7 +45,7 @@ public class CreateCategoryUseCase {
         Category newCategory = new Category(name);
         Category saved = categoryRepository.save(newCategory);
 
-        return new CategoryCreatedOutput(
+        return new CategoryOutput(
                 saved.getId(),
                 saved.getDisplayName(),
                 saved.isActive()

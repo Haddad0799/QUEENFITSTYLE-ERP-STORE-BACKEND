@@ -3,19 +3,19 @@ package br.com.erp.api.catalog.domain.entity;
 import br.com.erp.api.catalog.domain.exception.category.CategoryAlreadyActiveException;
 import br.com.erp.api.catalog.domain.exception.category.CategoryAlreadyInactiveException;
 import br.com.erp.api.catalog.domain.exception.category.CategoryNameAlreadyUsedException;
-import br.com.erp.api.catalog.domain.valueobject.Name;
+import br.com.erp.api.catalog.domain.valueobject.CategoryName;
 
 public class Category {
     private Long id;
-    private Name name;
+    private CategoryName name;
     private Boolean active;
 
-    public Category(Name name) {
+    public Category(CategoryName name) {
         this.name = name;
         this.active = true;
     }
 
-    public Category(Long id, Name name, Boolean active) {
+    public Category(Long id, CategoryName name, Boolean active) {
         this.id = id;
         this.name = name;
         this.active = active;
@@ -44,7 +44,7 @@ public class Category {
     }
 
 
-    public void rename(Name newName) {
+    public void rename(CategoryName newName) {
 
         if (this.name.normalizedName().equals(newName.normalizedName())) {
             throw new CategoryNameAlreadyUsedException();
