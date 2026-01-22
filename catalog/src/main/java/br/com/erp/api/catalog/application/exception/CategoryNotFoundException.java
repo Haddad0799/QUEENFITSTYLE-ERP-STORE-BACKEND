@@ -1,6 +1,6 @@
-package br.com.erp.api.catalog.domain.exception.category;
+package br.com.erp.api.catalog.application.exception;
 
-import br.com.erp.api.shared.domain.exception.EntityNotFoundException;
+import br.com.erp.api.shared.application.exception.EntityNotFoundException;
 
 public class CategoryNotFoundException extends EntityNotFoundException {
     public CategoryNotFoundException(String entity, Object id) {
