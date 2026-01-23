@@ -1,0 +1,9 @@
+package br.com.erp.api.product.domain.exception;
+
+import br.com.erp.api.shared.domain.exception.DomainException;
+
+public class ProductAlreadyDeactivatedException extends DomainException {
+    public ProductAlreadyDeactivatedException() {
+        super("Produto já está desativado!");
+    }
+}

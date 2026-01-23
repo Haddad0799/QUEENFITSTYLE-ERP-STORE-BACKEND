@@ -1,7 +1,7 @@
 package br.com.erp.api.web.exception.handler;
 
 import br.com.erp.api.shared.domain.exception.DomainException;
-import br.com.erp.api.shared.domain.exception.EntityNotFoundException;
+import br.com.erp.api.shared.application.exception.EntityNotFoundException;
 import br.com.erp.api.shared.presentation.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;

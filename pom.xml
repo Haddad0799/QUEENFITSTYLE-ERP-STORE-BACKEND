@@ -27,7 +27,8 @@
 		<module>app</module>
 		<module>catalog</module>
 		<module>shared</module>
-	</modules>
+        <module>product</module>
+    </modules>
 
 	<dependencyManagement>
 		<dependencies>

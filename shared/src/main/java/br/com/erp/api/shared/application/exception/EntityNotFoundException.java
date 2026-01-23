@@ -1,4 +1,4 @@
-package br.com.erp.api.shared.domain.exception;
+package br.com.erp.api.shared.application.exception;
 
 public class EntityNotFoundException extends RuntimeException {
 

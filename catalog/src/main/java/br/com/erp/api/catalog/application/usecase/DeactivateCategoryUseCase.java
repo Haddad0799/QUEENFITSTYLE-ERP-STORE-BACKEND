@@ -2,7 +2,7 @@ package br.com.erp.api.catalog.application.usecase;
 
 import br.com.erp.api.catalog.domain.entity.Category;
 import br.com.erp.api.catalog.domain.repository.CategoryRepository;
-import br.com.erp.api.shared.domain.exception.EntityNotFoundException;
+import br.com.erp.api.shared.application.exception.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

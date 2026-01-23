@@ -7,4 +7,5 @@ import java.util.List;
 public interface CategoryQueryService {
     List<CategoryDetailsDTO> findAll();
     CategoryDetailsDTO findById(Long id);
+    boolean existsActiveById(Long id);
 }

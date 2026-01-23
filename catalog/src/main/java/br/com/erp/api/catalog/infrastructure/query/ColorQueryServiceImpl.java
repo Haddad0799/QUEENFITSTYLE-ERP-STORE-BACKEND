@@ -32,5 +32,4 @@ public class ColorQueryServiceImpl implements ColorQueryService {
                         .list()
         );
     }
-
 }
