@@ -27,7 +27,7 @@ public class ProductJdbiRepositoryImpl implements ProductRepository {
                         .bind("name", product.getName())
                         .bind("description", product.getDescription())
                         .bind("slug", product.getSlugValue())
-                        .bind("categoryId", product.getCategoryId().value())
+                        .bind("categoryId", product.getCategoryId())
                         .bind("active", product.isActive())
                         .executeAndReturnGeneratedKeys()
                         .map(new ProductRowMapper())
@@ -36,7 +36,7 @@ public class ProductJdbiRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public Product update(Product product) {
+    public void update(Product product) {
         jdbi.useHandle(handle ->
                 handle.createUpdate("""
             UPDATE products
@@ -52,12 +52,11 @@ public class ProductJdbiRepositoryImpl implements ProductRepository {
                         .bind("name", product.getName())
                         .bind("description", product.getDescription())
                         .bind("slug", product.getSlugValue())
-                        .bind("categoryId", product.getCategoryId().value())
+                        .bind("categoryId", product.getCategoryId())
                         .bind("active", product.isActive())
                         .execute()
         );
 
-        return product;
     }
 
 

@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public interface ProductRepository {
     Product save(Product product);
-    Product update(Product product);
+    void update(Product product);
     boolean existsByslug(String slug);
     Optional<Product> findById(Long id);
 

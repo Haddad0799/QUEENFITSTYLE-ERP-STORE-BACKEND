@@ -1,7 +1,6 @@
 package br.com.erp.api.product.infrastructure.mapper;
 
 import br.com.erp.api.product.domain.entity.Product;
-import br.com.erp.api.product.domain.valueobject.CategoryId;
 import br.com.erp.api.product.domain.valueobject.Slug;
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;
@@ -18,7 +17,7 @@ public class ProductRowMapper implements RowMapper<Product> {
                 rs.getString("name"),
                 rs.getString("description"),
                 Slug.fromValue(rs.getString("slug")),
-                new CategoryId(rs.getLong("category_id")),
+                (rs.getLong("category_id")),
                 rs.getBoolean("active")
         );
     }

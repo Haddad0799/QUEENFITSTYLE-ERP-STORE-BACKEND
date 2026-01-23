@@ -3,7 +3,6 @@ package br.com.erp.api.product.domain.entity;
 import br.com.erp.api.product.domain.enumerated.ProductStatus;
 import br.com.erp.api.product.domain.exception.ProductAlreadyDeactivatedException;
 import br.com.erp.api.product.domain.exception.ProductNotReadyForSaleException;
-import br.com.erp.api.product.domain.valueobject.CategoryId;
 import br.com.erp.api.product.domain.valueobject.Slug;
 
 public class Product {
@@ -12,7 +11,7 @@ public class Product {
     private String name;
     private String description;
     private Slug slug;
-    private CategoryId categoryId;
+    private Long categoryId;
     private boolean active;
 
     protected Product(
@@ -20,7 +19,7 @@ public class Product {
             String name,
             String description,
             Slug slug,
-            CategoryId categoryId,
+            Long categoryId,
             boolean active
     ) {
         this.id = id;
@@ -36,7 +35,7 @@ public class Product {
     public Product(
             String name,
             String description,
-            CategoryId categoryId
+            Long categoryId
     ) {
         this.name = name;
         this.description = description;
@@ -50,7 +49,7 @@ public class Product {
             String name,
             String description,
             Slug slug,
-            CategoryId categoryId,
+            Long categoryId,
             boolean active
     ) {
         return new Product(id, name, description, slug, categoryId, active);
@@ -76,7 +75,7 @@ public class Product {
         this.description = newDescription;
     }
 
-    public void recategorize(CategoryId newCategoryId) {
+    public void recategorize(Long newCategoryId) {
         this.categoryId = newCategoryId;
     }
 
@@ -84,7 +83,6 @@ public class Product {
         if (!this.active) {
             throw new ProductAlreadyDeactivatedException();
         }
-
         this.active = false;
     }
 
@@ -105,7 +103,7 @@ public class Product {
         return slug.value();
     }
 
-    public CategoryId getCategoryId() {
+    public Long getCategoryId() {
         return categoryId;
     }
 

@@ -1,13 +1,12 @@
 package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.command.AlterProductCommand;
-import br.com.erp.api.product.application.exception.InvalidCategoryException;
+import br.com.erp.api.product.domain.exception.InvalidCategoryException;
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.application.output.ProductDetailsOutput;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.port.CategoryLookupPort;
 import br.com.erp.api.product.domain.port.ProductRepository;
-import br.com.erp.api.product.domain.valueobject.CategoryId;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +26,7 @@ public class AlterProductUseCase {
 
         Product product = productRepository
                 .findById(command.productId())
-                .orElseThrow(()-> new ProductNotFoundException("Produto", command.productId()));
+                .orElseThrow(()-> new ProductNotFoundException(command.productId()));
 
         if(command.name() != null) {
             product.rename(command.name());
@@ -40,17 +39,19 @@ public class AlterProductUseCase {
         if(command.categoryId() != null) {
 
             if(!categoryLookupPort.existsActiveById(command.categoryId())) {
-                throw new InvalidCategoryException("Categoiria", command.categoryId());
+                throw new InvalidCategoryException();
             }
-            product.recategorize(new CategoryId(command.categoryId()));
+            product.recategorize(command.categoryId());
         }
 
         productRepository.update(product);
 
-        return new ProductDetailsOutput(product.getId(),
+        return new ProductDetailsOutput(
+                product.getId(),
+                product.getDescription(),
                 product.getName(),
                 product.getSlugValue(),
-                product.getCategoryId().value(),
+                product.getCategoryId(),
                 product.isActive());
     }
 
