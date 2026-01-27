@@ -1,9 +1,14 @@
 package br.com.erp.api.product.domain.entity;
 
 import br.com.erp.api.product.domain.enumerated.ProductStatus;
+import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
 import br.com.erp.api.product.domain.exception.ProductAlreadyDeactivatedException;
 import br.com.erp.api.product.domain.exception.ProductNotReadyForSaleException;
+import br.com.erp.api.product.domain.port.SkuUniquenessChecker;
 import br.com.erp.api.product.domain.valueobject.Slug;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Product {
 
@@ -12,6 +17,8 @@ public class Product {
     private String description;
     private Slug slug;
     private Long categoryId;
+    private List<Sku> skus = new ArrayList<>();
+
     private boolean active;
 
     protected Product(
@@ -59,6 +66,16 @@ public class Product {
         return ProductStatus.DRAFT;
     }
 
+    public List<Sku> getSkus() {
+        return skus;
+    }
+
+    public void addSku(Sku sku) {
+
+        sku.attachToProduct(this.id);
+        skus.add(sku);
+    }
+
     public void activate() {
         if (getStatus() != ProductStatus.READY_FOR_SALE) {
             throw new ProductNotReadyForSaleException();
@@ -85,7 +102,6 @@ public class Product {
         }
         this.active = false;
     }
-
 
     public Long getId() {
         return id;

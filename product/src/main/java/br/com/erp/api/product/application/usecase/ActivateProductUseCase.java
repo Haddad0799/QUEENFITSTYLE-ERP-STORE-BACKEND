@@ -2,15 +2,15 @@ package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.domain.entity.Product;
-import br.com.erp.api.product.domain.port.ProductRepository;
+import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ActivateProductUseCase {
 
-    private final ProductRepository productRepository;
+    private final ProductRepositoryPort productRepository;
 
-    public ActivateProductUseCase(ProductRepository productRepository) {
+    public ActivateProductUseCase(ProductRepositoryPort productRepository) {
         this.productRepository = productRepository;
     }
 

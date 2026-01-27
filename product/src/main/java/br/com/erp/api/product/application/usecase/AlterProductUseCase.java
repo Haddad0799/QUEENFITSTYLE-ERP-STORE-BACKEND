@@ -6,7 +6,7 @@ import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.application.output.ProductDetailsOutput;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.port.CategoryLookupPort;
-import br.com.erp.api.product.domain.port.ProductRepository;
+import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class AlterProductUseCase {
 
    private final CategoryLookupPort categoryLookupPort;
-   private final ProductRepository productRepository;
+   private final ProductRepositoryPort productRepository;
 
-    public AlterProductUseCase(CategoryLookupPort categoryLookupPort, ProductRepository productRepository) {
+    public AlterProductUseCase(CategoryLookupPort categoryLookupPort, ProductRepositoryPort productRepository) {
         this.categoryLookupPort = categoryLookupPort;
         this.productRepository = productRepository;
     }
@@ -38,7 +38,7 @@ public class AlterProductUseCase {
 
         if(command.categoryId() != null) {
 
-            if(!categoryLookupPort.existsActiveById(command.categoryId())) {
+            if(categoryLookupPort.existsActiveById(command.categoryId())) {
                 throw new InvalidCategoryException();
             }
             product.recategorize(command.categoryId());
