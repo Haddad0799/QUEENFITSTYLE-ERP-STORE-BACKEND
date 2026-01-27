@@ -4,7 +4,7 @@ import br.com.erp.api.product.domain.entity.Product;
 
 import java.util.Optional;
 
-public interface ProductRepository {
+public interface ProductRepositoryPort {
     Product save(Product product);
     void update(Product product);
     boolean existsByslug(String slug);

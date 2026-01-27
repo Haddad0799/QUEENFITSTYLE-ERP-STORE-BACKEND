@@ -1,7 +1,7 @@
 package br.com.erp.api.product.infrastructure.repository;
 
 import br.com.erp.api.product.domain.entity.Product;
-import br.com.erp.api.product.domain.port.ProductRepository;
+import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import br.com.erp.api.product.infrastructure.mapper.ProductRowMapper;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Repository;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public class ProductJdbiRepositoryImpl implements ProductRepository {
+public class ProductJdbiRepositoryImpl implements ProductRepositoryPort {
 
     private final Jdbi jdbi;
 
