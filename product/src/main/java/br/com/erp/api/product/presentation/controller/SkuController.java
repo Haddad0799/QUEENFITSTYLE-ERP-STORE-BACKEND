@@ -2,8 +2,12 @@ package br.com.erp.api.product.presentation.controller;
 
 import br.com.erp.api.product.application.command.CreateSkuCommand;
 import br.com.erp.api.product.application.command.SkuData;
-import br.com.erp.api.product.application.usecase.CreateSkuUseCase;
+import br.com.erp.api.product.application.query.SkuQueryService;
+import br.com.erp.api.product.application.usecase.AddSkuToProductUseCase;
 import br.com.erp.api.product.presentation.dto.request.CreateSkuDTO;
+import br.com.erp.api.product.presentation.dto.response.SkuDetailsDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,10 +17,12 @@ import java.net.URI;
 @RequestMapping("/erp/products/{productId}/skus")
 public class SkuController {
 
-    private final CreateSkuUseCase createSkuUseCase;
+    private final AddSkuToProductUseCase addSkuToProductUseCase;
+    private final SkuQueryService skuQueryService;
 
-    public SkuController(CreateSkuUseCase createSkuUseCase) {
-        this.createSkuUseCase = createSkuUseCase;
+    public SkuController(AddSkuToProductUseCase addSkuToProductUseCase, SkuQueryService skuQueryService) {
+        this.addSkuToProductUseCase = addSkuToProductUseCase;
+        this.skuQueryService = skuQueryService;
     }
 
     @PostMapping
@@ -40,10 +46,22 @@ public class SkuController {
                         .toList()
         );
 
-        createSkuUseCase.execute(command);
+        addSkuToProductUseCase.execute(command);
 
         URI location = URI.create("/erp/products/" + productId + "/skus");
         return ResponseEntity.created(location).build();
     }
+
+    @GetMapping
+    public ResponseEntity<Page<SkuDetailsDTO>> getAllProductSkus(
+            @PathVariable Long productId,
+            Pageable pageable
+    ) {
+
+        Page<SkuDetailsDTO> skus = skuQueryService.findByProductId(productId, pageable);
+
+        return ResponseEntity.ok(skus);
+    }
+
 
 }

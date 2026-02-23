@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class CreateSkuUseCase {
+public class AddSkuToProductUseCase {
 
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
@@ -24,11 +24,11 @@ public class CreateSkuUseCase {
     private final ColorLookupPort colorLookupPort;
     private final SizeLookupPort sizeLookupPort;
 
-    public CreateSkuUseCase(ProductRepositoryPort productRepository,
-                            SkuRepositoryPort skuRepository,
-                            SkuUniquenessChecker skuUniquenessChecker,
-                            ColorLookupPort colorLookupPort,
-                            SizeLookupPort sizeLookupPort) {
+    public AddSkuToProductUseCase(ProductRepositoryPort productRepository,
+                                  SkuRepositoryPort skuRepository,
+                                  SkuUniquenessChecker skuUniquenessChecker,
+                                  ColorLookupPort colorLookupPort,
+                                  SizeLookupPort sizeLookupPort) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
         this.skuUniquenessChecker = skuUniquenessChecker;
@@ -39,16 +39,15 @@ public class CreateSkuUseCase {
     @Transactional
     public void execute(CreateSkuCommand command) {
 
-        //Recupera o produto
-        var product = productRepository.findById(command.productId())
-                .orElseThrow(() -> new ProductNotFoundException(command.productId()));
+        if (!productRepository.existsById(command.productId())) {
+            throw new ProductNotFoundException(command.productId());
+        }
 
         //Busca cores e tamanhos válidos de uma vez (lookup ports)
         Set<Long> validColorIds = new HashSet<>(colorLookupPort.findAllIds());
         Set<Long> validSizeIds = new HashSet<>(sizeLookupPort.findAllIds());
 
-        // 3️⃣ Valida cores e tamanhos, coleta todos os erros
-
+        //Valida cores e tamanhos, coleta todos os erros
         for (var skuData : command.skus()) {
             if (!validColorIds.contains(skuData.colorId())) {
                 throw new InvalidColorException("Cor inválida: " + skuData.colorId());
@@ -63,7 +62,7 @@ public class CreateSkuUseCase {
                 .map(s -> Map.entry(s.colorId(), s.sizeId()))
                 .toList();
 
-        Set<String> existingKeys = skuUniquenessChecker.existsBatch(product.getId(), skuPairs)
+        Set<String> existingKeys = skuUniquenessChecker.existsBatch(command.productId(), skuPairs)
                 .stream()
                 .map(e -> e.getKey() + "-" + e.getValue())
                 .collect(Collectors.toSet());
@@ -90,12 +89,10 @@ public class CreateSkuUseCase {
                     data.sizeId(),
                     dimensions
             );
-            product.addSku(sku);
             skusToSave.add(sku);
         }
-
         //Persiste os SKUs
-        skuRepository.saveAll(skusToSave);
+        skuRepository.saveAll(command.productId(),skusToSave);
 
     }
 

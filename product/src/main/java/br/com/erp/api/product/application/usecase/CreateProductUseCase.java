@@ -1,7 +1,6 @@
 package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.command.CreateProductCommand;
-import br.com.erp.api.product.application.output.ProductDetailsOutput;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.exception.InvalidCategoryException;
 import br.com.erp.api.product.domain.exception.ProductDuplicateException;
@@ -22,7 +21,7 @@ public class CreateProductUseCase {
     }
 
     @Transactional
-    public ProductDetailsOutput execute(CreateProductCommand command) {
+    public Long execute(CreateProductCommand command) {
 
         Long categoryId = validateCategory(command.categoryId());
 
@@ -34,16 +33,7 @@ public class CreateProductUseCase {
 
         validateDuplicateProduct(product);
 
-        Product saved = productRepository.save(product);
-
-        return new ProductDetailsOutput(
-                saved.getId(),
-                saved.getName(),
-                saved.getDescription(),
-                saved.getSlugValue(),
-                saved.getCategoryId(),
-                saved.isActive()
-        );
+        return productRepository.save(product);
     }
 
     private Long validateCategory(Long id) {

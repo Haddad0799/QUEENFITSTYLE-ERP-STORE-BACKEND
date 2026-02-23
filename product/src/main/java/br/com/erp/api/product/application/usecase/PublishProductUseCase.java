@@ -6,11 +6,11 @@ import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ActivateProductUseCase {
+public class PublishProductUseCase {
 
     private final ProductRepositoryPort productRepository;
 
-    public ActivateProductUseCase(ProductRepositoryPort productRepository) {
+    public PublishProductUseCase(ProductRepositoryPort productRepository) {
         this.productRepository = productRepository;
     }
 
@@ -18,7 +18,7 @@ public class ActivateProductUseCase {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(productId));
 
-        product.activate();
+        product.publish();
 
         productRepository.update(product);
     }

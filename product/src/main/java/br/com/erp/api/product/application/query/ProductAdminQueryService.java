@@ -1,7 +1,9 @@
 package br.com.erp.api.product.application.query;
 
 import br.com.erp.api.product.application.query.filter.ProductFilter;
+import br.com.erp.api.product.domain.enumerated.ProductStatus;
 import br.com.erp.api.product.presentation.dto.response.ProductDetailsDTO;
+import br.com.erp.api.product.presentation.dto.response.ProductSummaryDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,9 +17,7 @@ public class ProductAdminQueryService {
         this.queryRepository = queryRepository;
     }
 
-    public Page<ProductDetailsDTO> getAll(Boolean active, Long categoryId, Pageable pageable) {
-
-        ProductFilter filter = new ProductFilter(active, categoryId);
+    public Page<ProductSummaryDTO> getAll(ProductFilter filter, Pageable pageable) {
 
         return queryRepository.findAll(filter, pageable);
     }

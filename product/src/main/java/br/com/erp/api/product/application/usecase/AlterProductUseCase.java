@@ -1,10 +1,9 @@
 package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.command.AlterProductCommand;
-import br.com.erp.api.product.domain.exception.InvalidCategoryException;
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
-import br.com.erp.api.product.application.output.ProductDetailsOutput;
 import br.com.erp.api.product.domain.entity.Product;
+import br.com.erp.api.product.domain.exception.InvalidCategoryException;
 import br.com.erp.api.product.domain.port.CategoryLookupPort;
 import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,7 @@ public class AlterProductUseCase {
     }
 
     @Transactional
-    public ProductDetailsOutput execute(AlterProductCommand command) {
+    public void execute(AlterProductCommand command) {
 
         Product product = productRepository
                 .findById(command.productId())
@@ -45,14 +44,5 @@ public class AlterProductUseCase {
         }
 
         productRepository.update(product);
-
-        return new ProductDetailsOutput(
-                product.getId(),
-                product.getDescription(),
-                product.getName(),
-                product.getSlugValue(),
-                product.getCategoryId(),
-                product.isActive());
     }
-
 }

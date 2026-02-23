@@ -1,0 +1,6 @@
+ALTER TABLE products
+DROP COLUMN active;
+
+ALTER TABLE products
+    ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'DRAFT';
+

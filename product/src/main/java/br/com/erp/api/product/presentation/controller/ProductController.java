@@ -3,13 +3,13 @@ package br.com.erp.api.product.presentation.controller;
 import br.com.erp.api.product.application.command.AlterProductCommand;
 import br.com.erp.api.product.application.command.CreateProductCommand;
 import br.com.erp.api.product.application.query.ProductAdminQueryService;
-import br.com.erp.api.product.application.usecase.ActivateProductUseCase;
-import br.com.erp.api.product.application.usecase.AlterProductUseCase;
-import br.com.erp.api.product.application.usecase.CreateProductUseCase;
-import br.com.erp.api.product.application.usecase.DeactivateProductUseCase;
+import br.com.erp.api.product.application.query.filter.ProductFilter;
+import br.com.erp.api.product.application.usecase.*;
+import br.com.erp.api.product.domain.enumerated.ProductStatus;
 import br.com.erp.api.product.presentation.dto.request.AlterProductDTO;
 import br.com.erp.api.product.presentation.dto.request.CreateProductDTO;
 import br.com.erp.api.product.presentation.dto.response.ProductDetailsDTO;
+import br.com.erp.api.product.presentation.dto.response.ProductSummaryDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -25,28 +25,37 @@ public class ProductController {
     private final CreateProductUseCase createProductUseCase;
     private final AlterProductUseCase alterProductUseCase;
     private final ProductAdminQueryService productAdminQueryService;
-    private final ActivateProductUseCase activateProductUseCase;
+    private final PublishProductUseCase publishProductUseCase;
     private final DeactivateProductUseCase deactivateProductUseCase;
 
-    public ProductController(CreateProductUseCase createProductUseCase, AlterProductUseCase alterProductUseCase, ProductAdminQueryService productAdminQueryService, ActivateProductUseCase activateProductUseCase, DeactivateProductUseCase deactivateProductUseCase) {
+
+    public ProductController(CreateProductUseCase createProductUseCase, AlterProductUseCase alterProductUseCase, ProductAdminQueryService productAdminQueryService, PublishProductUseCase publishProductUseCase, DeactivateProductUseCase deactivateProductUseCase) {
         this.createProductUseCase = createProductUseCase;
         this.alterProductUseCase = alterProductUseCase;
         this.productAdminQueryService = productAdminQueryService;
-        this.activateProductUseCase = activateProductUseCase;
+        this.publishProductUseCase = publishProductUseCase;
         this.deactivateProductUseCase = deactivateProductUseCase;
     }
 
     @GetMapping
-    public ResponseEntity<Page<ProductDetailsDTO>> getAllProducts(
-            @RequestParam(required = false) Boolean active,
+    public Page<ProductSummaryDTO> getAll(
+            @RequestParam(required = false) ProductStatus status,
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long colorId,
+            @RequestParam(required = false) Long sizeId,
             Pageable pageable
     ) {
-        Page<ProductDetailsDTO> page =
-                productAdminQueryService.getAll(active, categoryId, pageable);
 
-        return ResponseEntity.ok(page);
+        ProductFilter filter = new ProductFilter(
+                status,
+                categoryId,
+                colorId,
+                sizeId
+        );
+
+        return productAdminQueryService.getAll(filter, pageable);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductDetailsDTO> getProductById(@PathVariable Long id) {
@@ -54,7 +63,7 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductDetailsDTO> createProduct(
+    public ResponseEntity<Void> createProduct(
             @RequestBody CreateProductDTO dto,
             UriComponentsBuilder uriBuilder
     ) {
@@ -64,27 +73,19 @@ public class ProductController {
                 dto.categoryId()
         );
 
-        var output = createProductUseCase.execute(command);
+        Long newProductId = createProductUseCase.execute(command);
 
         URI location = uriBuilder
                 .path("/erp/products/{id}")
-                .buildAndExpand(output.id())
+                .buildAndExpand(newProductId)
                 .toUri();
 
         return ResponseEntity
-                .created(location)
-                .body(new ProductDetailsDTO(
-                        output.id(),
-                        output.description(),
-                        output.name(),
-                        output.slug(),
-                        output.categoryId(),
-                        output.active()
-                ));
+                .created(location).build();
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ProductDetailsDTO> alterProduct(@RequestBody AlterProductDTO dto
+    public ResponseEntity<Void> alterProduct(@RequestBody AlterProductDTO dto
             , @PathVariable Long id) {
 
         var command = new AlterProductCommand(id,
@@ -92,20 +93,15 @@ public class ProductController {
                 dto.description(),
                 dto.categoryId());
 
-        var output = alterProductUseCase.execute(command);
+        alterProductUseCase.execute(command);
 
-        return ResponseEntity.ok(new ProductDetailsDTO(
-                output.id(),
-                output.description(),
-                output.name(),
-                output.slug(),
-                output.categoryId(),
-                output.active()));
+        return ResponseEntity.ok().build();
+
     }
 
-    @PatchMapping("/{id}/activate")
+    @PatchMapping("/{id}/publish")
     public ResponseEntity<Void> activate(@PathVariable Long id) {
-        activateProductUseCase.execute(id);
+        publishProductUseCase.execute(id);
         return ResponseEntity.noContent().build();
     }
 

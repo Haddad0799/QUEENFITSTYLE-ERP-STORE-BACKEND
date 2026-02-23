@@ -1,13 +1,16 @@
 package br.com.erp.api.product.presentation.dto.response;
 
-import org.jdbi.v3.core.mapper.reflect.ColumnName;
+import br.com.erp.api.product.domain.enumerated.ProductStatus;
+
+import java.util.List;
 
 public record ProductDetailsDTO(
         Long id,
         String name,
         String description,
         String slug,
-        @ColumnName("category_id") Long categoryId,
-        boolean active
-) {
-}
+        Long categoryId,
+        String categoryName,
+        ProductStatus status,
+        List<SkuSummaryDTO> skus
+) {}

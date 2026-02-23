@@ -1,86 +1,42 @@
 package br.com.erp.api.product.domain.entity;
 
 import br.com.erp.api.product.domain.enumerated.ProductStatus;
-import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
 import br.com.erp.api.product.domain.exception.ProductAlreadyDeactivatedException;
-import br.com.erp.api.product.domain.exception.ProductNotReadyForSaleException;
-import br.com.erp.api.product.domain.port.SkuUniquenessChecker;
 import br.com.erp.api.product.domain.valueobject.Slug;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Product {
-
     private Long id;
     private String name;
     private String description;
     private Slug slug;
     private Long categoryId;
-    private List<Sku> skus = new ArrayList<>();
+    private ProductStatus status;
 
-    private boolean active;
-
-    protected Product(
-            Long id,
-            String name,
-            String description,
-            Slug slug,
-            Long categoryId,
-            boolean active
-    ) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.slug = slug;
-        this.categoryId = categoryId;
-        this.active = active;
-    }
-
-
-    // Criação
-    public Product(
-            String name,
-            String description,
-            Long categoryId
-    ) {
+    public Product(String name, String description, Long categoryId) {
         this.name = name;
         this.description = description;
         this.categoryId = categoryId;
         this.slug = Slug.fromName(name);
-        this.active = false;
+        this.status = ProductStatus.DRAFT;
     }
 
     public static Product restore(
-            Long id,
+            long id,
             String name,
             String description,
             Slug slug,
-            Long categoryId,
-            boolean active
+            long categoryId,
+            ProductStatus status
     ) {
-        return new Product(id, name, description, slug, categoryId, active);
+        Product product = new Product(name, description, categoryId);
+        product.id = id;
+        product.slug = slug;
+        product.status = status;
+        return product;
     }
 
     public ProductStatus getStatus() {
-        return ProductStatus.DRAFT;
-    }
-
-    public List<Sku> getSkus() {
-        return skus;
-    }
-
-    public void addSku(Sku sku) {
-
-        sku.attachToProduct(this.id);
-        skus.add(sku);
-    }
-
-    public void activate() {
-        if (getStatus() != ProductStatus.READY_FOR_SALE) {
-            throw new ProductNotReadyForSaleException();
-        }
-        this.active = true;
+        return this.status;
     }
 
     public void rename(String newName) {
@@ -96,11 +52,18 @@ public class Product {
         this.categoryId = newCategoryId;
     }
 
+    public void publish() {
+        if (this.status == ProductStatus.ARCHIVED) {
+            throw new IllegalStateException("Produto arquivado não pode ser publicado");
+        }
+        this.status = ProductStatus.PUBLISHED;
+    }
+
     public void deactivate() {
-        if (!this.active) {
+        if (this.status == ProductStatus.INACTIVE) {
             throw new ProductAlreadyDeactivatedException();
         }
-        this.active = false;
+        this.status = ProductStatus.INACTIVE;
     }
 
     public Long getId() {
@@ -123,8 +86,5 @@ public class Product {
         return categoryId;
     }
 
-    public boolean isActive() {
-        return active;
-    }
 }
 

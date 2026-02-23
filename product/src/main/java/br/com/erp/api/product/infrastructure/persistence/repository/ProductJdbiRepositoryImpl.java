@@ -1,4 +1,4 @@
-package br.com.erp.api.product.infrastructure.repository;
+package br.com.erp.api.product.infrastructure.persistence.repository;
 
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.port.ProductRepositoryPort;
@@ -18,19 +18,19 @@ public class ProductJdbiRepositoryImpl implements ProductRepositoryPort {
     }
 
     @Override
-    public Product save(Product product) {
+    public Long save(Product product) {
         return jdbi.withHandle(handle ->
                 handle.createUpdate("""
-            INSERT INTO products (name, description, slug, category_id, active)
-            VALUES (:name, :description, :slug, :categoryId, :active)
+            INSERT INTO products (name, description, slug, category_id, status)
+            VALUES (:name, :description, :slug, :categoryId, :status)
         """)
                         .bind("name", product.getName())
                         .bind("description", product.getDescription())
                         .bind("slug", product.getSlugValue())
                         .bind("categoryId", product.getCategoryId())
-                        .bind("active", product.isActive())
-                        .executeAndReturnGeneratedKeys()
-                        .map(new ProductRowMapper())
+                        .bind("status", product.getStatus().name())
+                        .executeAndReturnGeneratedKeys("id")
+                        .mapTo(Long.class)
                         .one()
         );
     }
@@ -45,7 +45,7 @@ public class ProductJdbiRepositoryImpl implements ProductRepositoryPort {
                 description = :description,
                 slug = :slug,
                 category_id = :categoryId,
-                active = :active
+                status = :status
             WHERE id = :id
         """)
                         .bind("id", product.getId())
@@ -53,12 +53,10 @@ public class ProductJdbiRepositoryImpl implements ProductRepositoryPort {
                         .bind("description", product.getDescription())
                         .bind("slug", product.getSlugValue())
                         .bind("categoryId", product.getCategoryId())
-                        .bind("active", product.isActive())
+                        .bind("status", product.getStatus().name())
                         .execute()
         );
-
     }
-
 
 
     @Override
@@ -95,6 +93,21 @@ WHERE slug = :slug
         );
     }
 
+    @Override
+    public boolean existsById(Long id) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT 1
+                FROM products
+                WHERE id = :id
+                LIMIT 1
+            """)
+                        .bind("id", id)
+                        .mapTo(Integer.class)
+                        .findOne()
+                        .isPresent()
+        );
+    }
 
 
 }

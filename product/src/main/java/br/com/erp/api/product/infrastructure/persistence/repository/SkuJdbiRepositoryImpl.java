@@ -1,4 +1,4 @@
-package br.com.erp.api.product.infrastructure.repository;
+package br.com.erp.api.product.infrastructure.persistence.repository;
 
 import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.port.SkuRepositoryPort;
@@ -17,7 +17,7 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
     }
 
     @Override
-    public void saveAll(List<Sku> skus) {
+    public void saveAll(Long productId, List<Sku> skus) {
 
         if (skus == null || skus.isEmpty()) return;
 
@@ -48,7 +48,7 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
             """);
 
             for (Sku sku : skus) {
-                batch.bind("productId", sku.getProductId())
+                batch.bind("productId", productId)
                         .bind("code", sku.getCode().value())
                         .bind("colorId", sku.getColorId())
                         .bind("sizeId", sku.getSizeId())
@@ -59,8 +59,8 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                         .bind("active", sku.isActive())
                         .add();
             }
-
             batch.execute();
         });
     }
+
 }

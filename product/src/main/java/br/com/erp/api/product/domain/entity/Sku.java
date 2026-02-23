@@ -1,5 +1,6 @@
 package br.com.erp.api.product.domain.entity;
 
+import br.com.erp.api.product.domain.enumerated.SkuStatus;
 import br.com.erp.api.product.domain.valueobject.Dimensions;
 import br.com.erp.api.product.domain.valueobject.SkuCode;
 
@@ -11,7 +12,7 @@ public class Sku {
     private final Long colorId;
     private final Long sizeId;
     private Dimensions dimensions;
-    private boolean active;
+    private SkuStatus status;
 
     public Sku(SkuCode code,
                Long colorId,
@@ -22,22 +23,11 @@ public class Sku {
         this.colorId = colorId;
         this.sizeId = sizeId;
         this.dimensions = dimensions;
-        this.active = false;
+        this.status = SkuStatus.INCOMPLETE;
     }
 
     public Long getId() {
         return id;
-    }
-
-    public void attachToProduct(Long productId) {
-        if (this.productId != null) {
-            throw new IllegalStateException("SKU já vinculado a um produto");
-        }
-        this.productId = productId;
-    }
-
-    public Long getProductId() {
-        return productId;
     }
 
     public SkuCode getCode() {
@@ -57,7 +47,18 @@ public class Sku {
     }
 
     public boolean isActive() {
-        return active;
+        return this.status == SkuStatus.ACTIVE;
+    }
+
+    public void activate() {
+        if (!isReady()) {
+            throw new IllegalStateException("SKU não está pronto");
+        }
+        this.status = SkuStatus.ACTIVE;
+    }
+
+    public boolean isReady() {
+        return this.dimensions != null;
     }
 
     public void changeDimensions(Dimensions dimensions){
