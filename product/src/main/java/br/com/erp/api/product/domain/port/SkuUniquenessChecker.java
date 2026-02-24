@@ -1,5 +1,7 @@
 package br.com.erp.api.product.domain.port;
 
+import br.com.erp.api.product.domain.valueobject.SkuCombination;
+
 import java.util.List;
 import java.util.Map;
 
@@ -12,5 +14,5 @@ public interface SkuUniquenessChecker {
      * @param combos lista de combinações (colorId, sizeId) para verificar
      * @return lista de combinações existentes
      */
-    List<Map.Entry<Long, Long>> existsBatch(Long productId, List<Map.Entry<Long, Long>> combos);
+    List<SkuCombination> existsBatch(Long productId, List<SkuCombination> combos);
 }

@@ -1,11 +1,11 @@
 package br.com.erp.api.product.infrastructure.adapter;
 
 import br.com.erp.api.product.domain.port.SkuUniquenessChecker;
+import br.com.erp.api.product.domain.valueobject.SkuCombination;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class SkuJdbiUniquenessChecker implements SkuUniquenessChecker {
@@ -17,40 +17,60 @@ public class SkuJdbiUniquenessChecker implements SkuUniquenessChecker {
     }
 
     @Override
-    public List<Map.Entry<Long, Long>> existsBatch(
+    public List<SkuCombination> existsBatch(
             Long productId,
-            List<Map.Entry<Long, Long>> combos
+            List<SkuCombination> combos
     ) {
-        if (combos.isEmpty()) {
+
+        if (combos == null || combos.isEmpty()) {
             return List.of();
         }
 
-        String sql = """
-            SELECT color_id, size_id
-            FROM skus
-            WHERE product_id = :productId
-              AND (color_id, size_id) IN (<pairs>)
-        """;
-
         return jdbi.withHandle(handle -> {
 
-            var query = handle.createQuery(sql)
-                    .bind("productId", productId);
+            String sql = buildSql(combos.size());
 
-            // transforma (colorId, sizeId) em "(?,?) , (?,?)"
-            String pairs = combos.stream()
-                    .map(c -> "(" + c.getKey() + "," + c.getValue() + ")")
-                    .reduce((a, b) -> a + "," + b)
-                    .orElse("");
+            var query = handle.createQuery(sql);
 
-            query.define("pairs", pairs);
+            int index = 0;
+            for (SkuCombination combo : combos) {
+                query.bind(index++, combo.colorId());
+                query.bind(index++, combo.sizeId());
+            }
+
+            query.bind(index, productId);
 
             return query.map((rs, ctx) ->
-                    Map.entry(
+                    new SkuCombination(
                             rs.getLong("color_id"),
                             rs.getLong("size_id")
                     )
             ).list();
         });
+    }
+
+    private String buildSql(int batchSize) {
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT s.color_id, s.size_id
+        FROM skus s
+        JOIN (VALUES
+    """);
+
+        for (int i = 0; i < batchSize; i++) {
+            sql.append("(?, ?)");
+            if (i < batchSize - 1) {
+                sql.append(",");
+            }
+        }
+
+        sql.append("""
+        ) AS v(color_id, size_id)
+        ON s.color_id = v.color_id
+        AND s.size_id = v.size_id
+        WHERE s.product_id = ?
+    """);
+
+        return sql.toString();
     }
 }

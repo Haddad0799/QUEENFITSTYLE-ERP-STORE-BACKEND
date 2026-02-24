@@ -25,7 +25,7 @@ public class ColorBackOfficeController {
         var respose = output
                 .stream()
                 .map(o-> new ColorAdminDetailsDTO(o.id(),
-                        o.nome(),
+                        o.name(),
                         o.hexaCode()))
                 .toList();
 

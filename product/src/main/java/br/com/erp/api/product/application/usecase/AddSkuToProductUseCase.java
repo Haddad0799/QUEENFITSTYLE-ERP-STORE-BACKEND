@@ -6,13 +6,19 @@ import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
 import br.com.erp.api.product.domain.exception.InvalidColorException;
 import br.com.erp.api.product.domain.exception.InvalidSizeException;
+import br.com.erp.api.product.domain.exception.SkuConflictDetail;
 import br.com.erp.api.product.domain.port.*;
 import br.com.erp.api.product.domain.valueobject.Dimensions;
 import br.com.erp.api.product.domain.valueobject.SkuCode;
+import br.com.erp.api.product.domain.valueobject.SkuCombination;
+import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,11 +30,13 @@ public class AddSkuToProductUseCase {
     private final ColorLookupPort colorLookupPort;
     private final SizeLookupPort sizeLookupPort;
 
-    public AddSkuToProductUseCase(ProductRepositoryPort productRepository,
-                                  SkuRepositoryPort skuRepository,
-                                  SkuUniquenessChecker skuUniquenessChecker,
-                                  ColorLookupPort colorLookupPort,
-                                  SizeLookupPort sizeLookupPort) {
+    public AddSkuToProductUseCase(
+            ProductRepositoryPort productRepository,
+            SkuRepositoryPort skuRepository,
+            SkuUniquenessChecker skuUniquenessChecker,
+            ColorLookupPort colorLookupPort,
+            SizeLookupPort sizeLookupPort
+    ) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
         this.skuUniquenessChecker = skuUniquenessChecker;
@@ -39,61 +47,141 @@ public class AddSkuToProductUseCase {
     @Transactional
     public void execute(CreateSkuCommand command) {
 
+        //Valida produto
         if (!productRepository.existsById(command.productId())) {
             throw new ProductNotFoundException(command.productId());
         }
 
-        //Busca cores e tamanhos válidos de uma vez (lookup ports)
-        Set<Long> validColorIds = new HashSet<>(colorLookupPort.findAllIds());
-        Set<Long> validSizeIds = new HashSet<>(sizeLookupPort.findAllIds());
-
-        //Valida cores e tamanhos, coleta todos os erros
-        for (var skuData : command.skus()) {
-            if (!validColorIds.contains(skuData.colorId())) {
-                throw new InvalidColorException("Cor inválida: " + skuData.colorId());
-            }
-            if (!validSizeIds.contains(skuData.sizeId())) {
-               throw new InvalidSizeException("Tamanho inválido: " + skuData.sizeId());
-            }
-        }
-
-        //Valida duplicidade em batch (colorId + sizeId)
-        List<Map.Entry<Long, Long>> skuPairs = command.skus().stream()
-                .map(s -> Map.entry(s.colorId(), s.sizeId()))
+        //Extrai combinações do request
+        List<SkuCombination> combinations = command.skus().stream()
+                .map(s -> new SkuCombination(s.colorId(), s.sizeId()))
                 .toList();
 
-        Set<String> existingKeys = skuUniquenessChecker.existsBatch(command.productId(), skuPairs)
+        //Valida duplicidade interna no request
+        validateInternalDuplicates(combinations);
+
+        //Extrai IDs únicos
+        Set<Long> colorIds = combinations.stream()
+                .map(SkuCombination::colorId)
+                .collect(Collectors.toSet());
+
+        Set<Long> sizeIds = combinations.stream()
+                .map(SkuCombination::sizeId)
+                .collect(Collectors.toSet());
+
+        //Lookup
+        Map<Long, String> colors = colorLookupPort.findByIds(colorIds)
                 .stream()
-                .map(e -> e.getKey() + "-" + e.getValue())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toMap(
+                        IdNameProjection::id,
+                        IdNameProjection::name
+                ));
 
-        Set<String> newKeys = skuPairs.stream()
-                .map(e -> e.getKey() + "-" + e.getValue())
-                .collect(Collectors.toSet());
+        Map<Long, String> sizes = sizeLookupPort.findByIds(sizeIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        IdNameProjection::id,
+                        IdNameProjection::name
+                ));
 
-        // Verifica se algum SKU do lote já existe
-        newKeys.retainAll(existingKeys);
-        if (!newKeys.isEmpty()) {
-            throw new DuplicateSkuCombinationException(
-                    "As seguintes combinações de cor+tamanho já existem: " + newKeys
-            );
-        }
+        //Valida existência
+        validateExistence(combinations, colors, sizes);
 
-        //Cria entidades de domínio e adiciona ao aggregate
-        List<Sku> skusToSave = new ArrayList<>();
-        for (var data : command.skus()) {
-            Dimensions dimensions = Dimensions.of(data.width(), data.height(), data.length(), data.weight());
-            var sku = new Sku(
-                    SkuCode.of(data.code()),
-                    data.colorId(),
-                    data.sizeId(),
-                    dimensions
-            );
-            skusToSave.add(sku);
-        }
-        //Persiste os SKUs
-        skuRepository.saveAll(command.productId(),skusToSave);
+        //Valida duplicidade no banco
+        validateDatabaseDuplicates(
+                command.productId(),
+                combinations,
+                colors,
+                sizes
+        );
 
+        //Cria entidades
+        List<Sku> skusToSave = command.skus().stream()
+                .map(data -> {
+
+                    Dimensions dimensions = Dimensions.of(
+                            data.width(),
+                            data.height(),
+                            data.length(),
+                            data.weight()
+                    );
+
+                    return new Sku(
+                            SkuCode.of(data.code()),
+                            data.colorId(),
+                            data.sizeId(),
+                            dimensions
+                    );
+                })
+                .toList();
+
+        //Persiste
+        skuRepository.saveAll(command.productId(), skusToSave);
     }
 
+
+    private void validateInternalDuplicates(List<SkuCombination> combinations) {
+
+        Set<SkuCombination> unique = new HashSet<>();
+
+        for (SkuCombination combination : combinations) {
+            if (!unique.add(combination)) {
+                throw new DuplicateSkuCombinationException(
+                        List.of(new SkuConflictDetail(
+                                combination.colorId(),
+                                null,
+                                combination.sizeId(),
+                                null
+                        ))
+                );
+            }
+        }
+    }
+
+    private void validateExistence(
+            List<SkuCombination> combinations,
+            Map<Long, String> colors,
+            Map<Long, String> sizes
+    ) {
+
+        for (SkuCombination combination : combinations) {
+
+            if (!colors.containsKey(combination.colorId())) {
+                throw new InvalidColorException(
+                        "Cor inválida: id=" + combination.colorId()
+                );
+            }
+
+            if (!sizes.containsKey(combination.sizeId())) {
+                throw new InvalidSizeException(
+                        "Tamanho inválido: id=" + combination.sizeId()
+                );
+            }
+        }
+    }
+
+    private void validateDatabaseDuplicates(
+            Long productId,
+            List<SkuCombination> combinations,
+            Map<Long, String> colors,
+            Map<Long, String> sizes
+    ) {
+
+        List<SkuCombination> existing =
+                skuUniquenessChecker.existsBatch(productId, combinations);
+
+        if (!existing.isEmpty()) {
+
+            List<SkuConflictDetail> conflicts = existing.stream()
+                    .map(c -> new SkuConflictDetail(
+                            c.colorId(),
+                            colors.get(c.colorId()),
+                            c.sizeId(),
+                            sizes.get(c.sizeId())
+                    ))
+                    .toList();
+
+            throw new DuplicateSkuCombinationException(conflicts);
+        }
+    }
 }

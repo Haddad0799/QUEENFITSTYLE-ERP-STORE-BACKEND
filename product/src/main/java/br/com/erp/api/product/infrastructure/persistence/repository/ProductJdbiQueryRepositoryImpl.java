@@ -27,16 +27,18 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
     public ProductJdbiQueryRepositoryImpl(Jdbi jdbi) {
         this.jdbi = jdbi;
     }
-
     @Override
     public Page<ProductSummaryDTO> findAll(ProductFilter filter, Pageable pageable) {
 
         PageQuery pageQuery = resolver.build(filter, pageable);
 
+        //SELECT (usa filtros + paginação)
         List<ProductSummaryDTO> content = jdbi.withHandle(handle -> {
 
             var query = handle.createQuery(pageQuery.selectSql());
-            pageQuery.params().forEach(query::bind);
+
+            pageQuery.filterParams().forEach(query::bind);
+            pageQuery.pageParams().forEach(query::bind);
 
             return query.map((rs, ctx) ->
                     new ProductSummaryDTO(
@@ -49,15 +51,18 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
             ).list();
         });
 
+        //COUNT (usa apenas filtros)
         Long total = jdbi.withHandle(handle -> {
+
             var query = handle.createQuery(pageQuery.countSql());
-            pageQuery.params().forEach(query::bind);
+
+            pageQuery.filterParams().forEach(query::bind);
+
             return query.mapTo(Long.class).one();
         });
 
         return new PageImpl<>(content, pageable, total);
     }
-
     @Override
     public ProductDetailsDTO findById(Long id) {
         //buscar produtos + categorias
