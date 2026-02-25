@@ -22,10 +22,11 @@ import java.util.List;
 public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
 
     private final Jdbi jdbi;
-    private final ProductFilterSqlResolver resolver = new ProductFilterSqlResolver();
+    private final ProductFilterSqlResolver resolver;
 
-    public ProductJdbiQueryRepositoryImpl(Jdbi jdbi) {
+    public ProductJdbiQueryRepositoryImpl(Jdbi jdbi, ProductFilterSqlResolver resolver) {
         this.jdbi = jdbi;
+        this.resolver = resolver;
     }
     @Override
     public Page<ProductSummaryDTO> findAll(ProductFilter filter, Pageable pageable) {

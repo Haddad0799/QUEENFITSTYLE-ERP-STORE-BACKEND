@@ -4,6 +4,7 @@ import br.com.erp.api.product.application.command.CreateSkuCommand;
 import br.com.erp.api.product.application.command.SkuData;
 import br.com.erp.api.product.application.query.SkuQueryService;
 import br.com.erp.api.product.application.usecase.AddSkuToProductUseCase;
+import br.com.erp.api.product.application.query.filter.SkuFilter;
 import br.com.erp.api.product.presentation.dto.request.CreateSkuDTO;
 import br.com.erp.api.product.presentation.dto.response.SkuDetailsDTO;
 import org.springframework.data.domain.Page;
@@ -53,14 +54,17 @@ public class SkuController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<SkuDetailsDTO>> getAllProductSkus(
+    public Page<SkuDetailsDTO> findSkus(
             @PathVariable Long productId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long colorId,
+            @RequestParam(required = false) Long sizeId,
             Pageable pageable
     ) {
 
-        Page<SkuDetailsDTO> skus = skuQueryService.findByProductId(productId, pageable);
+        SkuFilter filter = new SkuFilter(status, colorId, sizeId);
 
-        return ResponseEntity.ok(skus);
+        return skuQueryService.findByProductId(productId, filter, pageable);
     }
 
 

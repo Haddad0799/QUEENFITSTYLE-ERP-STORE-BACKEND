@@ -13,5 +13,5 @@ public record SkuDetailsDTO(
         BigDecimal height,
         BigDecimal length,
         BigDecimal weight,
-        boolean active
+        String status
 ) {}

@@ -2,10 +2,12 @@ package br.com.erp.api.product.infrastructure.persistence.query;
 
 import br.com.erp.api.product.application.query.filter.ProductFilter;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Component
 public class ProductFilterSqlResolver {
 
     public PageQuery build(ProductFilter filter, Pageable pageable) {
