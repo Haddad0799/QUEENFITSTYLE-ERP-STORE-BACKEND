@@ -16,36 +16,39 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
         this.jdbi = jdbi;
     }
 
+
     @Override
-    public void saveAll(Long productId, List<Sku> skus) {
+    public List<Long> saveAll(Long productId, List<Sku> skus) {
 
-        if (skus == null || skus.isEmpty()) return;
+        if (skus == null || skus.isEmpty()) {
+            return List.of();
+        }
 
-        jdbi.useHandle(handle -> {
+        return jdbi.withHandle(handle -> {
 
             var batch = handle.prepareBatch("""
-                INSERT INTO skus (
-                    product_id,
-                    sku_code,
-                    color_id,
-                    size_id,
-                    width,
-                    height,
-                    length,
-                    weight,
-                    active
-                ) VALUES (
-                    :productId,
-                    :code,
-                    :colorId,
-                    :sizeId,
-                    :width,
-                    :height,
-                    :length,
-                    :weight,
-                    :active
-                )
-            """);
+            INSERT INTO skus (
+                product_id,
+                sku_code,
+                color_id,
+                size_id,
+                width,
+                height,
+                length,
+                weight,
+                status
+            ) VALUES (
+                :productId,
+                :code,
+                :colorId,
+                :sizeId,
+                :width,
+                :height,
+                :length,
+                :weight,
+                :status
+            )
+        """);
 
             for (Sku sku : skus) {
                 batch.bind("productId", productId)
@@ -56,11 +59,14 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                         .bind("height", sku.getDimensions().height())
                         .bind("length", sku.getDimensions().length())
                         .bind("weight", sku.getDimensions().weight())
-                        .bind("active", sku.isActive())
+                        .bind("status", sku.getStatus())
                         .add();
             }
-            batch.execute();
+
+            return batch
+                    .executePreparedBatch("id")
+                    .mapTo(Long.class)
+                    .list();
         });
     }
-
 }

@@ -2,6 +2,8 @@ package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.command.CreateSkuCommand;
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
+import br.com.erp.api.product.application.gateway.InventoryGateway;
+import br.com.erp.api.product.application.gateway.StockInitialization;
 import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
 import br.com.erp.api.product.domain.exception.InvalidColorException;
@@ -29,19 +31,21 @@ public class AddSkuToProductUseCase {
     private final SkuUniquenessChecker skuUniquenessChecker;
     private final ColorLookupPort colorLookupPort;
     private final SizeLookupPort sizeLookupPort;
+    private final InventoryGateway inventoryGateway;
 
     public AddSkuToProductUseCase(
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
             SkuUniquenessChecker skuUniquenessChecker,
             ColorLookupPort colorLookupPort,
-            SizeLookupPort sizeLookupPort
+            SizeLookupPort sizeLookupPort, InventoryGateway inventoryGateway
     ) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
         this.skuUniquenessChecker = skuUniquenessChecker;
         this.colorLookupPort = colorLookupPort;
         this.sizeLookupPort = sizeLookupPort;
+        this.inventoryGateway = inventoryGateway;
     }
 
     @Transactional
@@ -115,8 +119,16 @@ public class AddSkuToProductUseCase {
                 })
                 .toList();
 
-        //Persiste
-        skuRepository.saveAll(command.productId(), skusToSave);
+        //Persiste skus em bath e retorna seus ids.
+        List<Long> skuIds =
+                skuRepository.saveAll(command.productId(), skusToSave);
+
+        //utiliza os ids dos skus persistidos para inicializar o estoque zerado desses skus no módulo (inventory)
+        List<StockInitialization> stocks = skuIds.stream()
+                .map(id -> new StockInitialization(id, 0))
+                .toList();
+        //chama o método via gateway(iterface) iplementado na infra do módulo de estoque(inventory)
+        inventoryGateway.initializeStocks(stocks);
     }
 
 

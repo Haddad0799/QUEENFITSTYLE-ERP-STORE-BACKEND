@@ -14,6 +14,10 @@ public class Sku {
     private Dimensions dimensions;
     private SkuStatus status;
 
+    public SkuStatus getStatus() {
+        return status;
+    }
+
     public Sku(SkuCode code,
                Long colorId,
                Long sizeId,
