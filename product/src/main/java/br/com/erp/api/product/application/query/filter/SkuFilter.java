@@ -5,4 +5,15 @@ public record SkuFilter(
         Long colorId,
         Long sizeId
 ) {
+    public boolean hasStatus() {
+        return status != null && !status.isBlank();
+    }
+
+    public boolean hasColor() {
+        return colorId != null;
+    }
+
+    public boolean hasSize() {
+        return sizeId != null;
+    }
 }

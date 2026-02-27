@@ -38,7 +38,7 @@ public class CreateProductUseCase {
 
     private Long validateCategory(Long id) {
 
-        if (categoryLookup.existsActiveById(id)) {
+        if (!categoryLookup.existsActiveById(id)) {
             throw new InvalidCategoryException();
         }
         return id;

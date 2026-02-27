@@ -3,7 +3,9 @@ import br.com.erp.api.product.application.query.filter.SkuFilter;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -11,30 +13,36 @@ public class SkuFilterSqlResolver {
 
     public PageQuery build(Long productId, SkuFilter filter, Pageable pageable) {
 
-        StringBuilder baseSql = new StringBuilder("""
+        String baseSql = """
             FROM skus s
             LEFT JOIN colors c ON c.id = s.color_id
             LEFT JOIN sizes sz ON sz.id = s.size_id
             WHERE s.product_id = :productId
-        """);
+        """;
 
-        Map<String, Object> filterParams = new HashMap<>();
-        filterParams.put("productId", productId);
+        Map<String, Object> params = new HashMap<>();
+        params.put("productId", productId);
 
-        if (filter.status() != null) {
-            baseSql.append(" AND s.status = :status ");
-            filterParams.put("status", filter.status());
+        List<String> conditions = new ArrayList<>();
+
+        if (filter.hasStatus()) {
+            conditions.add("s.status = :status");
+            params.put("status", filter.status());
         }
 
-        if (filter.colorId() != null) {
-            baseSql.append(" AND s.color_id = :colorId ");
-            filterParams.put("colorId", filter.colorId());
+        if (filter.hasColor()) {
+            conditions.add("s.color_id = :colorId");
+            params.put("colorId", filter.colorId());
         }
 
-        if (filter.sizeId() != null) {
-            baseSql.append(" AND s.size_id = :sizeId ");
-            filterParams.put("sizeId", filter.sizeId());
+        if (filter.hasSize()) {
+            conditions.add("s.size_id = :sizeId");
+            params.put("sizeId", filter.sizeId());
         }
+
+        String whereClause = conditions.isEmpty()
+                ? ""
+                : " AND " + String.join(" AND ", conditions);
 
         String selectSql = """
             SELECT
@@ -49,18 +57,16 @@ public class SkuFilterSqlResolver {
                 s.length,
                 s.weight,
                 s.status
-        """ + baseSql + """
+        """ + baseSql + whereClause + """
             ORDER BY s.id
             LIMIT :limit OFFSET :offset
         """;
 
-        String countSql = "SELECT COUNT(*) " + baseSql;
+        String countSql = "SELECT COUNT(*) " + baseSql + whereClause;
 
-        Map<String, Object> pageParams = Map.of(
-                "limit", pageable.getPageSize(),
-                "offset", pageable.getOffset()
-        );
+        params.put("limit", pageable.getPageSize());
+        params.put("offset", pageable.getOffset());
 
-        return new PageQuery(selectSql, countSql, filterParams, pageParams);
+        return new PageQuery(selectSql, countSql, params, Map.of());
     }
 }

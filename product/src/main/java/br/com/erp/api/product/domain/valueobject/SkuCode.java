@@ -16,6 +16,14 @@ public record SkuCode(String value) {
 
         value = value.trim().toUpperCase();
 
+        if (value.length() < 3) {
+            throw new InvalidSkuCodeException("SKU muito curto, mínimo 3 caracteres");
+        }
+
+        if (value.length() > 50) {
+            throw new InvalidSkuCodeException("SKU não pode ter mais de 50 caracteres");
+        }
+
         if (!PATTERN.matcher(value).matches()) {
             throw new InvalidSkuCodeException(
                     "SKU deve conter apenas letras e números, separados por hífen"

@@ -3,87 +3,104 @@ package br.com.erp.api.web.exception.handler;
 import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
 import br.com.erp.api.shared.application.exception.EntityNotFoundException;
 import br.com.erp.api.shared.domain.exception.DomainException;
-import br.com.erp.api.shared.presentation.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String PROBLEM_JSON = "application/problem+json";
+
     // 1️⃣ Handler específico primeiro
     @ExceptionHandler(DuplicateSkuCombinationException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateSku(
+    public ResponseEntity<ProblemDetail> handleDuplicateSku(
             DuplicateSkuCombinationException ex,
             HttpServletRequest request
     ) {
-        ErrorResponse error = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.UNPROCESSABLE_ENTITY.value(),
-                "Combinação de SKU já existente",
-                ex.getMessage(),
-                ex.getConflicts(),
-                request.getRequestURI()
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ex.getMessage()
         );
+        problem.setTitle("Combinação de SKU já existente");
+        problem.setType(URI.create("https://example.com/probs/duplicate-sku-combination"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("conflicts", ex.getConflicts());
+        problem.setProperty("path", request.getRequestURI());
 
-        return ResponseEntity.unprocessableEntity().body(error);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.unprocessableEntity().headers(headers).body(problem);
     }
 
     // 2️⃣ Depois handler genérico de regra de negócio
     @ExceptionHandler(DomainException.class)
-    public ResponseEntity<ErrorResponse> handleDomainException(
+    public ResponseEntity<ProblemDetail> handleDomainException(
             DomainException ex,
             HttpServletRequest request
     ) {
-        ErrorResponse error = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.UNPROCESSABLE_ENTITY.value(),
-                "Violação de Regra de Negócio",
-                ex.getMessage(),
-                null,
-                request.getRequestURI()
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ex.getMessage()
         );
+        problem.setTitle("Violação de Regra de Negócio");
+        problem.setType(URI.create("https://example.com/probs/domain-exception"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
 
-        return ResponseEntity.unprocessableEntity().body(error);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.unprocessableEntity().headers(headers).body(problem);
     }
 
     // 3️⃣ Not found
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleEntityNotFound(
+    public ResponseEntity<ProblemDetail> handleEntityNotFound(
             EntityNotFoundException ex,
             HttpServletRequest request
     ) {
-        ErrorResponse error = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                "Recurso não encontrado",
-                ex.getMessage(),
-                null,
-                request.getRequestURI()
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage()
         );
+        problem.setTitle("Recurso não encontrado");
+        problem.setType(URI.create("https://example.com/probs/not-found"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).headers(headers).body(problem);
     }
 
     // 4️⃣ Genérico
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(
+    public ResponseEntity<ProblemDetail> handleGenericException(
             Exception ex,
             HttpServletRequest request
     ) {
-        ErrorResponse error = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                ex.getMessage(),
-                null,
-                request.getRequestURI()
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ex.getMessage()
         );
+        problem.setTitle(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+        problem.setType(URI.create("https://example.com/probs/internal-server-error"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).headers(headers).body(problem);
     }
 }

@@ -15,6 +15,6 @@ public class CategoryLookupFromCatalog implements CategoryLookupPort {
 
     @Override
     public boolean existsActiveById(Long id) {
-        return !categoryQueryService.existsActiveById(id);
+        return categoryQueryService.existsActiveById(id);
     }
 }
