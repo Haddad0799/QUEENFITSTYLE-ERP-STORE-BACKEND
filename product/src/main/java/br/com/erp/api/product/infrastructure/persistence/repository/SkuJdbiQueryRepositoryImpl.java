@@ -1,10 +1,12 @@
 package br.com.erp.api.product.infrastructure.persistence.repository;
 
 import br.com.erp.api.product.application.query.SkuQueryRepository;
+import br.com.erp.api.product.domain.enumerated.SkuStatus;
 import br.com.erp.api.product.infrastructure.persistence.query.PageQuery;
 import br.com.erp.api.product.infrastructure.persistence.query.SkuFilterSqlResolver;
 import br.com.erp.api.product.application.query.filter.SkuFilter;
 import br.com.erp.api.product.presentation.dto.response.SkuDetailsDTO;
+import br.com.erp.api.product.presentation.dto.response.SkuSummaryDTO;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -26,30 +28,23 @@ public class SkuJdbiQueryRepositoryImpl implements SkuQueryRepository {
     }
 
     @Override
-    public Page<SkuDetailsDTO> findByProductId(Long productId,
+    public Page<SkuSummaryDTO> findByProductId(Long productId,
                                                SkuFilter filter,
                                                Pageable pageable) {
 
-        PageQuery pageQuery = skuFilterSqlResolver.build(productId, filter, pageable);
+        PageQuery pageQuery = skuFilterSqlResolver.buildSummary(productId, filter, pageable);
 
-
-        List<SkuDetailsDTO> skus = jdbi.withHandle(handle ->
+        List<SkuSummaryDTO> skus = jdbi.withHandle(handle ->
                 handle.createQuery(pageQuery.selectSql())
                         .bindMap(pageQuery.filterParams())
                         .bind("limit", pageable.getPageSize())
                         .bind("offset", pageable.getOffset())
-                        .map((rs, ctx) -> new SkuDetailsDTO(
+                        .map((rs, ctx) -> new SkuSummaryDTO(
                                 rs.getLong("id"),
                                 rs.getString("code"),
-                                rs.getLong("colorId"),
-                                rs.getString("colorName"),
-                                rs.getLong("sizeId"),
-                                rs.getString("sizeName"),
-                                rs.getBigDecimal("width"),
-                                rs.getBigDecimal("height"),
-                                rs.getBigDecimal("length"),
-                                rs.getBigDecimal("weight"),
-                                rs.getString("status")
+                                rs.getString("color_name"),
+                                rs.getString("size_name"),
+                                SkuStatus.valueOf(rs.getString("status"))
                         ))
                         .list()
         );

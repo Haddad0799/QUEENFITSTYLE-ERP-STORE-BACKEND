@@ -3,11 +3,11 @@ package br.com.erp.api.product.presentation.controller;
 import br.com.erp.api.product.application.command.CreateSkuCommand;
 import br.com.erp.api.product.application.command.SkuData;
 import br.com.erp.api.product.application.query.SkuQueryService;
-import br.com.erp.api.product.application.usecase.AddSkuToProductUseCase;
 import br.com.erp.api.product.application.query.filter.SkuFilter;
+import br.com.erp.api.product.application.usecase.AddSkuToProductUseCase;
 import br.com.erp.api.product.presentation.dto.request.CreateSkuDTO;
-import br.com.erp.api.product.presentation.dto.response.SkuDetailsDTO;
-import org.springframework.data.domain.Page;
+import br.com.erp.api.product.presentation.dto.response.PageResponse;
+import br.com.erp.api.product.presentation.dto.response.SkuSummaryDTO;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,7 +54,7 @@ public class SkuController {
     }
 
     @GetMapping
-    public Page<SkuDetailsDTO> findSkus(
+    public PageResponse<SkuSummaryDTO> findSkus(
             @PathVariable Long productId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Long colorId,
@@ -64,7 +64,7 @@ public class SkuController {
 
         SkuFilter filter = new SkuFilter(status, colorId, sizeId);
 
-        return skuQueryService.findByProductId(productId, filter, pageable);
+        return PageResponse.from(skuQueryService.findByProductId(productId, filter, pageable));
     }
 
 
