@@ -6,5 +6,5 @@ public record SkuDetailsDTO(
         String status,
         SkuAttributes attributes,
         SkuDimensions dimensions,
-        SkuStock stock
-) {}
+        SkuStock stock,
+        SkuPriceDTO price) {}

@@ -1,9 +1,10 @@
 package br.com.erp.api.product.application.query;
 
-import br.com.erp.api.product.application.gateway.InventoryGateway;
 import br.com.erp.api.product.application.provider.InventoryProvider;
+import br.com.erp.api.product.application.provider.PriceProvider;
 import br.com.erp.api.product.application.query.filter.SkuFilter;
 import br.com.erp.api.product.presentation.dto.response.SkuDetailsDTO;
+import br.com.erp.api.product.presentation.dto.response.SkuPriceDTO;
 import br.com.erp.api.product.presentation.dto.response.SkuStock;
 import br.com.erp.api.product.presentation.dto.response.SkuSummaryDTO;
 import org.springframework.data.domain.Page;
@@ -15,13 +16,16 @@ public class SkuQueryService {
 
     private final SkuQueryRepository repository;
     private final InventoryProvider inventoryProvider;
+    private final PriceProvider priceProvider;        // adicionar
 
     public SkuQueryService(
             SkuQueryRepository repository,
-            InventoryProvider inventoryProvider
+            InventoryProvider inventoryProvider,
+            PriceProvider priceProvider
     ) {
         this.repository = repository;
         this.inventoryProvider = inventoryProvider;
+        this.priceProvider = priceProvider;
     }
 
     public Page<SkuSummaryDTO> findByProductId(
@@ -38,10 +42,11 @@ public class SkuQueryService {
     ) {
 
         var sku = repository
-                .findByProductIdAndSkuId(productId, skuId )
+                .findByProductIdAndSkuId(productId, skuId)
                 .orElseThrow(() -> new RuntimeException("SKU not found"));
 
         SkuStock stock = inventoryProvider.getBySkuId(sku.id());
+        SkuPriceDTO price = priceProvider.getBySkuId(sku.id());
 
         return new SkuDetailsDTO(
                 sku.id(),
@@ -49,7 +54,8 @@ public class SkuQueryService {
                 sku.status(),
                 sku.attributes(),
                 sku.dimensions(),
-                stock
+                stock,
+                price
         );
     }
 }

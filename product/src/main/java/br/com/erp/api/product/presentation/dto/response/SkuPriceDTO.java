@@ -1,4 +1,8 @@
 package br.com.erp.api.product.presentation.dto.response;
 
-public record SkuPriceDTO() {
-}
+import java.math.BigDecimal;
+
+public record SkuPriceDTO(
+        BigDecimal costPrice,
+        BigDecimal sellingPrice
+) {}

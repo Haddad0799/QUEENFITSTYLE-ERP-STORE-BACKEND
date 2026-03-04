@@ -2,6 +2,7 @@ package br.com.erp.api.pricing.application.usecase;
 
 import br.com.erp.api.pricing.domain.entity.SkuPrice;
 import br.com.erp.api.pricing.domain.port.SkuPriceRepositoryPort;
+import br.com.erp.api.product.application.dto.PriceInitialization;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;

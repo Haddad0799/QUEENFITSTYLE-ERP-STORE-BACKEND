@@ -11,6 +11,14 @@ public class SkuPrice {
     private BigDecimal sellingPrice;
     private LocalDateTime createdAt;
 
+    public SkuPrice(Long id, Long skuId, BigDecimal costPrice, BigDecimal sellingPrice, LocalDateTime createdAt) {
+        this.id = id;
+        this.skuId = skuId;
+        this.costPrice = costPrice;
+        this.sellingPrice = sellingPrice;
+        this.createdAt = createdAt;
+    }
+
     public SkuPrice(Long skuId, BigDecimal costPrice, BigDecimal sellingPrice) {
         this.skuId = skuId;
         this.costPrice = costPrice;
