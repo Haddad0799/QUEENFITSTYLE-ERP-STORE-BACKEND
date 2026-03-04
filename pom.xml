@@ -30,6 +30,7 @@
 		<module>shared</module>
         <module>product</module>
 		<module>inventory</module>
+		<module>pricing</module>
     </modules>
 
 	<dependencyManagement>
