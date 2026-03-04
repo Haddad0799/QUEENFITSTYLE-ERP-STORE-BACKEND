@@ -44,7 +44,9 @@ public class SkuController {
                                 s.height(),
                                 s.length(),
                                 s.weight(),
-                                s.stockQuantity()
+                                s.stockQuantity(),
+                                s.costPrice(),
+                                s.sellingPrice()
                         ))
                         .toList()
         );

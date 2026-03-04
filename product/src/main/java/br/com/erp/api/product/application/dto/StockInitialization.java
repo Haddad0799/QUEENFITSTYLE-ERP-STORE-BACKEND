@@ -1,4 +1,4 @@
-package br.com.erp.api.product.application.gateway;
+package br.com.erp.api.product.application.dto;
 
 public record StockInitialization(
         Long skuId,

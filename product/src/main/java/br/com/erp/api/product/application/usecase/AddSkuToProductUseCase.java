@@ -1,9 +1,11 @@
 package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.command.CreateSkuCommand;
+import br.com.erp.api.product.application.dto.PriceInitialization;
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.application.gateway.InventoryGateway;
-import br.com.erp.api.product.application.gateway.StockInitialization;
+import br.com.erp.api.product.application.dto.StockInitialization;
+import br.com.erp.api.product.application.gateway.PriceGateway;
 import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
 import br.com.erp.api.product.domain.exception.InvalidColorException;
@@ -32,13 +34,14 @@ public class AddSkuToProductUseCase {
     private final ColorLookupPort colorLookupPort;
     private final SizeLookupPort sizeLookupPort;
     private final InventoryGateway inventoryGateway;
+    private final PriceGateway priceGateway;
 
     public AddSkuToProductUseCase(
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
             SkuUniquenessChecker skuUniquenessChecker,
             ColorLookupPort colorLookupPort,
-            SizeLookupPort sizeLookupPort, InventoryGateway inventoryGateway
+            SizeLookupPort sizeLookupPort, InventoryGateway inventoryGateway, PriceGateway priceGateway
     ) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
@@ -46,6 +49,7 @@ public class AddSkuToProductUseCase {
         this.colorLookupPort = colorLookupPort;
         this.sizeLookupPort = sizeLookupPort;
         this.inventoryGateway = inventoryGateway;
+        this.priceGateway = priceGateway;
     }
 
     @Transactional
@@ -131,6 +135,16 @@ public class AddSkuToProductUseCase {
                 .toList();
         //chama o método via gateway(iterface) iplementado na infra do módulo de estoque(inventory)
         inventoryGateway.initializeStocks(stocks);
+
+        List<PriceInitialization> prices = command.skus().stream()
+                .map(data -> new PriceInitialization(
+                        skuCodeToId.get(data.code()),
+                        data.costPrice(),
+                        data.sellingPrice()
+                ))
+                .toList();
+
+        priceGateway.initializePrices(prices);
     }
 
 

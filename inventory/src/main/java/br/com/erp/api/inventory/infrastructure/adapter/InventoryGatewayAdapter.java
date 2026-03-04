@@ -2,7 +2,7 @@ package br.com.erp.api.inventory.infrastructure.adapter;
 
 import br.com.erp.api.inventory.application.usecase.InitializeStockUseCase;
 import br.com.erp.api.product.application.gateway.InventoryGateway;
-import br.com.erp.api.product.application.gateway.StockInitialization;
+import br.com.erp.api.product.application.dto.StockInitialization;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

@@ -5,7 +5,7 @@ import br.com.erp.api.inventory.domain.entity.StockMovement;
 import br.com.erp.api.inventory.domain.enumerated.MovementType;
 import br.com.erp.api.inventory.domain.port.SkuStockRepositoryPort;
 import br.com.erp.api.inventory.domain.port.StockMovementRepositoryPort;
-import br.com.erp.api.product.application.gateway.StockInitialization;
+import br.com.erp.api.product.application.dto.StockInitialization;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
