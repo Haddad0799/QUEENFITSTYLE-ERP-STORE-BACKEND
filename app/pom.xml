@@ -15,28 +15,24 @@
 
         <dependencies>
 
-            <!-- Módulo catalog -->
             <dependency>
                 <groupId>br.com.erp</groupId>
                 <artifactId>catalog</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- Módulo shared -->
             <dependency>
                 <groupId>br.com.erp</groupId>
                 <artifactId>shared</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- Módulo product -->
             <dependency>
                 <groupId>br.com.erp</groupId>
                 <artifactId>product</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- Módulo inventory -->
             <dependency>
                 <groupId>br.com.erp</groupId>
                 <artifactId>inventory</artifactId>
@@ -46,6 +42,12 @@
             <dependency>
                 <groupId>br.com.erp</groupId>
                 <artifactId>pricing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>br.com.erp</groupId>
+                <artifactId>storage</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

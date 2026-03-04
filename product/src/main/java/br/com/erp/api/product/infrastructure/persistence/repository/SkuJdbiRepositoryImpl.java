@@ -77,4 +77,20 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                     ));
         });
     }
+
+    @Override
+    public boolean existsByProductIdAndColorId(Long productId, Long colorId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT COUNT(*) > 0
+                FROM skus
+                WHERE product_id = :productId
+                  AND color_id = :colorId
+            """)
+                        .bind("productId", productId)
+                        .bind("colorId", colorId)
+                        .mapTo(Boolean.class)
+                        .one()
+        );
+    }
 }

@@ -7,4 +7,6 @@ import java.util.Map;
 
 public interface SkuRepositoryPort {
     Map<String, Long> saveAll(Long productId, List<Sku> skus);
+
+    boolean existsByProductIdAndColorId(Long productId, Long colorId);
 }

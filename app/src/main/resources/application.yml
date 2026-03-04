@@ -28,3 +28,8 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+minio:
+  url: http://localhost:9000
+  access-key: ${MINIO_ROOT_USER:admin}
+  secret-key: ${MINIO_ROOT_PASSWORD:admin123}
+  bucket: queenfitstyle

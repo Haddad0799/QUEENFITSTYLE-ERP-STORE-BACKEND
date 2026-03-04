@@ -31,6 +31,7 @@
         <module>product</module>
 		<module>inventory</module>
 		<module>pricing</module>
+		<module>storage</module>
     </modules>
 
 	<dependencyManagement>

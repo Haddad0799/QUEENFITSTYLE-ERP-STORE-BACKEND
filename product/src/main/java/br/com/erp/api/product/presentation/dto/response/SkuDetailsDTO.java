@@ -1,5 +1,7 @@
 package br.com.erp.api.product.presentation.dto.response;
 
+import java.util.List;
+
 public record SkuDetailsDTO(
         Long id,
         String code,
@@ -7,4 +9,5 @@ public record SkuDetailsDTO(
         SkuAttributes attributes,
         SkuDimensions dimensions,
         SkuStock stock,
-        SkuPriceDTO price) {}
+        SkuPriceDTO price,
+        List<SkuImageDTO> images ) {}
