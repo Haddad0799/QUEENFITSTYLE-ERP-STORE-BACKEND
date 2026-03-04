@@ -1,8 +1,7 @@
 package br.com.erp.api.inventory.domain.entity;
 
-import br.com.erp.api.inventory.domain.enumerated.MovementType;
-import br.com.erp.api.inventory.domain.exception.InsufficientStockException;
 import br.com.erp.api.inventory.domain.exception.InsufficientReservationException;
+import br.com.erp.api.inventory.domain.exception.InsufficientStockException;
 
 public class SkuStock {
 

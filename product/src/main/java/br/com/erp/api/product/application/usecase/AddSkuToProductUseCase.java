@@ -2,7 +2,7 @@ package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.command.CreateSkuCommand;
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
-import br.com.erp.api.product.application.gateway.InventoryGateway;
+import br.com.erp.api.product.application.gateway.InventoryProvider;
 import br.com.erp.api.product.application.gateway.StockInitialization;
 import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
@@ -31,14 +31,14 @@ public class AddSkuToProductUseCase {
     private final SkuUniquenessChecker skuUniquenessChecker;
     private final ColorLookupPort colorLookupPort;
     private final SizeLookupPort sizeLookupPort;
-    private final InventoryGateway inventoryGateway;
+    private final InventoryProvider inventoryGateway;
 
     public AddSkuToProductUseCase(
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
             SkuUniquenessChecker skuUniquenessChecker,
             ColorLookupPort colorLookupPort,
-            SizeLookupPort sizeLookupPort, InventoryGateway inventoryGateway
+            SizeLookupPort sizeLookupPort, InventoryProvider inventoryGateway
     ) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;

@@ -1,11 +1,13 @@
 package br.com.erp.api.product.infrastructure.persistence.repository;
 
 import br.com.erp.api.product.application.query.SkuQueryRepository;
+import br.com.erp.api.product.application.query.model.SkuBaseData;
 import br.com.erp.api.product.domain.enumerated.SkuStatus;
 import br.com.erp.api.product.infrastructure.persistence.query.PageQuery;
 import br.com.erp.api.product.infrastructure.persistence.query.SkuFilterSqlResolver;
 import br.com.erp.api.product.application.query.filter.SkuFilter;
-import br.com.erp.api.product.presentation.dto.response.SkuDetailsDTO;
+import br.com.erp.api.product.presentation.dto.response.SkuAttributes;
+import br.com.erp.api.product.presentation.dto.response.SkuDimensions;
 import br.com.erp.api.product.presentation.dto.response.SkuSummaryDTO;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class SkuJdbiQueryRepositoryImpl implements SkuQueryRepository {
@@ -57,5 +60,56 @@ public class SkuJdbiQueryRepositoryImpl implements SkuQueryRepository {
         );
 
         return new PageImpl<>(skus, pageable, total);
+    }
+
+    @Override
+    public Optional<SkuBaseData> findByProductIdAndSkuId(
+            Long productId,
+            Long skuId
+    ) {
+
+        String sql = """
+    SELECT
+        s.id,
+        s.sku_code AS code,
+        s.status,
+        s.color_id,
+        c.name AS color_name,
+        s.size_id,
+        sz.label AS size_name,
+        s.width,
+        s.height,
+        s.length,
+        s.weight
+    FROM skus s
+    LEFT JOIN colors c ON c.id = s.color_id
+    LEFT JOIN sizes sz ON sz.id = s.size_id
+    WHERE s.product_id = :productId
+      AND s.id = :skuId
+""";
+
+        return jdbi.withHandle(handle ->
+                handle.createQuery(sql)
+                        .bind("productId", productId)
+                        .bind("skuId", skuId)
+                        .map((rs, ctx) -> new SkuBaseData(
+                                rs.getLong("id"),
+                                rs.getString("code"),
+                                rs.getString("status"),
+                                new SkuAttributes(
+                                        rs.getLong("color_id"),
+                                        rs.getString("color_name"),
+                                        rs.getLong("size_id"),
+                                        rs.getString("size_name")
+                                ),
+                                new SkuDimensions(
+                                        rs.getBigDecimal("width"),
+                                        rs.getBigDecimal("height"),
+                                        rs.getBigDecimal("length"),
+                                        rs.getBigDecimal("weight")
+                                )
+                        ))
+                        .findOne()
+        );
     }
 }

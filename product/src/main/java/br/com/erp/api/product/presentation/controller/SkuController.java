@@ -7,6 +7,7 @@ import br.com.erp.api.product.application.query.filter.SkuFilter;
 import br.com.erp.api.product.application.usecase.AddSkuToProductUseCase;
 import br.com.erp.api.product.presentation.dto.request.CreateSkuDTO;
 import br.com.erp.api.product.presentation.dto.response.PageResponse;
+import br.com.erp.api.product.presentation.dto.response.SkuDetailsDTO;
 import br.com.erp.api.product.presentation.dto.response.SkuSummaryDTO;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -67,5 +68,11 @@ public class SkuController {
         return PageResponse.from(skuQueryService.findByProductId(productId, filter, pageable));
     }
 
-
+    @GetMapping("/{skuId}")
+    public ResponseEntity<SkuDetailsDTO> findSkuById(
+            @PathVariable Long productId,
+            @PathVariable Long skuId
+    ) {
+        return ResponseEntity.ok(skuQueryService.findByProductIdAndSkuCode(productId, skuId));
+    }
 }
