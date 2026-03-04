@@ -1,6 +1,7 @@
 package br.com.erp.api.product.application.query;
 
-import br.com.erp.api.product.application.gateway.InventoryProvider;
+import br.com.erp.api.product.application.gateway.InventoryGateway;
+import br.com.erp.api.product.application.provider.InventoryProvider;
 import br.com.erp.api.product.application.query.filter.SkuFilter;
 import br.com.erp.api.product.presentation.dto.response.SkuDetailsDTO;
 import br.com.erp.api.product.presentation.dto.response.SkuStock;

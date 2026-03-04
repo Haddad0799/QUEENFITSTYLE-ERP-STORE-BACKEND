@@ -6,6 +6,8 @@ import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Repository
 public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
@@ -18,10 +20,10 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
 
 
     @Override
-    public List<Long> saveAll(Long productId, List<Sku> skus) {
+    public Map<String, Long> saveAll(Long productId, List<Sku> skus) {
 
         if (skus == null || skus.isEmpty()) {
-            return List.of();
+            return Map.of();  // era List.of() — bug, já corrijo aqui
         }
 
         return jdbi.withHandle(handle -> {
@@ -64,9 +66,15 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
             }
 
             return batch
-                    .executePreparedBatch("id")
-                    .mapTo(Long.class)
-                    .list();
+                    .executePreparedBatch("id", "sku_code")  // retorna ambas as colunas
+                    .map((rs, ctx) -> Map.entry(
+                            rs.getString("sku_code"),
+                            rs.getLong("id")
+                    ))
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            Map.Entry::getValue
+                    ));
         });
     }
 }

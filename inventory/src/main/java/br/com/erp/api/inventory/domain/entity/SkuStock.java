@@ -6,7 +6,7 @@ import br.com.erp.api.inventory.domain.exception.InsufficientStockException;
 public class SkuStock {
 
     private Long id;
-    private Long skuId;
+    private final Long skuId;
     private int quantity;
     private int reserved;
     private int minQuantity;

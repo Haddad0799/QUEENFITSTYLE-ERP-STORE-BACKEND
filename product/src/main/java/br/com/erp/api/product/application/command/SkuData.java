@@ -9,6 +9,7 @@ public record SkuData(
         BigDecimal width,
         BigDecimal height,
         BigDecimal length,
-        BigDecimal weight
+        BigDecimal weight,
+        Integer stockQuantity
 ) {
 }

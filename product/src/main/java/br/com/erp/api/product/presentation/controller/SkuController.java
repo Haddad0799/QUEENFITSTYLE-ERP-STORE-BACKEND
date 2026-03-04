@@ -43,7 +43,8 @@ public class SkuController {
                                 s.width(),
                                 s.height(),
                                 s.length(),
-                                s.weight()
+                                s.weight(),
+                                s.stockQuantity()
                         ))
                         .toList()
         );

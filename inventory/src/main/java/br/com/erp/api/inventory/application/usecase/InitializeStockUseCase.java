@@ -30,7 +30,7 @@ public class InitializeStockUseCase {
     public void execute(List<StockInitialization> initializations) {
 
         List<SkuStock> stocks = initializations.stream()
-                .map(init -> new SkuStock(init.skuId(), 0, 0))
+                .map(init -> new SkuStock(init.skuId(), init.quantity(), 0))  // quantidade real
                 .toList();
 
         stockRepository.saveAll(stocks);
@@ -38,9 +38,9 @@ public class InitializeStockUseCase {
         initializations.forEach(init ->
                 movementRepository.save(new StockMovement(
                         init.skuId(),
-                        MovementType.INITIALIZED,
-                        0,
-                        "SKU criado com estoque inicial zerado",
+                        MovementType.INBOUND,
+                        init.quantity(),
+                        "Estoque inicial informado no cadastro do SKU",
                         null
                 ))
         );
