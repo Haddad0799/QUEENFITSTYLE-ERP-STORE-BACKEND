@@ -1,4 +1,7 @@
 package br.com.erp.api.product.presentation.dto.request;
 
-public record RequestUploadUrlsDTO() {
-}
+import java.util.List;
+
+public record RequestUploadUrlsDTO(
+        List<String> files
+) {}

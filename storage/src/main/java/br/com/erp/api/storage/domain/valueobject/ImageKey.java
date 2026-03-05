@@ -1,5 +1,6 @@
 package br.com.erp.api.storage.domain.valueobject;
 
+import java.util.Set;
 import java.util.UUID;
 
 public class ImageKey {
@@ -10,13 +11,24 @@ public class ImageKey {
         this.value = value;
     }
 
-    public static ImageKey of(Long productId, Long colorId) {
+    public static ImageKey of(Long productId, Long colorId, String filename) {
+
+        Set<String> allowed = Set.of("jpg", "jpeg", "png", "webp");
+
+        String ext = filename.contains(".")
+                ? filename.substring(filename.lastIndexOf('.') + 1).toLowerCase()
+                : "jpg";
+
+        if (!allowed.contains(ext)) {
+            throw new IllegalArgumentException("Formato não suportado: " + ext);
+        }
+
         return new ImageKey(
-                "products/" + productId + "/colors/" + colorId + "/" + UUID.randomUUID() + ".jpg"
+                "products/" + productId + "/colors/" + colorId + "/" + UUID.randomUUID() + "." + ext
         );
     }
 
-    public String value() {
+    public String getValue() {
         return value;
     }
 }

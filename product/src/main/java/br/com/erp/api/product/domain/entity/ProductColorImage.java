@@ -15,6 +15,14 @@ public class ProductColorImage {
         this.order = order;
     }
 
+    public ProductColorImage(Long id, Long productId, Long colorId, String imageKey, int order) {
+        this.id = id;
+        this.productId = productId;
+        this.colorId = colorId;
+        this.imageKey = imageKey;
+        this.order = order;
+    }
+
     public Long getId() { return id; }
     public Long getProductId() { return productId; }
     public Long getColorId() { return colorId; }

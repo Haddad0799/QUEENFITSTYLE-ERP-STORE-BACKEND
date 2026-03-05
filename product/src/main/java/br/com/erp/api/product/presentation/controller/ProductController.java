@@ -13,6 +13,7 @@ import br.com.erp.api.product.domain.enumerated.ProductStatus;
 import br.com.erp.api.product.presentation.dto.request.AlterProductDTO;
 import br.com.erp.api.product.presentation.dto.request.ConfirmImageUploadDTO;
 import br.com.erp.api.product.presentation.dto.request.CreateProductDTO;
+import br.com.erp.api.product.presentation.dto.request.RequestUploadUrlsDTO;
 import br.com.erp.api.product.presentation.dto.response.PageResponse;
 import br.com.erp.api.product.presentation.dto.response.PresignedUrlDTO;
 import br.com.erp.api.product.presentation.dto.response.ProductDetailsDTO;
@@ -110,9 +111,9 @@ public class ProductController {
     public ResponseEntity<List<PresignedUrlDTO>> generateUploadUrls(
             @PathVariable Long productId,
             @PathVariable Long colorId,
-            @RequestParam(defaultValue = "1") int quantity
+            @RequestBody RequestUploadUrlsDTO dto
     ) {
-        List<PresignedUrlResult> results = requestImageUploadUseCase.execute(productId, colorId, quantity);
+        List<PresignedUrlResult> results = requestImageUploadUseCase.execute(productId, colorId, dto.files());
 
         List<PresignedUrlDTO> response = results.stream()
                 .map(r -> new PresignedUrlDTO(r.uploadUrl(), r.imageKey()))
@@ -120,7 +121,6 @@ public class ProductController {
 
         return ResponseEntity.ok(response);
     }
-
     @PostMapping("/{productId}/colors/{colorId}/images")
     public ResponseEntity<Void> confirmUpload(
             @PathVariable Long productId,

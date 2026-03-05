@@ -70,15 +70,16 @@ public class ProductColorImageJdbiRepository implements ProductColorImageReposit
     public List<ProductColorImage> findByProductIdAndColorId(Long productId, Long colorId) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
-                    SELECT id, product_id, color_id, image_key, "order"
-                    FROM product_color_images
-                    WHERE product_id = :productId
-                      AND color_id = :colorId
-                    ORDER BY "order" ASC
-                """)
+            SELECT id, product_id, color_id, image_key, "order"
+            FROM product_color_images
+            WHERE product_id = :productId
+              AND color_id = :colorId
+            ORDER BY "order" ASC
+        """)
                         .bind("productId", productId)
                         .bind("colorId", colorId)
                         .map((rs, ctx) -> new ProductColorImage(
+                                rs.getLong("id"),
                                 rs.getLong("product_id"),
                                 rs.getLong("color_id"),
                                 rs.getString("image_key"),

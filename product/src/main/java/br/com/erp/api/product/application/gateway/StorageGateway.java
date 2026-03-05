@@ -5,6 +5,6 @@ import br.com.erp.api.product.application.dto.PresignedUrlResult;
 import java.util.List;
 
 public interface StorageGateway {
-    List<PresignedUrlResult> generatePresignedUrls(Long productId, Long colorId, int quantity);
+    List<PresignedUrlResult> generatePresignedUrls(Long productId, Long colorId, List<String> filenames);
     String getPublicUrl(String imageKey);
 }

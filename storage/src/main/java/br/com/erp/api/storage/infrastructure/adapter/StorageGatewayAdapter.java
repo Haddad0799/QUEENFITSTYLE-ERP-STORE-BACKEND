@@ -7,7 +7,6 @@ import br.com.erp.api.storage.domain.valueobject.ImageKey;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.stream.IntStream;
 
 @Component
 public class StorageGatewayAdapter implements StorageGateway {
@@ -19,12 +18,12 @@ public class StorageGatewayAdapter implements StorageGateway {
     }
 
     @Override
-    public List<PresignedUrlResult> generatePresignedUrls(Long productId, Long colorId, int quantity) {
-        return IntStream.range(0, quantity)
-                .mapToObj(i -> {
-                    ImageKey imageKey = ImageKey.of(productId, colorId);
-                    String uploadUrl = storagePort.generatePresignedUploadUrl(imageKey.value());
-                    return new PresignedUrlResult(uploadUrl, imageKey.value());
+    public List<PresignedUrlResult> generatePresignedUrls(Long productId, Long colorId, List<String> filenames) {
+        return filenames.stream()
+                .map(filename -> {
+                    ImageKey imageKey = ImageKey.of(productId, colorId, filename);
+                    String uploadUrl = storagePort.generatePresignedUploadUrl(imageKey.getValue());
+                    return new PresignedUrlResult(uploadUrl, imageKey.getValue());
                 })
                 .toList();
     }
