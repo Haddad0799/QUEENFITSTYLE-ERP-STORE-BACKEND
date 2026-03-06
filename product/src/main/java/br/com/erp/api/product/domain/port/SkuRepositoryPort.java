@@ -4,9 +4,20 @@ import br.com.erp.api.product.domain.entity.Sku;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface SkuRepositoryPort {
     Map<String, Long> saveAll(Long productId, List<Sku> skus);
 
     boolean existsByProductIdAndColorId(Long productId, Long colorId);
+
+    List<Long> findIdsByProductIdAndColorId(Long productId, Long colorId);
+
+    Optional<Sku> findById(Long skuId);
+
+    void updateStatus(Sku sku);
+
+    List<Sku> findByProductId(Long productId);
+
+    void updateStatusBatch(List<Sku> readySkus);
 }

@@ -14,15 +14,11 @@ public class Sku {
     private Dimensions dimensions;
     private SkuStatus status;
 
-    public SkuStatus getStatus() {
-        return status;
-    }
-
+    // construtor de criação
     public Sku(SkuCode code,
                Long colorId,
                Long sizeId,
                Dimensions dimensions) {
-
         this.code = code;
         this.colorId = colorId;
         this.sizeId = sizeId;
@@ -30,8 +26,23 @@ public class Sku {
         this.status = SkuStatus.INCOMPLETE;
     }
 
+    // construtor de reconstituição — usado pelo repositório
+    public Sku(Long id, Long productId, SkuCode code, Long colorId, Long sizeId, Dimensions dimensions, SkuStatus status) {
+        this.id = id;
+        this.productId = productId;
+        this.code = code;
+        this.colorId = colorId;
+        this.sizeId = sizeId;
+        this.dimensions = dimensions;
+        this.status = status;
+    }
+
     public Long getId() {
         return id;
+    }
+
+    public Long getProductId() {
+        return productId;
     }
 
     public SkuCode getCode() {
@@ -50,22 +61,34 @@ public class Sku {
         return dimensions;
     }
 
+    public SkuStatus getStatus() {
+        return status;
+    }
+
     public boolean isActive() {
         return this.status == SkuStatus.ACTIVE;
     }
 
+    public boolean isReady() {
+        return this.status == SkuStatus.READY;
+    }
+
+    public void markAsReady() {
+        this.status = SkuStatus.READY;
+    }
+
+    public void markAsIncomplete() {
+        this.status = SkuStatus.INCOMPLETE;
+    }
+
     public void activate() {
         if (!isReady()) {
-            throw new IllegalStateException("SKU não está pronto");
+            throw new IllegalStateException("SKU não está pronto para ser ativado");
         }
         this.status = SkuStatus.ACTIVE;
     }
 
-    public boolean isReady() {
-        return this.dimensions != null;
-    }
-
-    public void changeDimensions(Dimensions dimensions){
+    public void changeDimensions(Dimensions dimensions) {
         this.dimensions = dimensions;
     }
 }

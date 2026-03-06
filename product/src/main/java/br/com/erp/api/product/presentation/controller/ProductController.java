@@ -5,10 +5,7 @@ import br.com.erp.api.product.application.command.CreateProductCommand;
 import br.com.erp.api.product.application.dto.PresignedUrlResult;
 import br.com.erp.api.product.application.query.ProductAdminQueryService;
 import br.com.erp.api.product.application.query.filter.ProductFilter;
-import br.com.erp.api.product.application.usecase.AlterProductUseCase;
-import br.com.erp.api.product.application.usecase.ConfirmImageUploadUseCase;
-import br.com.erp.api.product.application.usecase.CreateProductUseCase;
-import br.com.erp.api.product.application.usecase.RequestImageUploadUseCase;
+import br.com.erp.api.product.application.usecase.*;
 import br.com.erp.api.product.domain.enumerated.ProductStatus;
 import br.com.erp.api.product.presentation.dto.request.AlterProductDTO;
 import br.com.erp.api.product.presentation.dto.request.ConfirmImageUploadDTO;
@@ -35,14 +32,16 @@ public class ProductController {
     private final ProductAdminQueryService productAdminQueryService;
     private final RequestImageUploadUseCase requestImageUploadUseCase;
     private final ConfirmImageUploadUseCase confirmImageUploadUseCase;
+    private final PublishProductUseCase publishProductUseCase;
 
 
-    public ProductController(CreateProductUseCase createProductUseCase, AlterProductUseCase alterProductUseCase, ProductAdminQueryService productAdminQueryService, RequestImageUploadUseCase requestImageUploadUseCase, ConfirmImageUploadUseCase confirmImageUploadUseCase) {
+    public ProductController(CreateProductUseCase createProductUseCase, AlterProductUseCase alterProductUseCase, ProductAdminQueryService productAdminQueryService, RequestImageUploadUseCase requestImageUploadUseCase, ConfirmImageUploadUseCase confirmImageUploadUseCase, PublishProductUseCase publishProductUseCase) {
         this.createProductUseCase = createProductUseCase;
         this.alterProductUseCase = alterProductUseCase;
         this.productAdminQueryService = productAdminQueryService;
         this.requestImageUploadUseCase = requestImageUploadUseCase;
         this.confirmImageUploadUseCase = confirmImageUploadUseCase;
+        this.publishProductUseCase = publishProductUseCase;
     }
 
     @GetMapping
@@ -131,4 +130,9 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{id}/publish")
+    public ResponseEntity<Void> publishProduct(@PathVariable Long id) {
+        publishProductUseCase.execute(id);
+        return ResponseEntity.noContent().build();
+    }
 }

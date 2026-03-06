@@ -7,6 +7,7 @@ public class ProductColorImage {
     private final Long colorId;
     private final String imageKey;
     private final int order;
+    public static final int MAX_IMAGES_PER_COLOR = 5;
 
     public ProductColorImage(Long productId, Long colorId, String imageKey, int order) {
         this.productId = productId;

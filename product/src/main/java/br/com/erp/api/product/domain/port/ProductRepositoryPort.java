@@ -10,6 +10,5 @@ public interface ProductRepositoryPort {
     boolean existsByslug(String slug);
     Optional<Product> findById(Long id);
     boolean existsById(Long id);
-
-
+    void updateStatus(Product product);
 }

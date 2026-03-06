@@ -83,7 +83,7 @@ WHERE slug = :slug
                 description,
                 slug,
                 category_id,
-                active
+                status
             FROM products
             WHERE id = :id
        """)
@@ -106,6 +106,20 @@ WHERE slug = :slug
                         .mapTo(Integer.class)
                         .findOne()
                         .isPresent()
+        );
+    }
+
+    @Override
+    public void updateStatus(Product product) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                UPDATE products
+                SET status = :status
+                WHERE id = :id
+            """)
+                        .bind("status", product.getStatus().name())
+                        .bind("id", product.getId())
+                        .execute()
         );
     }
 

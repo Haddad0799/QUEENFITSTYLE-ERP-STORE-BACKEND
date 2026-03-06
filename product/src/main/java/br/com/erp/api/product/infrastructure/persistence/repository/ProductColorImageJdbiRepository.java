@@ -67,6 +67,22 @@ public class ProductColorImageJdbiRepository implements ProductColorImageReposit
     }
 
     @Override
+    public boolean hasImage(Long skuId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT COUNT(*) > 0
+                FROM product_color_images pci
+                JOIN skus s ON s.color_id = pci.color_id
+                           AND s.product_id = pci.product_id
+                WHERE s.id = :skuId
+            """)
+                        .bind("skuId", skuId)
+                        .mapTo(Boolean.class)
+                        .one()
+        );
+    }
+
+    @Override
     public List<ProductColorImage> findByProductIdAndColorId(Long productId, Long colorId) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
@@ -85,6 +101,38 @@ public class ProductColorImageJdbiRepository implements ProductColorImageReposit
                                 rs.getString("image_key"),
                                 rs.getInt("order")
                         ))
+                        .list()
+        );
+    }
+
+    @Override
+    public List<Integer> findOrdersByProductIdAndColorId(Long productId, Long colorId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT "order"
+                FROM product_color_images
+                WHERE product_id = :productId
+                  AND color_id = :colorId
+            """)
+                        .bind("productId", productId)
+                        .bind("colorId", colorId)
+                        .mapTo(Integer.class)
+                        .list()
+        );
+    }
+
+    @Override
+    public List<String> findKeysByProductIdAndColorId(Long productId, Long colorId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT image_key
+                FROM product_color_images
+                WHERE product_id = :productId
+                  AND color_id = :colorId
+            """)
+                        .bind("productId", productId)
+                        .bind("colorId", colorId)
+                        .mapTo(String.class)
                         .list()
         );
     }
