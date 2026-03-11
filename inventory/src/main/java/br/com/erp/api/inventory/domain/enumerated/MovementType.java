@@ -4,6 +4,6 @@ public enum MovementType {
     INBOUND,      // Entrada manual de estoque
     OUTBOUND,     // Saída por pedido
     RESERVATION,  // Reserva (item no carrinho)
-    INITIALIZED,  // Criação do SKU — estoque zerado
+    ADJUSTMENT,  // Ajuste manual (correção de estoque)
     RELEASE       // Liberação de reserva (carrinho abandonado / cancelamento)
 }

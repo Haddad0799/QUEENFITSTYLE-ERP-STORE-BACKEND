@@ -25,4 +25,6 @@ public interface SkuRepositoryPort {
     void updateStatusByProductIdAndColorId(Long productId, Long colorId, SkuStatus skuStatus);
     Optional<Sku> findByProductIdAndSkuId(Long productId, Long skuId);
     void updateDimensions(Sku sku);
+
+    boolean existsByProductIdAndSkuId(Long productId, Long skuId);
 }

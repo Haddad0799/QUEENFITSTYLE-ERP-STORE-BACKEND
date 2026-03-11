@@ -272,5 +272,21 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
         );
     }
 
+    @Override
+    public boolean existsByProductIdAndSkuId(Long productId, Long skuId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT COUNT(*) > 0
+                FROM skus
+                WHERE id = :skuId
+                  AND product_id = :productId
+            """)
+                        .bind("skuId", skuId)
+                        .bind("productId", productId)
+                        .mapTo(Boolean.class)
+                        .one()
+        );
+    }
+
 
 }

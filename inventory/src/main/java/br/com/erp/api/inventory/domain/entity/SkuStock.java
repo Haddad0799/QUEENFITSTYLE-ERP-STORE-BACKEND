@@ -67,6 +67,11 @@ public class SkuStock {
         this.minQuantity = minQuantity;
     }
 
+    public void adjust(int quantity) {
+        if (quantity < 0) throw new IllegalArgumentException("Quantidade não pode ser negativa");
+        this.quantity = quantity;
+    }
+
     public Long getId()          { return id; }
     public Long getSkuId()       { return skuId; }
     public int getQuantity()     { return quantity; }

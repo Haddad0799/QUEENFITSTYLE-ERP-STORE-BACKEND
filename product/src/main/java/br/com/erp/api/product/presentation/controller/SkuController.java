@@ -1,17 +1,21 @@
 package br.com.erp.api.product.presentation.controller;
 
 import br.com.erp.api.product.application.command.CreateSkuCommand;
+import br.com.erp.api.product.application.command.RegisterSkuStockMovementCommand;
 import br.com.erp.api.product.application.command.SkuData;
 import br.com.erp.api.product.application.command.UpdateSkuDimensionsCommand;
 import br.com.erp.api.product.application.query.SkuQueryService;
 import br.com.erp.api.product.application.query.filter.SkuFilter;
 import br.com.erp.api.product.application.usecase.AddSkuToProductUseCase;
+import br.com.erp.api.product.application.usecase.RegisterSkuStockMovementUseCase;
 import br.com.erp.api.product.application.usecase.UpdateSkuDimensionsUseCase;
 import br.com.erp.api.product.presentation.dto.request.CreateSkuDTO;
+import br.com.erp.api.product.presentation.dto.request.StockMovementDTO;
 import br.com.erp.api.product.presentation.dto.request.UpdateSkuDimensionsDTO;
 import br.com.erp.api.product.presentation.dto.response.PageResponse;
 import br.com.erp.api.product.presentation.dto.response.SkuDetailsDTO;
 import br.com.erp.api.product.presentation.dto.response.SkuSummaryDTO;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,11 +29,13 @@ public class SkuController {
     private final AddSkuToProductUseCase addSkuToProductUseCase;
     private final SkuQueryService skuQueryService;
     private final UpdateSkuDimensionsUseCase updateSkuDimensionsUseCase;
+    private final RegisterSkuStockMovementUseCase registerSkuStockMovementUseCase;
 
-    public SkuController(AddSkuToProductUseCase addSkuToProductUseCase, SkuQueryService skuQueryService, UpdateSkuDimensionsUseCase updateSkuDimensionsUseCase) {
+    public SkuController(AddSkuToProductUseCase addSkuToProductUseCase, SkuQueryService skuQueryService, UpdateSkuDimensionsUseCase updateSkuDimensionsUseCase, RegisterSkuStockMovementUseCase registerSkuStockMovementUseCase) {
         this.addSkuToProductUseCase = addSkuToProductUseCase;
         this.skuQueryService = skuQueryService;
         this.updateSkuDimensionsUseCase = updateSkuDimensionsUseCase;
+        this.registerSkuStockMovementUseCase = registerSkuStockMovementUseCase;
     }
 
     @PostMapping
@@ -100,4 +106,21 @@ public class SkuController {
         ));
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{skuId}/stock/movements")
+    public ResponseEntity<Void> registerStockMovement(
+            @PathVariable Long productId,
+            @PathVariable Long skuId,
+            @RequestBody @Valid StockMovementDTO dto
+    ) {
+        registerSkuStockMovementUseCase.execute(new RegisterSkuStockMovementCommand(
+                productId,
+                skuId,
+                dto.type(),
+                dto.quantity(),
+                dto.reason()
+        ));
+        return ResponseEntity.noContent().build();
+    }
+
 }
