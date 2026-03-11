@@ -4,6 +4,8 @@ import br.com.erp.api.product.domain.enumerated.SkuStatus;
 import br.com.erp.api.product.domain.valueobject.Dimensions;
 import br.com.erp.api.product.domain.valueobject.SkuCode;
 
+import java.math.BigDecimal;
+
 public class Sku {
 
     private Long id;
@@ -88,7 +90,7 @@ public class Sku {
         this.status = SkuStatus.ACTIVE;
     }
 
-    public void changeDimensions(Dimensions dimensions) {
-        this.dimensions = dimensions;
+    public void changeDimensions(BigDecimal width, BigDecimal height, BigDecimal length, BigDecimal weight) {
+        this.dimensions = this.dimensions.merge(width, height, length, weight);
     }
 }

@@ -205,23 +205,6 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
         });
     }
 
-    @Override
-    public boolean existsActiveByProductIdAndColorId(Long productId, Long colorId) {
-        return jdbi.withHandle(handle ->
-                handle.createQuery("""
-                SELECT COUNT(*) > 0
-                FROM skus
-                WHERE product_id = :productId
-                  AND color_id = :colorId
-                  AND status = :status
-            """)
-                        .bind("productId", productId)
-                        .bind("colorId", colorId)
-                        .bind("status", SkuStatus.ACTIVE.name())
-                        .mapTo(Boolean.class)
-                        .one()
-        );
-    }
 
     @Override
     public void updateStatusByProductIdAndColorId(Long productId, Long colorId, SkuStatus skuStatus) {
@@ -235,6 +218,56 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                         .bind("status", skuStatus.name())
                         .bind("productId", productId)
                         .bind("colorId", colorId)
+                        .execute()
+        );
+    }
+
+    @Override
+    public Optional<Sku> findByProductIdAndSkuId(Long productId, Long skuId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT id, product_id, sku_code, color_id, size_id,
+                       width, height, length, weight, status
+                FROM skus
+                WHERE id = :skuId
+                  AND product_id = :productId
+            """)
+                        .bind("skuId", skuId)
+                        .bind("productId", productId)
+                        .map((rs, ctx) -> new Sku(
+                                rs.getLong("id"),
+                                rs.getLong("product_id"),
+                                SkuCode.of(rs.getString("sku_code")),
+                                rs.getLong("color_id"),
+                                rs.getLong("size_id"),
+                                Dimensions.of(
+                                        rs.getBigDecimal("width"),
+                                        rs.getBigDecimal("height"),
+                                        rs.getBigDecimal("length"),
+                                        rs.getBigDecimal("weight")
+                                ),
+                                SkuStatus.valueOf(rs.getString("status"))
+                        ))
+                        .findOne()
+        );
+    }
+
+    @Override
+    public void updateDimensions(Sku sku) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                UPDATE skus
+                SET width  = :width,
+                    height = :height,
+                    length = :length,
+                    weight = :weight
+                WHERE id = :id
+            """)
+                        .bind("width", sku.getDimensions().width())
+                        .bind("height", sku.getDimensions().height())
+                        .bind("length", sku.getDimensions().length())
+                        .bind("weight", sku.getDimensions().weight())
+                        .bind("id", sku.getId())
                         .execute()
         );
     }

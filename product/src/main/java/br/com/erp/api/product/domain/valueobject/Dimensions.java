@@ -30,5 +30,14 @@ public record Dimensions(
         return new Dimensions(w, h, l, kg);
     }
 
+    public Dimensions merge(BigDecimal newWidth, BigDecimal newHeight, BigDecimal newLength, BigDecimal newWeight) {
+        return Dimensions.of(
+                newWidth  != null ? newWidth  : this.width,
+                newHeight != null ? newHeight : this.height,
+                newLength != null ? newLength : this.length,
+                newWeight != null ? newWeight : this.weight
+        );
+    }
+
 
 }
