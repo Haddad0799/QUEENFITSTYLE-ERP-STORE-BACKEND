@@ -37,7 +37,7 @@ public class AlterProductUseCase {
 
         if(command.categoryId() != null) {
 
-            if(categoryLookupPort.existsActiveById(command.categoryId())) {
+            if(!categoryLookupPort.existsActiveById(command.categoryId())) {
                 throw new InvalidCategoryException();
             }
             product.recategorize(command.categoryId());
