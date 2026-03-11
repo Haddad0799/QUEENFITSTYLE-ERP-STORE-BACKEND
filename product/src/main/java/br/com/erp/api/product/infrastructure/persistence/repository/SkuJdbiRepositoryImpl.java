@@ -205,5 +205,39 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
         });
     }
 
+    @Override
+    public boolean existsActiveByProductIdAndColorId(Long productId, Long colorId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT COUNT(*) > 0
+                FROM skus
+                WHERE product_id = :productId
+                  AND color_id = :colorId
+                  AND status = :status
+            """)
+                        .bind("productId", productId)
+                        .bind("colorId", colorId)
+                        .bind("status", SkuStatus.ACTIVE.name())
+                        .mapTo(Boolean.class)
+                        .one()
+        );
+    }
+
+    @Override
+    public void updateStatusByProductIdAndColorId(Long productId, Long colorId, SkuStatus skuStatus) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                UPDATE skus
+                SET status = :status
+                WHERE product_id = :productId
+                  AND color_id = :colorId
+            """)
+                        .bind("status", skuStatus.name())
+                        .bind("productId", productId)
+                        .bind("colorId", colorId)
+                        .execute()
+        );
+    }
+
 
 }

@@ -54,11 +54,11 @@ public class ProductColorImageJdbiRepository implements ProductColorImageReposit
     public int countByProductIdAndColorId(Long productId, Long colorId) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
-                    SELECT COUNT(*)
-                    FROM product_color_images
-                    WHERE product_id = :productId
-                      AND color_id = :colorId
-                """)
+                SELECT COUNT(1)
+                FROM product_color_images
+                WHERE product_id = :productId
+                  AND color_id = :colorId
+            """)
                         .bind("productId", productId)
                         .bind("colorId", colorId)
                         .mapTo(Integer.class)
@@ -86,12 +86,12 @@ public class ProductColorImageJdbiRepository implements ProductColorImageReposit
     public List<ProductColorImage> findByProductIdAndColorId(Long productId, Long colorId) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
-            SELECT id, product_id, color_id, image_key, "order"
-            FROM product_color_images
-            WHERE product_id = :productId
-              AND color_id = :colorId
-            ORDER BY "order" ASC
-        """)
+                SELECT id, product_id, color_id, image_key, "order"
+                FROM product_color_images
+                WHERE product_id = :productId
+                  AND color_id = :colorId
+                ORDER BY "order"
+            """)
                         .bind("productId", productId)
                         .bind("colorId", colorId)
                         .map((rs, ctx) -> new ProductColorImage(
@@ -113,6 +113,7 @@ public class ProductColorImageJdbiRepository implements ProductColorImageReposit
                 FROM product_color_images
                 WHERE product_id = :productId
                   AND color_id = :colorId
+                ORDER BY "order"
             """)
                         .bind("productId", productId)
                         .bind("colorId", colorId)
@@ -134,6 +135,58 @@ public class ProductColorImageJdbiRepository implements ProductColorImageReposit
                         .bind("colorId", colorId)
                         .mapTo(String.class)
                         .list()
+        );
+    }
+
+    @Override
+    public List<ProductColorImage> findAllByIds(List<Long> imageIds) {
+        if (imageIds == null || imageIds.isEmpty()) return List.of();
+
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT id, product_id, color_id, image_key, "order"
+                FROM product_color_images
+                WHERE id IN (<ids>)
+            """)
+                        .defineList("ids", imageIds)
+                        .map((rs, ctx) -> new ProductColorImage(
+                                rs.getLong("id"),
+                                rs.getLong("product_id"),
+                                rs.getLong("color_id"),
+                                rs.getString("image_key"),
+                                rs.getInt("order")
+                        ))
+                        .list()
+        );
+    }
+
+    @Override
+    public void deleteAllByIds(List<Long> imageIds) {
+        if (imageIds == null || imageIds.isEmpty()) return;
+
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                DELETE FROM product_color_images
+                WHERE id IN (<ids>)
+            """)
+                        .defineList("ids", imageIds)
+                        .execute()
+        );
+    }
+
+    @Override
+    public boolean existsByProductIdAndColorId(Long productId, Long colorId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT COUNT(1) > 0
+                FROM product_color_images
+                WHERE product_id = :productId
+                  AND color_id = :colorId
+            """)
+                        .bind("productId", productId)
+                        .bind("colorId", colorId)
+                        .mapTo(Boolean.class)
+                        .one()
         );
     }
 }

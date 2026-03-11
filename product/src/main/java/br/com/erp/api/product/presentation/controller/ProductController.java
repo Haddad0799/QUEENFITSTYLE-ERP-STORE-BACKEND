@@ -7,10 +7,7 @@ import br.com.erp.api.product.application.query.ProductAdminQueryService;
 import br.com.erp.api.product.application.query.filter.ProductFilter;
 import br.com.erp.api.product.application.usecase.*;
 import br.com.erp.api.product.domain.enumerated.ProductStatus;
-import br.com.erp.api.product.presentation.dto.request.AlterProductDTO;
-import br.com.erp.api.product.presentation.dto.request.ConfirmImageUploadDTO;
-import br.com.erp.api.product.presentation.dto.request.CreateProductDTO;
-import br.com.erp.api.product.presentation.dto.request.RequestUploadUrlsDTO;
+import br.com.erp.api.product.presentation.dto.request.*;
 import br.com.erp.api.product.presentation.dto.response.PageResponse;
 import br.com.erp.api.product.presentation.dto.response.PresignedUrlDTO;
 import br.com.erp.api.product.presentation.dto.response.ProductDetailsDTO;
@@ -33,15 +30,17 @@ public class ProductController {
     private final RequestImageUploadUseCase requestImageUploadUseCase;
     private final ConfirmImageUploadUseCase confirmImageUploadUseCase;
     private final PublishProductUseCase publishProductUseCase;
+    private final DeleteProductImagesUseCase deleteProductImagesUseCase;
 
 
-    public ProductController(CreateProductUseCase createProductUseCase, AlterProductUseCase alterProductUseCase, ProductAdminQueryService productAdminQueryService, RequestImageUploadUseCase requestImageUploadUseCase, ConfirmImageUploadUseCase confirmImageUploadUseCase, PublishProductUseCase publishProductUseCase) {
+    public ProductController(CreateProductUseCase createProductUseCase, AlterProductUseCase alterProductUseCase, ProductAdminQueryService productAdminQueryService, RequestImageUploadUseCase requestImageUploadUseCase, ConfirmImageUploadUseCase confirmImageUploadUseCase, PublishProductUseCase publishProductUseCase, DeleteProductImagesUseCase deleteProductImagesUseCase) {
         this.createProductUseCase = createProductUseCase;
         this.alterProductUseCase = alterProductUseCase;
         this.productAdminQueryService = productAdminQueryService;
         this.requestImageUploadUseCase = requestImageUploadUseCase;
         this.confirmImageUploadUseCase = confirmImageUploadUseCase;
         this.publishProductUseCase = publishProductUseCase;
+        this.deleteProductImagesUseCase = deleteProductImagesUseCase;
     }
 
     @GetMapping
@@ -106,7 +105,7 @@ public class ProductController {
 
     }
 
-    @GetMapping("/{productId}/colors/{colorId}/images/upload-urls")
+    @PostMapping("/{productId}/colors/{colorId}/images/upload-urls")
     public ResponseEntity<List<PresignedUrlDTO>> generateUploadUrls(
             @PathVariable Long productId,
             @PathVariable Long colorId,
@@ -127,6 +126,17 @@ public class ProductController {
             @RequestBody ConfirmImageUploadDTO dto
     ) {
         confirmImageUploadUseCase.execute(productId, colorId, dto.images());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{productId}/colors/{colorId}/images")
+    public ResponseEntity<Void> deleteImages(
+            @PathVariable Long productId,
+            @PathVariable Long colorId,
+            @RequestParam(name = "imageIds") List<Long> imageIds) {
+
+        deleteProductImagesUseCase.execute(productId, colorId, imageIds);
+
         return ResponseEntity.noContent().build();
     }
 

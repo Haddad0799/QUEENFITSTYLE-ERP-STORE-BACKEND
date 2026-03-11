@@ -32,4 +32,9 @@ public class StorageGatewayAdapter implements StorageGateway {
     public String getPublicUrl(String imageKey) {
         return storagePort.getPublicUrl(imageKey);
     }
+
+    @Override
+    public void deleteImages(List<String> imageKeys) {
+        storagePort.deleteImages(imageKeys);
+    }
 }

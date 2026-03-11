@@ -1,6 +1,7 @@
 package br.com.erp.api.product.domain.port;
 
 import br.com.erp.api.product.domain.entity.Sku;
+import br.com.erp.api.product.domain.enumerated.SkuStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -20,4 +21,8 @@ public interface SkuRepositoryPort {
     List<Sku> findByProductId(Long productId);
 
     void updateStatusBatch(List<Sku> readySkus);
+
+    boolean existsActiveByProductIdAndColorId(Long productId, Long colorId);
+
+    void updateStatusByProductIdAndColorId(Long productId, Long colorId, SkuStatus skuStatus);
 }
