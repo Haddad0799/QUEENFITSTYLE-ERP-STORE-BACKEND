@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class ProductFilterSqlResolver {
@@ -58,7 +59,7 @@ public class ProductFilterSqlResolver {
             p.slug,
             c.display_name AS category_name,
             p.status
-    """ + baseSql + """
+    """ + baseSql + resolveOrderBy(pageable) + """
         LIMIT :limit OFFSET :offset
     """;
 
@@ -70,5 +71,23 @@ public class ProductFilterSqlResolver {
         );
 
         return new PageQuery(selectSql, countSql, filterParams, pageParams);
+    }
+
+    private String resolveOrderBy(Pageable pageable) {
+        if (pageable.getSort().isUnsorted()) {
+            return " ORDER BY p.name ASC ";
+        }
+
+        return pageable.getSort().stream()
+                .map(o -> toColumn(o.getProperty()) + " " + o.getDirection().name())
+                .collect(Collectors.joining(", ", " ORDER BY ", " "));
+    }
+
+    private String toColumn(String property) {
+        return switch (property) {
+            case "categoryName" -> "c.display_name";
+            case "status"       -> "p.status";
+            default             -> "p.name";
+        };
     }
 }
