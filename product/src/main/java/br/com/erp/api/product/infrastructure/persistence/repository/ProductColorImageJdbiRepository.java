@@ -6,7 +6,9 @@ import br.com.erp.api.product.domain.port.ProductColorImageRepositoryPort;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class ProductColorImageJdbiRepository implements ProductColorImageRepositoryPort, ImageProvider {
@@ -187,6 +189,97 @@ public class ProductColorImageJdbiRepository implements ProductColorImageReposit
                         .bind("colorId", colorId)
                         .mapTo(Boolean.class)
                         .one()
+        );
+    }
+
+    @Override
+    public List<Long> saveAllReturningIds(List<ProductColorImage> images) {
+        if (images == null || images.isEmpty()) return List.of();
+
+        return jdbi.withHandle(handle -> {
+            List<Long> ids = new ArrayList<>();
+            for (ProductColorImage image : images) {
+                Long id = handle.createUpdate("""
+                    INSERT INTO product_color_images (product_id, color_id, image_key, "order")
+                    VALUES (:productId, :colorId, :imageKey, :order)
+                """)
+                        .bind("productId", image.getProductId())
+                        .bind("colorId", image.getColorId())
+                        .bind("imageKey", image.getImageKey())
+                        .bind("order", image.getOrder())
+                        .executeAndReturnGeneratedKeys("id")
+                        .mapTo(Long.class)
+                        .one();
+                ids.add(id);
+            }
+            return ids;
+        });
+    }
+
+    @Override
+    public Optional<ProductColorImage> findFirstByProductIdExcluding(Long productId, List<Long> excludedIds) {
+        return jdbi.withHandle(handle -> {
+            String sql;
+            if (excludedIds == null || excludedIds.isEmpty()) {
+                sql = """
+                    SELECT id, product_id, color_id, image_key, "order"
+                    FROM product_color_images
+                    WHERE product_id = :productId
+                    ORDER BY "order"
+                    LIMIT 1
+                """;
+                return handle.createQuery(sql)
+                        .bind("productId", productId)
+                        .map((rs, ctx) -> new ProductColorImage(
+                                rs.getLong("id"),
+                                rs.getLong("product_id"),
+                                rs.getLong("color_id"),
+                                rs.getString("image_key"),
+                                rs.getInt("order")
+                        ))
+                        .findOne();
+            } else {
+                sql = """
+                    SELECT id, product_id, color_id, image_key, "order"
+                    FROM product_color_images
+                    WHERE product_id = :productId
+                      AND id NOT IN (<excludedIds>)
+                    ORDER BY "order"
+                    LIMIT 1
+                """;
+                return handle.createQuery(sql)
+                        .bind("productId", productId)
+                        .defineList("excludedIds", excludedIds)
+                        .map((rs, ctx) -> new ProductColorImage(
+                                rs.getLong("id"),
+                                rs.getLong("product_id"),
+                                rs.getLong("color_id"),
+                                rs.getString("image_key"),
+                                rs.getInt("order")
+                        ))
+                        .findOne();
+            }
+        });
+    }
+
+    @Override
+    public List<ProductColorImage> findAllByProductIdGroupedByColor(Long productId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT id, product_id, color_id, image_key, "order"
+                FROM product_color_images
+                WHERE product_id = :productId
+                ORDER BY color_id, "order"
+            """)
+                        .bind("productId", productId)
+                        .map((rs, ctx) -> new ProductColorImage(
+                                rs.getLong("id"),
+                                rs.getLong("product_id"),
+                                rs.getLong("color_id"),
+                                rs.getString("image_key"),
+                                rs.getInt("order")
+                        ))
+                        .list()
         );
     }
 }

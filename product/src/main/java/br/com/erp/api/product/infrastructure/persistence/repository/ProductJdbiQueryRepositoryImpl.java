@@ -45,6 +45,7 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
                     new ProductSummaryDTO(
                             rs.getLong("id"),
                             rs.getString("name"),
+                            rs.getString("main_image_key"),
                             rs.getString("slug"),
                             rs.getString("category_name"),
                             rs.getString("status")
@@ -52,7 +53,6 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
             ).list();
         });
 
-        //COUNT (usa apenas filtros)
         Long total = jdbi.withHandle(handle -> {
 
             var query = handle.createQuery(pageQuery.countSql());
@@ -64,9 +64,10 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
 
         return new PageImpl<>(content, pageable, total);
     }
+
     @Override
     public ProductDetailsDTO findById(Long id) {
-        //buscar produtos + categorias
+
         var productData = jdbi.withHandle(handle ->
                 handle.createQuery("""
         SELECT
@@ -76,9 +77,12 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
             p.slug,
             p.status,
             c.id AS category_id,
-            c.display_name AS category_name
+            c.display_name AS category_name,
+            pci.image_key AS main_image_key
         FROM products p
         JOIN categories c ON c.id = p.category_id
+        LEFT JOIN product_color_images pci
+            ON pci.id = p.primary_image_id
         WHERE p.id = :id
     """)
                         .bind("id", id)
@@ -87,15 +91,16 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
                                 rs.getString("name"),
                                 rs.getString("description"),
                                 rs.getString("slug"),
+                                rs.getString("main_image_key"),
                                 rs.getLong("category_id"),
                                 rs.getString("category_name"),
                                 ProductStatus.valueOf(rs.getString("status")),
-                                List.of() // temporário
+                                List.of()
                         ))
                         .findOne()
                         .orElseThrow(() -> new ProductNotFoundException(id))
         );
-        //buscar variaçoes do produto
+
         List<SkuSummaryDTO> skus = jdbi.withHandle(handle ->
                 handle.createQuery("""
         SELECT
@@ -120,12 +125,12 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
                         .list()
         );
 
-        //montar dto de resposta
         return new ProductDetailsDTO(
                 productData.id(),
                 productData.name(),
                 productData.description(),
                 productData.slug(),
+                productData.mainImageUrl(),
                 productData.categoryId(),
                 productData.categoryName(),
                 productData.status(),

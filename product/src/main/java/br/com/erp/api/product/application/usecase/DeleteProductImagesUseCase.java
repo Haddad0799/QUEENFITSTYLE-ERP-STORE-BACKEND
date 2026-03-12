@@ -2,6 +2,7 @@ package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.application.gateway.StorageGateway;
+import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.entity.ProductColorImage;
 import br.com.erp.api.product.domain.enumerated.SkuStatus;
 import br.com.erp.api.product.domain.port.ProductColorImageRepositoryPort;
@@ -40,9 +41,8 @@ public class DeleteProductImagesUseCase {
     @Transactional
     public void execute(Long productId, Long colorId, List<Long> imageIds) {
 
-        if (!productRepository.existsById(productId)) {
-            throw new ProductNotFoundException(productId);
-        }
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
 
         if (imageIds == null || imageIds.isEmpty()) return;
 
@@ -74,7 +74,10 @@ public class DeleteProductImagesUseCase {
             skuRepository.updateStatusByProductIdAndColorId(productId, colorId, SkuStatus.INCOMPLETE);
         }
 
-        // 3) Remove do storage POR ÚLTIMO — se falhar, a exceção causa rollback da transação
+        // 3) Revalida imagem principal — se a imagem principal foi deletada, elege outra
+        revalidatePrimaryImage(product, imageIds);
+
+        // 4) Remove do storage POR ÚLTIMO — se falhar, a exceção causa rollback da transação
         try {
             storageGateway.deleteImages(imageKeys);
         } catch (Exception e) {
@@ -82,4 +85,17 @@ public class DeleteProductImagesUseCase {
             throw new RuntimeException("Falha ao excluir imagens do storage", e);
         }
     }
+
+    private void revalidatePrimaryImage(Product product, List<Long> deletedImageIds) {
+        if (product.isPrimaryImageAmong(deletedImageIds)) {
+            imageRepository
+                    .findFirstByProductIdExcluding(product.getId(), deletedImageIds)
+                    .ifPresentOrElse(
+                            image -> product.definePrimaryImage(image.getId()),
+                            () -> product.definePrimaryImage(null)
+                    );
+            productRepository.updatePrimaryImage(product);
+        }
+    }
 }
+

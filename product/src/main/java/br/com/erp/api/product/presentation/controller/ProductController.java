@@ -2,14 +2,15 @@ package br.com.erp.api.product.presentation.controller;
 
 import br.com.erp.api.product.application.command.AlterProductCommand;
 import br.com.erp.api.product.application.command.CreateProductCommand;
-import br.com.erp.api.product.application.dto.PresignedUrlResult;
 import br.com.erp.api.product.application.query.ProductAdminQueryService;
 import br.com.erp.api.product.application.query.filter.ProductFilter;
-import br.com.erp.api.product.application.usecase.*;
+import br.com.erp.api.product.application.usecase.AlterProductUseCase;
+import br.com.erp.api.product.application.usecase.CreateProductUseCase;
+import br.com.erp.api.product.application.usecase.PublishProductUseCase;
 import br.com.erp.api.product.domain.enumerated.ProductStatus;
-import br.com.erp.api.product.presentation.dto.request.*;
+import br.com.erp.api.product.presentation.dto.request.AlterProductDTO;
+import br.com.erp.api.product.presentation.dto.request.CreateProductDTO;
 import br.com.erp.api.product.presentation.dto.response.PageResponse;
-import br.com.erp.api.product.presentation.dto.response.PresignedUrlDTO;
 import br.com.erp.api.product.presentation.dto.response.ProductDetailsDTO;
 import br.com.erp.api.product.presentation.dto.response.ProductSummaryDTO;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 @RestController
 @RequestMapping("/erp/products")
@@ -27,41 +27,27 @@ public class ProductController {
     private final CreateProductUseCase createProductUseCase;
     private final AlterProductUseCase alterProductUseCase;
     private final ProductAdminQueryService productAdminQueryService;
-    private final RequestImageUploadUseCase requestImageUploadUseCase;
-    private final ConfirmImageUploadUseCase confirmImageUploadUseCase;
     private final PublishProductUseCase publishProductUseCase;
-    private final DeleteProductImagesUseCase deleteProductImagesUseCase;
 
-
-    public ProductController(CreateProductUseCase createProductUseCase, AlterProductUseCase alterProductUseCase, ProductAdminQueryService productAdminQueryService, RequestImageUploadUseCase requestImageUploadUseCase, ConfirmImageUploadUseCase confirmImageUploadUseCase, PublishProductUseCase publishProductUseCase, DeleteProductImagesUseCase deleteProductImagesUseCase) {
+    public ProductController(CreateProductUseCase createProductUseCase,
+                             AlterProductUseCase alterProductUseCase,
+                             ProductAdminQueryService productAdminQueryService,
+                             PublishProductUseCase publishProductUseCase) {
         this.createProductUseCase = createProductUseCase;
         this.alterProductUseCase = alterProductUseCase;
         this.productAdminQueryService = productAdminQueryService;
-        this.requestImageUploadUseCase = requestImageUploadUseCase;
-        this.confirmImageUploadUseCase = confirmImageUploadUseCase;
         this.publishProductUseCase = publishProductUseCase;
-        this.deleteProductImagesUseCase = deleteProductImagesUseCase;
     }
 
     @GetMapping
     public PageResponse<ProductSummaryDTO> getAll(
             @RequestParam(required = false) ProductStatus status,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long colorId,
-            @RequestParam(required = false) Long sizeId,
             Pageable pageable
     ) {
-
-        ProductFilter filter = new ProductFilter(
-                status,
-                categoryId,
-                colorId,
-                sizeId
-        );
-
+        ProductFilter filter = new ProductFilter(status, categoryId);
         return PageResponse.from(productAdminQueryService.getAll(filter, pageable));
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductDetailsDTO> getProductById(@PathVariable Long id) {
@@ -86,13 +72,13 @@ public class ProductController {
                 .buildAndExpand(newProductId)
                 .toUri();
 
-        return ResponseEntity
-                .created(location).build();
+        return ResponseEntity.created(location).build();
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Void> alterProduct(@RequestBody AlterProductDTO dto
-            , @PathVariable Long id) {
+    public ResponseEntity<Void> alterProduct(
+            @PathVariable Long id,
+            @RequestBody AlterProductDTO dto) {
 
         var command = new AlterProductCommand(id,
                 dto.name(),
@@ -102,42 +88,6 @@ public class ProductController {
         alterProductUseCase.execute(command);
 
         return ResponseEntity.ok().build();
-
-    }
-
-    @PostMapping("/{productId}/colors/{colorId}/images/upload-urls")
-    public ResponseEntity<List<PresignedUrlDTO>> generateUploadUrls(
-            @PathVariable Long productId,
-            @PathVariable Long colorId,
-            @RequestBody RequestUploadUrlsDTO dto
-    ) {
-        List<PresignedUrlResult> results = requestImageUploadUseCase.execute(productId, colorId, dto.files());
-
-        List<PresignedUrlDTO> response = results.stream()
-                .map(r -> new PresignedUrlDTO(r.uploadUrl(), r.imageKey()))
-                .toList();
-
-        return ResponseEntity.ok(response);
-    }
-    @PostMapping("/{productId}/colors/{colorId}/images")
-    public ResponseEntity<Void> confirmUpload(
-            @PathVariable Long productId,
-            @PathVariable Long colorId,
-            @RequestBody ConfirmImageUploadDTO dto
-    ) {
-        confirmImageUploadUseCase.execute(productId, colorId, dto.images());
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/{productId}/colors/{colorId}/images")
-    public ResponseEntity<Void> deleteImages(
-            @PathVariable Long productId,
-            @PathVariable Long colorId,
-            @RequestParam(name = "imageIds") List<Long> imageIds) {
-
-        deleteProductImagesUseCase.execute(productId, colorId, imageIds);
-
-        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/publish")

@@ -4,10 +4,13 @@ import br.com.erp.api.product.domain.enumerated.ProductStatus;
 import br.com.erp.api.product.domain.exception.ProductAlreadyDeactivatedException;
 import br.com.erp.api.product.domain.valueobject.Slug;
 
+import java.util.List;
+
 public class Product {
     private Long id;
     private String name;
     private String description;
+    private Long primaryImageId;
     private Slug slug;
     private Long categoryId;
     private ProductStatus status;
@@ -18,20 +21,16 @@ public class Product {
         this.categoryId = categoryId;
         this.slug = Slug.fromName(name);
         this.status = ProductStatus.DRAFT;
+        this.primaryImageId = null;
     }
 
-    public static Product restore(
-            long id,
-            String name,
-            String description,
-            Slug slug,
-            long categoryId,
-            ProductStatus status
-    ) {
+    public static Product restore(long id, String name, String description,
+                                  Slug slug, long categoryId, ProductStatus status, Long primaryImageId) {
         Product product = new Product(name, description, categoryId);
         product.id = id;
         product.slug = slug;
         product.status = status;
+        product.primaryImageId = primaryImageId;
         return product;
     }
 
@@ -86,5 +85,20 @@ public class Product {
         return categoryId;
     }
 
-}
+    public void definePrimaryImage(Long imageId) {
+        this.primaryImageId = imageId;
+    }
 
+    public void clearPrimaryImageIfMatch(Long imageId) {
+        if (imageId != null && imageId.equals(this.primaryImageId)) {
+            this.primaryImageId = null;
+        }
+    }
+
+    public boolean isPrimaryImageAmong(List<Long> imageIds) {
+        return primaryImageId != null && imageIds.contains(primaryImageId);
+    }
+
+    public Long getPrimaryImageId() { return primaryImageId; }
+
+}

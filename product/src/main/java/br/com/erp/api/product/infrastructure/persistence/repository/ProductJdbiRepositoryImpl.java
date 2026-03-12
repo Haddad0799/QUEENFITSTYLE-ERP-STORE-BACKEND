@@ -77,16 +77,17 @@ WHERE slug = :slug
     public Optional<Product> findById(Long id) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
-            SELECT
-                id,
-                name,
-                description,
-                slug,
-                category_id,
-                status
-            FROM products
-            WHERE id = :id
-       """)
+        SELECT
+            id,
+            name,
+            description,
+            slug,
+            category_id,
+            status,
+            primary_image_id
+        FROM products
+        WHERE id = :id
+   """)
                         .bind("id", id)
                         .map(new ProductRowMapper())
                         .findOne()
@@ -118,6 +119,20 @@ WHERE slug = :slug
                 WHERE id = :id
             """)
                         .bind("status", product.getStatus().name())
+                        .bind("id", product.getId())
+                        .execute()
+        );
+    }
+
+    @Override
+    public void updatePrimaryImage(Product product) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                UPDATE products
+                SET primary_image_id = :primaryImageId
+                WHERE id = :id
+            """)
+                        .bind("primaryImageId", product.getPrimaryImageId())
                         .bind("id", product.getId())
                         .execute()
         );

@@ -11,4 +11,5 @@ public interface ProductRepositoryPort {
     Optional<Product> findById(Long id);
     boolean existsById(Long id);
     void updateStatus(Product product);
+    void updatePrimaryImage(Product product);
 }

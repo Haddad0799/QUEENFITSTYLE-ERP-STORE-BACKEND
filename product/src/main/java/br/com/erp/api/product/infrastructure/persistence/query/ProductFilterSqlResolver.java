@@ -16,6 +16,8 @@ public class ProductFilterSqlResolver {
         StringBuilder baseSql = new StringBuilder("""
         FROM products p
         JOIN categories c ON c.id = p.category_id
+        LEFT JOIN product_color_images pci
+            ON pci.id = p.primary_image_id
         WHERE 1=1
     """);
 
@@ -31,34 +33,14 @@ public class ProductFilterSqlResolver {
             filterParams.put("categoryId", filter.categoryId());
         }
 
-        if (filter.colorId() != null || filter.sizeId() != null) {
-            baseSql.append("""
-            AND EXISTS (
-                SELECT 1
-                FROM skus s
-                WHERE s.product_id = p.id
-        """);
-
-            if (filter.colorId() != null) {
-                baseSql.append(" AND s.color_id = :colorId ");
-                filterParams.put("colorId", filter.colorId());
-            }
-
-            if (filter.sizeId() != null) {
-                baseSql.append(" AND s.size_id = :sizeId ");
-                filterParams.put("sizeId", filter.sizeId());
-            }
-
-            baseSql.append(" ) ");
-        }
-
         String selectSql = """
         SELECT
             p.id,
             p.name,
             p.slug,
             c.display_name AS category_name,
-            p.status
+            p.status,
+            pci.image_key AS main_image_key
     """ + baseSql + resolveOrderBy(pageable) + """
         LIMIT :limit OFFSET :offset
     """;

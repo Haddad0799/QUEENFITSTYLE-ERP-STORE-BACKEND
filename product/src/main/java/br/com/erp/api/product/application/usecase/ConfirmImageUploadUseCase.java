@@ -2,6 +2,7 @@ package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.application.provider.ImageProvider;
+import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.entity.ProductColorImage;
 import br.com.erp.api.product.domain.exception.InvalidColorException;
 import br.com.erp.api.product.domain.port.ProductColorImageRepositoryPort;
@@ -35,9 +36,8 @@ public class ConfirmImageUploadUseCase {
     @Transactional
     public void execute(Long productId, Long colorId, List<ImageConfirmationItem> items) {
 
-        if (!productRepository.existsById(productId)) {
-            throw new ProductNotFoundException(productId);
-        }
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
 
         if (!skuRepository.existsByProductIdAndColorId(productId, colorId)) {
             throw new InvalidColorException(
@@ -88,7 +88,13 @@ public class ConfirmImageUploadUseCase {
             );
         }
 
-        imageRepository.saveAll(images);
+        List<Long> savedIds = imageRepository.saveAllReturningIds(images);
+
+        // Auto-set: se o produto ainda não tem imagem principal, define a primeira inserida
+        if (product.getPrimaryImageId() == null && !savedIds.isEmpty()) {
+            product.definePrimaryImage(savedIds.get(0));
+            productRepository.updatePrimaryImage(product);
+        }
 
         List<Long> skuIds = skuRepository.findIdsByProductIdAndColorId(productId, colorId);
         skuIds.forEach(evaluateSkuCompleteness::execute);

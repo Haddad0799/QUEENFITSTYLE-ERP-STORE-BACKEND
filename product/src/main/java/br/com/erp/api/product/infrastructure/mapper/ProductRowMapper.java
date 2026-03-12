@@ -14,8 +14,10 @@ public class ProductRowMapper implements RowMapper<Product> {
     @Override
     public Product map(ResultSet rs, StatementContext ctx) throws SQLException {
 
-        ProductStatus status =
-                ProductStatus.valueOf(rs.getString("status"));
+        ProductStatus status = ProductStatus.valueOf(rs.getString("status"));
+
+        long primaryImageId = rs.getLong("primary_image_id");
+        Long primaryImage = rs.wasNull() ? null : primaryImageId;
 
         return Product.restore(
                 rs.getLong("id"),
@@ -23,7 +25,8 @@ public class ProductRowMapper implements RowMapper<Product> {
                 rs.getString("description"),
                 Slug.fromValue(rs.getString("slug")),
                 rs.getLong("category_id"),
-                status
+                status,
+                primaryImage
         );
     }
 }

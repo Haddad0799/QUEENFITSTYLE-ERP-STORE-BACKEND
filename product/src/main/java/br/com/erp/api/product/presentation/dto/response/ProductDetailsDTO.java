@@ -9,6 +9,7 @@ public record ProductDetailsDTO(
         String name,
         String description,
         String slug,
+        String mainImageUrl,
         Long categoryId,
         String categoryName,
         ProductStatus status,
