@@ -22,6 +22,10 @@
 	<properties>
 		<java.version>21</java.version>
 		<springdoc.version>2.1.0</springdoc.version>
+		<jdbi.version>3.45.1</jdbi.version>
+		<minio.version>8.5.7</minio.version>
+		<testcontainers.version>1.19.4</testcontainers.version>
+		<spotbugs-maven-plugin.version>4.7.4.2</spotbugs-maven-plugin.version>
 	</properties>
 
 	<modules>
@@ -49,9 +53,33 @@
 			<dependency>
 				<groupId>org.testcontainers</groupId>
 				<artifactId>testcontainers-bom</artifactId>
-				<version>1.19.4</version>
+				<version>${testcontainers.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+
+			<!-- JDBI -->
+			<dependency>
+				<groupId>org.jdbi</groupId>
+				<artifactId>jdbi3-core</artifactId>
+				<version>${jdbi.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jdbi</groupId>
+				<artifactId>jdbi3-sqlobject</artifactId>
+				<version>${jdbi.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jdbi</groupId>
+				<artifactId>jdbi3-jackson2</artifactId>
+				<version>${jdbi.version}</version>
+			</dependency>
+
+			<!-- MinIO SDK -->
+			<dependency>
+				<groupId>io.minio</groupId>
+				<artifactId>minio</artifactId>
+				<version>${minio.version}</version>
 			</dependency>
 
 		</dependencies>
@@ -64,7 +92,7 @@
 				<plugin>
 					<groupId>com.github.spotbugs</groupId>
 					<artifactId>spotbugs-maven-plugin</artifactId>
-					<version>4.7.4.2</version>
+					<version>${spotbugs-maven-plugin.version}</version>
 					<configuration>
 						<effort>Min</effort>
 						<threshold>Low</threshold>

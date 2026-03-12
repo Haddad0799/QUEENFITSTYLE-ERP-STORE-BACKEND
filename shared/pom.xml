@@ -37,21 +37,18 @@
         <dependency>
             <groupId>org.jdbi</groupId>
             <artifactId>jdbi3-core</artifactId>
-            <version>3.45.1</version>
         </dependency>
 
         <!-- JDBI SQL Object Plugin -->
         <dependency>
             <groupId>org.jdbi</groupId>
             <artifactId>jdbi3-sqlobject</artifactId>
-            <version>3.45.1</version>
         </dependency>
 
         <!-- JDBI Jackson plugin -->
         <dependency>
             <groupId>org.jdbi</groupId>
             <artifactId>jdbi3-jackson2</artifactId>
-            <version>3.45.1</version>
         </dependency>
 
     </dependencies>
