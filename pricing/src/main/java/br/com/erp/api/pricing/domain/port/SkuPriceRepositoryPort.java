@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface SkuPriceRepositoryPort {
     void saveAll(List<SkuPrice> prices);
     Optional<SkuPrice> findBySkuId(Long skuId);
+    void update(SkuPrice skuPrice);
 }

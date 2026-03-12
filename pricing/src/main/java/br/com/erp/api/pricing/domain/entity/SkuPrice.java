@@ -25,6 +25,11 @@ public class SkuPrice {
         this.sellingPrice = sellingPrice;
     }
 
+    public void updatePrices(BigDecimal costPrice, BigDecimal sellingPrice) {
+        if (costPrice != null) this.costPrice = costPrice;
+        if (sellingPrice != null) this.sellingPrice = sellingPrice;
+    }
+
     public Long getId() { return id; }
     public Long getSkuId() { return skuId; }
     public BigDecimal getCostPrice() { return costPrice; }

@@ -75,4 +75,23 @@ public class SkuPriceJdbiRepository implements SkuPriceRepositoryPort {
         );
     }
 
+    @Override
+    public void update(SkuPrice skuPrice) {
+
+        String sql = """
+        UPDATE sku_price
+        SET cost_price = :costPrice,
+            selling_price = :sellingPrice
+        WHERE sku_id = :skuId
+    """;
+
+        jdbi.withHandle(handle ->
+                handle.createUpdate(sql)
+                        .bind("costPrice", skuPrice.getCostPrice())
+                        .bind("sellingPrice", skuPrice.getSellingPrice())
+                        .bind("skuId", skuPrice.getSkuId())
+                        .execute()
+        );
+    }
+
 }

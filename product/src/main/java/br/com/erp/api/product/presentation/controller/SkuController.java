@@ -1,17 +1,16 @@
 package br.com.erp.api.product.presentation.controller;
 
-import br.com.erp.api.product.application.command.CreateSkuCommand;
-import br.com.erp.api.product.application.command.RegisterSkuStockMovementCommand;
-import br.com.erp.api.product.application.command.SkuData;
-import br.com.erp.api.product.application.command.UpdateSkuDimensionsCommand;
+import br.com.erp.api.product.application.command.*;
 import br.com.erp.api.product.application.query.SkuQueryService;
 import br.com.erp.api.product.application.query.filter.SkuFilter;
 import br.com.erp.api.product.application.usecase.AddSkuToProductUseCase;
 import br.com.erp.api.product.application.usecase.RegisterSkuStockMovementUseCase;
 import br.com.erp.api.product.application.usecase.UpdateSkuDimensionsUseCase;
+import br.com.erp.api.product.application.usecase.UpdateSkuPriceUseCase;
 import br.com.erp.api.product.presentation.dto.request.CreateSkuDTO;
 import br.com.erp.api.product.presentation.dto.request.StockMovementDTO;
 import br.com.erp.api.product.presentation.dto.request.UpdateSkuDimensionsDTO;
+import br.com.erp.api.product.presentation.dto.request.UpdateSkuPriceDTO;
 import br.com.erp.api.product.presentation.dto.response.PageResponse;
 import br.com.erp.api.product.presentation.dto.response.SkuDetailsDTO;
 import br.com.erp.api.product.presentation.dto.response.SkuSummaryDTO;
@@ -30,12 +29,14 @@ public class SkuController {
     private final SkuQueryService skuQueryService;
     private final UpdateSkuDimensionsUseCase updateSkuDimensionsUseCase;
     private final RegisterSkuStockMovementUseCase registerSkuStockMovementUseCase;
+    private final UpdateSkuPriceUseCase updateSkuPriceUseCase;
 
-    public SkuController(AddSkuToProductUseCase addSkuToProductUseCase, SkuQueryService skuQueryService, UpdateSkuDimensionsUseCase updateSkuDimensionsUseCase, RegisterSkuStockMovementUseCase registerSkuStockMovementUseCase) {
+    public SkuController(AddSkuToProductUseCase addSkuToProductUseCase, SkuQueryService skuQueryService, UpdateSkuDimensionsUseCase updateSkuDimensionsUseCase, RegisterSkuStockMovementUseCase registerSkuStockMovementUseCase, UpdateSkuPriceUseCase updateSkuPriceUseCase) {
         this.addSkuToProductUseCase = addSkuToProductUseCase;
         this.skuQueryService = skuQueryService;
         this.updateSkuDimensionsUseCase = updateSkuDimensionsUseCase;
         this.registerSkuStockMovementUseCase = registerSkuStockMovementUseCase;
+        this.updateSkuPriceUseCase = updateSkuPriceUseCase;
     }
 
     @PostMapping
@@ -120,6 +121,26 @@ public class SkuController {
                 dto.quantity(),
                 dto.reason()
         ));
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{skuId}/price")
+    public ResponseEntity<Void> updatePrice(
+            @PathVariable Long productId,
+            @PathVariable Long skuId,
+            @RequestBody @Valid UpdateSkuPriceDTO dto
+    ) {
+        if (dto.costPrice() == null && dto.sellingPrice() == null) {
+            throw new IllegalArgumentException("Informe ao menos um preço para atualizar");
+        }
+
+        updateSkuPriceUseCase.execute(new UpdateSkuPriceCommand(
+                productId,
+                skuId,
+                dto.costPrice(),
+                dto.sellingPrice()
+        ));
+
         return ResponseEntity.noContent().build();
     }
 
