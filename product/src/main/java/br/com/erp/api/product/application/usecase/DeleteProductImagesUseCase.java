@@ -64,19 +64,16 @@ public class DeleteProductImagesUseCase {
                 .map(ProductColorImage::getImageKey)
                 .collect(Collectors.toList());
 
-        // 1) ✅ Revalida/limpa a FK em products.primary_image_id ANTES de deletar
         revalidatePrimaryImage(product, imageIds);
 
-        // 2) Agora o DELETE é seguro — FK já foi liberada
+
         imageRepository.deleteAllByIds(imageIds);
 
-        // 3) Atualiza status dos SKUs se não restarem imagens para essa cor
         boolean stillHasImages = imageRepository.existsByProductIdAndColorId(productId, colorId);
         if (!stillHasImages) {
             skuRepository.updateStatusByProductIdAndColorId(productId, colorId, SkuStatus.INCOMPLETE);
         }
 
-        // 4) Remove do storage POR ÚLTIMO
         try {
             storageGateway.deleteImages(imageKeys);
         } catch (Exception e) {

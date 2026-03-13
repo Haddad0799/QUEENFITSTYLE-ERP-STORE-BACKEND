@@ -35,13 +35,14 @@ public class AddSkuToProductUseCase {
     private final SizeLookupPort sizeLookupPort;
     private final InventoryGateway inventoryGateway;
     private final PriceGateway priceGateway;
+    private final EvaluateSkuCompletenessUseCase evaluateSkuCompletenessUseCase;
 
     public AddSkuToProductUseCase(
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
             SkuUniquenessChecker skuUniquenessChecker,
             ColorLookupPort colorLookupPort,
-            SizeLookupPort sizeLookupPort, InventoryGateway inventoryGateway, PriceGateway priceGateway
+            SizeLookupPort sizeLookupPort, InventoryGateway inventoryGateway, PriceGateway priceGateway, EvaluateSkuCompletenessUseCase evaluateSkuCompletenessUseCase
     ) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
@@ -50,6 +51,7 @@ public class AddSkuToProductUseCase {
         this.sizeLookupPort = sizeLookupPort;
         this.inventoryGateway = inventoryGateway;
         this.priceGateway = priceGateway;
+        this.evaluateSkuCompletenessUseCase = evaluateSkuCompletenessUseCase;
     }
 
     @Transactional
@@ -145,6 +147,8 @@ public class AddSkuToProductUseCase {
                 .toList();
 
         priceGateway.initializePrices(prices);
+
+        skuCodeToId.values().forEach(evaluateSkuCompletenessUseCase::execute);
     }
 
 
