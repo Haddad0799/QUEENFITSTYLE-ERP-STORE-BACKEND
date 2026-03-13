@@ -52,7 +52,6 @@ public class DeleteProductImagesUseCase {
             throw new IllegalArgumentException("Algumas imagens informadas não foram encontradas");
         }
 
-        // valida que todas as imagens pertencem ao mesmo productId e colorId
         boolean invalid = images.stream().anyMatch(img ->
                 !productId.equals(img.getProductId()) || !colorId.equals(img.getColorId())
         );
@@ -65,19 +64,19 @@ public class DeleteProductImagesUseCase {
                 .map(ProductColorImage::getImageKey)
                 .collect(Collectors.toList());
 
-        // 1) Remove metadados do banco PRIMEIRO (dentro da transação)
+        // 1) ✅ Revalida/limpa a FK em products.primary_image_id ANTES de deletar
+        revalidatePrimaryImage(product, imageIds);
+
+        // 2) Agora o DELETE é seguro — FK já foi liberada
         imageRepository.deleteAllByIds(imageIds);
 
-        // 2) Atualiza status dos SKUs se não restarem imagens para essa cor
+        // 3) Atualiza status dos SKUs se não restarem imagens para essa cor
         boolean stillHasImages = imageRepository.existsByProductIdAndColorId(productId, colorId);
         if (!stillHasImages) {
             skuRepository.updateStatusByProductIdAndColorId(productId, colorId, SkuStatus.INCOMPLETE);
         }
 
-        // 3) Revalida imagem principal — se a imagem principal foi deletada, elege outra
-        revalidatePrimaryImage(product, imageIds);
-
-        // 4) Remove do storage POR ÚLTIMO — se falhar, a exceção causa rollback da transação
+        // 4) Remove do storage POR ÚLTIMO
         try {
             storageGateway.deleteImages(imageKeys);
         } catch (Exception e) {

@@ -130,10 +130,6 @@ public class SkuController {
             @PathVariable Long skuId,
             @RequestBody @Valid UpdateSkuPriceDTO dto
     ) {
-        if (dto.costPrice() == null && dto.sellingPrice() == null) {
-            throw new IllegalArgumentException("Informe ao menos um preço para atualizar");
-        }
-
         updateSkuPriceUseCase.execute(new UpdateSkuPriceCommand(
                 productId,
                 skuId,
