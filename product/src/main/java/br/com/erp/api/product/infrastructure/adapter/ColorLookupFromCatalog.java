@@ -3,6 +3,7 @@ package br.com.erp.api.product.infrastructure.adapter;
 import br.com.erp.api.catalog.application.output.ColorOutput;
 import br.com.erp.api.catalog.application.query.ColorQueryService;
 import br.com.erp.api.product.domain.port.ColorLookupPort;
+import br.com.erp.api.shared.application.projection.ColorDetailProjection;
 import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.springframework.stereotype.Component;
 
@@ -42,4 +43,20 @@ public class ColorLookupFromCatalog implements ColorLookupPort{
                 .collect(Collectors.toUnmodifiableSet());
     }
 
+    @Override
+    public Set<ColorDetailProjection> findWithHexByIds(Set<Long> ids) {
+
+        if (ids == null || ids.isEmpty()) {
+            return Set.of();
+        }
+
+        return colorQueryService.findByIds(ids)
+                .stream()
+                .map(color -> new ColorDetailProjection(
+                        color.id(),
+                        color.name(),
+                        color.hexaCode()
+                ))
+                .collect(Collectors.toUnmodifiableSet());
+    }
 }

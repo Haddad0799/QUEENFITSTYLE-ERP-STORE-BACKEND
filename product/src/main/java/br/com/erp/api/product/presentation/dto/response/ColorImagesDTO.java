@@ -4,6 +4,7 @@ import java.util.List;
 
 public record ColorImagesDTO(
         String colorName,
+        String hexCode,
         List<ImageItemDTO> images
 ) {}
 
