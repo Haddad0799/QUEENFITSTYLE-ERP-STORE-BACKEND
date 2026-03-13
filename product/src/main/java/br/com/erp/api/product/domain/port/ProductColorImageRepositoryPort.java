@@ -3,6 +3,7 @@ package br.com.erp.api.product.domain.port;
 import br.com.erp.api.product.domain.entity.ProductColorImage;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ProductColorImageRepositoryPort {
@@ -18,4 +19,6 @@ public interface ProductColorImageRepositoryPort {
 
     Optional<ProductColorImage> findFirstByProductIdExcluding(Long productId, List<Long> excludedIds);
     List<ProductColorImage> findAllByProductIdGroupedByColor(Long productId);
+
+    void updateOrders(Map<Long, Integer> imageIdToOrder);
 }

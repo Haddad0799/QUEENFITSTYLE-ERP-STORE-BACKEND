@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -281,5 +282,26 @@ public class ProductColorImageJdbiRepository implements ProductColorImageReposit
                         ))
                         .list()
         );
+    }
+
+    @Override
+    public void updateOrders(Map<Long, Integer> imageIdToOrder) {
+        if (imageIdToOrder == null || imageIdToOrder.isEmpty()) return;
+
+        jdbi.useHandle(handle -> {
+            var batch = handle.prepareBatch("""
+                UPDATE product_color_images
+                SET "order" = :order
+                WHERE id = :id
+            """);
+
+            for (var entry : imageIdToOrder.entrySet()) {
+                batch.bind("id", entry.getKey())
+                     .bind("order", entry.getValue())
+                     .add();
+            }
+
+            batch.execute();
+        });
     }
 }

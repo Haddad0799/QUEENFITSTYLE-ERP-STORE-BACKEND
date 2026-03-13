@@ -3,6 +3,7 @@ package br.com.erp.api.product.presentation.controller;
 import br.com.erp.api.product.application.dto.PresignedUrlResult;
 import br.com.erp.api.product.application.usecase.*;
 import br.com.erp.api.product.presentation.dto.request.ConfirmImageUploadDTO;
+import br.com.erp.api.product.presentation.dto.request.ReorderImagesDTO;
 import br.com.erp.api.product.presentation.dto.request.RequestUploadUrlsDTO;
 import br.com.erp.api.product.presentation.dto.request.SetPrimaryImageDTO;
 import br.com.erp.api.product.presentation.dto.response.ColorImagesDTO;
@@ -21,17 +22,20 @@ public class ProductImageController {
     private final DeleteProductImagesUseCase deleteProductImagesUseCase;
     private final SetPrimaryImageUseCase setPrimaryImageUseCase;
     private final ListProductImagesUseCase listProductImagesUseCase;
+    private final ReorderProductImagesUseCase reorderProductImagesUseCase;
 
     public ProductImageController(RequestImageUploadUseCase requestImageUploadUseCase,
                                   ConfirmImageUploadUseCase confirmImageUploadUseCase,
                                   DeleteProductImagesUseCase deleteProductImagesUseCase,
                                   SetPrimaryImageUseCase setPrimaryImageUseCase,
-                                  ListProductImagesUseCase listProductImagesUseCase) {
+                                  ListProductImagesUseCase listProductImagesUseCase,
+                                  ReorderProductImagesUseCase reorderProductImagesUseCase) {
         this.requestImageUploadUseCase = requestImageUploadUseCase;
         this.confirmImageUploadUseCase = confirmImageUploadUseCase;
         this.deleteProductImagesUseCase = deleteProductImagesUseCase;
         this.setPrimaryImageUseCase = setPrimaryImageUseCase;
         this.listProductImagesUseCase = listProductImagesUseCase;
+        this.reorderProductImagesUseCase = reorderProductImagesUseCase;
     }
 
     @PostMapping("/colors/{colorId}/images/upload-urls")
@@ -81,6 +85,17 @@ public class ProductImageController {
     @GetMapping("/images")
     public ResponseEntity<List<ColorImagesDTO>> listProductImages(@PathVariable Long productId) {
         return ResponseEntity.ok(listProductImagesUseCase.execute(productId));
+    }
+
+    @PutMapping("/colors/{colorId}/images/reorder")
+    public ResponseEntity<Void> reorderImages(
+            @PathVariable Long productId,
+            @PathVariable Long colorId,
+            @RequestBody ReorderImagesDTO dto) {
+
+        reorderProductImagesUseCase.execute(productId, colorId, dto.orderedImageIds());
+
+        return ResponseEntity.noContent().build();
     }
 }
 
