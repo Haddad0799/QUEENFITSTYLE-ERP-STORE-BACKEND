@@ -1,0 +1,1 @@
+UPDATE colors SET hex_code = '#795548' WHERE name = 'Marrom';

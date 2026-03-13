@@ -8,7 +8,7 @@ import br.com.erp.api.product.domain.port.ProductColorImageRepositoryPort;
 import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import br.com.erp.api.product.presentation.dto.response.ColorImagesDTO;
 import br.com.erp.api.product.presentation.dto.response.ImageItemDTO;
-import br.com.erp.api.shared.application.projection.IdNameProjection;
+import br.com.erp.api.shared.application.projection.ColorDetailProjection;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -48,15 +48,17 @@ public class ListProductImagesUseCase {
         Map<Long, List<ProductColorImage>> byColor = allImages.stream()
                 .collect(Collectors.groupingBy(ProductColorImage::getColorId));
 
-        // Busca nomes das cores
+        // Busca detalhes das cores (nome + hexCode)
         Set<Long> colorIds = byColor.keySet();
-        Map<Long, String> colorNames = colorLookup.findByIds(colorIds).stream()
-                .collect(Collectors.toMap(IdNameProjection::id, IdNameProjection::name));
+        Map<Long, ColorDetailProjection> colorDetails = colorLookup.findWithHexByIds(colorIds).stream()
+                .collect(Collectors.toMap(ColorDetailProjection::id, c -> c));
 
         return byColor.entrySet().stream()
                 .map(entry -> {
                     Long colorId = entry.getKey();
-                    String colorName = colorNames.getOrDefault(colorId, "Cor #" + colorId);
+                    ColorDetailProjection color = colorDetails.get(colorId);
+                    String colorName = color != null ? color.name() : "Cor #" + colorId;
+                    String hexCode = color != null ? color.hexCode() : null;
                     List<ImageItemDTO> items = entry.getValue().stream()
                             .map(img -> new ImageItemDTO(
                                     img.getId(),
@@ -64,8 +66,9 @@ public class ListProductImagesUseCase {
                                     img.getOrder()
                             ))
                             .toList();
-                    return new ColorImagesDTO(colorName, items);
+                    return new ColorImagesDTO(colorName, hexCode, items);
                 })
+                .sorted(java.util.Comparator.comparing(ColorImagesDTO::colorName))
                 .toList();
     }
 }
