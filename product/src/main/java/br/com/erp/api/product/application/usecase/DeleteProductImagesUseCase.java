@@ -25,17 +25,20 @@ public class DeleteProductImagesUseCase {
     private final StorageGateway storageGateway;
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
+    private final EvaluateProductStatusUseCase evaluateProductStatus;
 
     public DeleteProductImagesUseCase(
             ProductColorImageRepositoryPort imageRepository,
             StorageGateway storageGateway,
             ProductRepositoryPort productRepository,
-            SkuRepositoryPort skuRepository
+            SkuRepositoryPort skuRepository,
+            EvaluateProductStatusUseCase evaluateProductStatus
     ) {
         this.imageRepository = imageRepository;
         this.storageGateway = storageGateway;
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
+        this.evaluateProductStatus = evaluateProductStatus;
     }
 
     @Transactional
@@ -76,7 +79,10 @@ public class DeleteProductImagesUseCase {
             skuRepository.updateStatusByProductIdAndColorId(productId, colorId, SkuStatus.INCOMPLETE);
         }
 
-        // 4) Remove do storage POR ÚLTIMO
+        // 4) Reavalia o status do produto após possível degradação dos SKUs
+        evaluateProductStatus.execute(productId);
+
+        // 5) Remove do storage POR ÚLTIMO
         try {
             storageGateway.deleteImages(imageKeys);
         } catch (Exception e) {

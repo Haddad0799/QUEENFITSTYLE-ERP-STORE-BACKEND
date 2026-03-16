@@ -12,13 +12,16 @@ public class EvaluateSkuCompletenessUseCase {
 
     private final SkuRepositoryPort skuRepository;
     private final ImageProvider imageProvider;
+    private final EvaluateProductStatusUseCase evaluateProductStatus;
 
     public EvaluateSkuCompletenessUseCase(
             SkuRepositoryPort skuRepository,
-            ImageProvider imageProvider
+            ImageProvider imageProvider,
+            EvaluateProductStatusUseCase evaluateProductStatus
     ) {
         this.skuRepository = skuRepository;
         this.imageProvider = imageProvider;
+        this.evaluateProductStatus = evaluateProductStatus;
     }
 
     @Transactional
@@ -34,5 +37,7 @@ public class EvaluateSkuCompletenessUseCase {
         }
 
         skuRepository.updateStatus(sku);
+
+        evaluateProductStatus.execute(sku.getProductId());
     }
 }

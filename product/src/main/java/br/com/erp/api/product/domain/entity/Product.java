@@ -58,6 +58,26 @@ public class Product {
         this.status = ProductStatus.PUBLISHED;
     }
 
+    public void markAsReadyForSale() {
+        if (this.status == ProductStatus.DRAFT) {
+            this.status = ProductStatus.READY_FOR_SALE;
+        }
+    }
+
+    public void markAsDraft() {
+        if (this.status == ProductStatus.READY_FOR_SALE) {
+            this.status = ProductStatus.DRAFT;
+        }
+    }
+
+    public boolean isDraft() {
+        return this.status == ProductStatus.DRAFT;
+    }
+
+    public boolean isReadyForSale() {
+        return this.status == ProductStatus.READY_FOR_SALE;
+    }
+
     public void deactivate() {
         if (this.status == ProductStatus.INACTIVE) {
             throw new ProductAlreadyDeactivatedException();
