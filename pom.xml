@@ -30,7 +30,7 @@
 
 	<modules>
 		<module>app</module>
-		<module>catalog</module>
+		<module>attribute</module>
 		<module>shared</module>
         <module>product</module>
 		<module>inventory</module>

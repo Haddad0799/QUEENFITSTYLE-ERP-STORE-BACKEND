@@ -17,7 +17,7 @@
 
             <dependency>
                 <groupId>br.com.erp</groupId>
-                <artifactId>catalog</artifactId>
+                <artifactId>attribute</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
