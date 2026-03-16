@@ -90,9 +90,8 @@ public class ConfirmImageUploadUseCase {
 
         List<Long> savedIds = imageRepository.saveAllReturningIds(images);
 
-        // Auto-set: se o produto ainda não tem imagem principal, define a primeira inserida
         if (product.getPrimaryImageId() == null && !savedIds.isEmpty()) {
-            product.definePrimaryImage(savedIds.get(0));
+            product.definePrimaryImage(savedIds.getFirst());
             productRepository.updatePrimaryImage(product);
         }
 

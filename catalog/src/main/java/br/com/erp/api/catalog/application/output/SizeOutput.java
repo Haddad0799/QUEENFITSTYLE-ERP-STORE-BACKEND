@@ -1,9 +1,0 @@
-package br.com.erp.api.catalog.application.output;
-
-public record SizeOutput(
-        Long id,
-        String label,
-        String type,
-        int displayOrder
-) {
-}
