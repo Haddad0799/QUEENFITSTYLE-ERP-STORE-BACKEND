@@ -1,15 +1,15 @@
 package br.com.erp.api.product.infrastructure.adapter;
 
 import br.com.erp.api.attribute.application.query.CategoryQueryService;
-import br.com.erp.api.product.domain.port.CategoryLookupPort;
+import br.com.erp.api.product.application.provider.CategoryProvider;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CategoryLookupFromAttribute implements CategoryLookupPort {
+public class CategoryProviderFromAttribute implements CategoryProvider {
 
     private final CategoryQueryService categoryQueryService;
 
-    public CategoryLookupFromAttribute(CategoryQueryService categoryQueryService) {
+    public CategoryProviderFromAttribute(CategoryQueryService categoryQueryService) {
         this.categoryQueryService = categoryQueryService;
     }
 

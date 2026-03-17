@@ -16,8 +16,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.net.URI;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -28,7 +26,7 @@ class CategoryBackOfficeControllerTest {
     private ActivateCategoryUseCase activateCategoryUseCase;
     private DeactivateCategoryUseCase deactivateCategoryUseCase;
     private CategoryControllerMapper mapper;
-    private CategoryBackOfficeController controller;
+    private CategoryController controller;
 
     @BeforeEach
     void setup() {
@@ -38,7 +36,7 @@ class CategoryBackOfficeControllerTest {
         deactivateCategoryUseCase = Mockito.mock(DeactivateCategoryUseCase.class);
         mapper = Mockito.mock(CategoryControllerMapper.class);
 
-        controller = new CategoryBackOfficeController(
+        controller = new CategoryController(
                 createCategoryUseCase,
                 renameCategoryUseCase,
                 activateCategoryUseCase,

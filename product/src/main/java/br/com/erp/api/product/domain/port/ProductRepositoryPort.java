@@ -12,4 +12,5 @@ public interface ProductRepositoryPort {
     boolean existsById(Long id);
     void updateStatus(Product product);
     void updatePrimaryImage(Product product);
+    String findCategoryNameByProductId(Long productId);
 }

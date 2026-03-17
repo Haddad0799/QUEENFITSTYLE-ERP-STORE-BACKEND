@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/erp/sizes")
-public class SizeBackOfficeController {
+public class SizeController {
     private final SizeQueryService sizeQueryService;
 
-    public SizeBackOfficeController(SizeQueryService sizeQueryService) {
+    public SizeController(SizeQueryService sizeQueryService) {
         this.sizeQueryService = sizeQueryService;
     }
 

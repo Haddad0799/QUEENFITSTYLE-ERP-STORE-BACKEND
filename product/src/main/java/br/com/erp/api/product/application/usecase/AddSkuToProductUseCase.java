@@ -6,6 +6,8 @@ import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.application.gateway.InventoryGateway;
 import br.com.erp.api.product.application.dto.StockInitialization;
 import br.com.erp.api.product.application.gateway.PriceGateway;
+import br.com.erp.api.product.application.provider.ColorProvider;
+import br.com.erp.api.product.application.provider.SizeProvider;
 import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
 import br.com.erp.api.product.domain.exception.InvalidColorException;
@@ -31,8 +33,8 @@ public class AddSkuToProductUseCase {
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
     private final SkuUniquenessChecker skuUniquenessChecker;
-    private final ColorLookupPort colorLookupPort;
-    private final SizeLookupPort sizeLookupPort;
+    private final ColorProvider colorProvider;
+    private final SizeProvider sizeProvider;
     private final InventoryGateway inventoryGateway;
     private final PriceGateway priceGateway;
     private final EvaluateSkuCompletenessUseCase evaluateSkuCompletenessUseCase;
@@ -41,14 +43,14 @@ public class AddSkuToProductUseCase {
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
             SkuUniquenessChecker skuUniquenessChecker,
-            ColorLookupPort colorLookupPort,
-            SizeLookupPort sizeLookupPort, InventoryGateway inventoryGateway, PriceGateway priceGateway, EvaluateSkuCompletenessUseCase evaluateSkuCompletenessUseCase
+            ColorProvider colorProvider,
+            SizeProvider sizeProvider, InventoryGateway inventoryGateway, PriceGateway priceGateway, EvaluateSkuCompletenessUseCase evaluateSkuCompletenessUseCase
     ) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
         this.skuUniquenessChecker = skuUniquenessChecker;
-        this.colorLookupPort = colorLookupPort;
-        this.sizeLookupPort = sizeLookupPort;
+        this.colorProvider = colorProvider;
+        this.sizeProvider = sizeProvider;
         this.inventoryGateway = inventoryGateway;
         this.priceGateway = priceGateway;
         this.evaluateSkuCompletenessUseCase = evaluateSkuCompletenessUseCase;
@@ -80,14 +82,14 @@ public class AddSkuToProductUseCase {
                 .collect(Collectors.toSet());
 
         //Lookup
-        Map<Long, String> colors = colorLookupPort.findByIds(colorIds)
+        Map<Long, String> colors = colorProvider.findByIds(colorIds)
                 .stream()
                 .collect(Collectors.toMap(
                         IdNameProjection::id,
                         IdNameProjection::name
                 ));
 
-        Map<Long, String> sizes = sizeLookupPort.findByIds(sizeIds)
+        Map<Long, String> sizes = sizeProvider.findByIds(sizeIds)
                 .stream()
                 .collect(Collectors.toMap(
                         IdNameProjection::id,

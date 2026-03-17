@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/erp/colors")
-public class ColorBackOfficeController {
+public class ColorController {
     private final ColorQueryService queryService;
 
-    public ColorBackOfficeController(ColorQueryService queryService) {
+    public ColorController(ColorQueryService queryService) {
         this.queryService = queryService;
     }
 

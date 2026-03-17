@@ -3,7 +3,7 @@ package br.com.erp.api.product.application.usecase;
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.application.gateway.StorageGateway;
 import br.com.erp.api.product.domain.entity.ProductColorImage;
-import br.com.erp.api.product.domain.port.ColorLookupPort;
+import br.com.erp.api.product.application.provider.ColorProvider;
 import br.com.erp.api.product.domain.port.ProductColorImageRepositoryPort;
 import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import br.com.erp.api.product.presentation.dto.response.ColorImagesDTO;
@@ -21,12 +21,12 @@ public class ListProductImagesUseCase {
 
     private final ProductRepositoryPort productRepository;
     private final ProductColorImageRepositoryPort imageRepository;
-    private final ColorLookupPort colorLookup;
+    private final ColorProvider colorLookup;
     private final StorageGateway storageGateway;
 
     public ListProductImagesUseCase(ProductRepositoryPort productRepository,
                                     ProductColorImageRepositoryPort imageRepository,
-                                    ColorLookupPort colorLookup,
+                                    ColorProvider colorLookup,
                                     StorageGateway storageGateway) {
         this.productRepository = productRepository;
         this.imageRepository = imageRepository;

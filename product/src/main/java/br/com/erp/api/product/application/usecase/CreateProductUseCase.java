@@ -4,7 +4,7 @@ import br.com.erp.api.product.application.command.CreateProductCommand;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.exception.InvalidCategoryException;
 import br.com.erp.api.product.domain.exception.ProductDuplicateException;
-import br.com.erp.api.product.domain.port.CategoryLookupPort;
+import br.com.erp.api.product.application.provider.CategoryProvider;
 import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,9 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class CreateProductUseCase {
 
     private final ProductRepositoryPort productRepository;
-    private final CategoryLookupPort categoryLookup;
+    private final CategoryProvider categoryLookup;
 
-    public CreateProductUseCase(ProductRepositoryPort productRepository, CategoryLookupPort categoryLookup) {
+    public CreateProductUseCase(ProductRepositoryPort productRepository, CategoryProvider categoryLookup) {
         this.productRepository = productRepository;
         this.categoryLookup = categoryLookup;
     }

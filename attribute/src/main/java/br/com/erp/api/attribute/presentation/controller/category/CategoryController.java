@@ -21,7 +21,7 @@ import java.net.URI;
 //Controller utilizado pelo ERP, responsável por administração do ecommerce.
 @RestController
 @RequestMapping("/erp/categories")
-public class CategoryBackOfficeController {
+public class CategoryController {
     private final CreateCategoryUseCase createCategoryUseCase;
     private final RenameCategoryUseCase renameCategoryUseCase;
     private final ActivateCategoryUseCase activateCategoryUseCase;
@@ -29,7 +29,7 @@ public class CategoryBackOfficeController {
     private final CategoryQueryService categoryQueryService;
     private final CategoryControllerMapper mapper;
 
-    public CategoryBackOfficeController(CreateCategoryUseCase createCategoryUseCase, RenameCategoryUseCase renameCategoryUseCase, ActivateCategoryUseCase activateCategoryUseCase, DeactivateCategoryUseCase deactivateCategoryUseCase, CategoryQueryService categoryQueryService, CategoryControllerMapper mapper) {
+    public CategoryController(CreateCategoryUseCase createCategoryUseCase, RenameCategoryUseCase renameCategoryUseCase, ActivateCategoryUseCase activateCategoryUseCase, DeactivateCategoryUseCase deactivateCategoryUseCase, CategoryQueryService categoryQueryService, CategoryControllerMapper mapper) {
         this.createCategoryUseCase = createCategoryUseCase;
         this.renameCategoryUseCase = renameCategoryUseCase;
         this.activateCategoryUseCase = activateCategoryUseCase;

@@ -52,6 +52,12 @@
             </dependency>
 
             <dependency>
+                <groupId>br.com.erp</groupId>
+                <artifactId>catalog</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.springframework.data</groupId>
                 <artifactId>spring-data-commons</artifactId>
             </dependency>

@@ -2,7 +2,7 @@ package br.com.erp.api.product.infrastructure.adapter;
 
 import br.com.erp.api.attribute.application.output.SizeOutput;
 import br.com.erp.api.attribute.application.query.SizeQueryService;
-import br.com.erp.api.product.domain.port.SizeLookupPort;
+import br.com.erp.api.product.application.provider.SizeProvider;
 import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.springframework.stereotype.Component;
 
@@ -10,11 +10,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-public class SizeLookupFromAttribute implements SizeLookupPort {
+public class SizeProviderFromAttribute implements SizeProvider {
 
     private final SizeQueryService sizeQueryService;
 
-    public SizeLookupFromAttribute(SizeQueryService sizeQueryService) {
+    public SizeProviderFromAttribute(SizeQueryService sizeQueryService) {
         this.sizeQueryService = sizeQueryService;
     }
 

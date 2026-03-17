@@ -2,7 +2,7 @@ package br.com.erp.api.product.infrastructure.adapter;
 
 import br.com.erp.api.attribute.application.output.ColorOutput;
 import br.com.erp.api.attribute.application.query.ColorQueryService;
-import br.com.erp.api.product.domain.port.ColorLookupPort;
+import br.com.erp.api.product.application.provider.ColorProvider;
 import br.com.erp.api.shared.application.projection.ColorDetailProjection;
 import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.springframework.stereotype.Component;
@@ -11,11 +11,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-public class ColorLookupFromAttribute implements ColorLookupPort{
+public class ColorProviderFromAttribute implements ColorProvider {
 
     private final ColorQueryService colorQueryService;
 
-    public ColorLookupFromAttribute(ColorQueryService colorQueryService) {
+    public ColorProviderFromAttribute(ColorQueryService colorQueryService) {
         this.colorQueryService = colorQueryService;
     }
 

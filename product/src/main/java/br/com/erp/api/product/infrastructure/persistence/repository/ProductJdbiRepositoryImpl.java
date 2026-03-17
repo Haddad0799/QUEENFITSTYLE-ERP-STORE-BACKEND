@@ -6,6 +6,7 @@ import br.com.erp.api.product.infrastructure.mapper.ProductRowMapper;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Repository;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Repository
@@ -135,6 +136,22 @@ WHERE slug = :slug
                         .bind("primaryImageId", product.getPrimaryImageId())
                         .bind("id", product.getId())
                         .execute()
+        );
+    }
+
+    @Override
+    public String findCategoryNameByProductId(Long productId) {
+        return jdbi.withHandle(handle ->
+                Objects.requireNonNull(handle.createQuery("""
+                                    SELECT c.display_name
+                                    FROM products p
+                                    JOIN categories c ON c.id = p.category_id
+                                    WHERE p.id = :productId
+                                """)
+                        .bind("productId", productId)
+                        .mapTo(String.class)
+                        .findOne()
+                        .orElse(null))
         );
     }
 
