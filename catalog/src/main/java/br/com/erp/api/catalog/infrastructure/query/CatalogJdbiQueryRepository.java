@@ -1,9 +1,7 @@
-package br.com.erp.api.catalog.infrastructure.persistence;
+package br.com.erp.api.catalog.infrastructure.query;
 
 import br.com.erp.api.catalog.application.query.CatalogQueryRepository;
 import br.com.erp.api.catalog.application.query.filter.CatalogFilter;
-import br.com.erp.api.catalog.infrastructure.query.CatalogFilterSqlResolver;
-import br.com.erp.api.catalog.infrastructure.query.CatalogPageQuery;
 import br.com.erp.api.catalog.presentation.dto.*;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.data.domain.Page;
@@ -64,10 +62,10 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
 
             // 1. Busca produto
             var productOpt = handle.createQuery("""
-                        SELECT id, name, description, slug, category_name, main_image_url, min_price
-                        FROM catalog_products
-                        WHERE slug = :slug
-                    """)
+                    SELECT id, name, description, slug, category_name, main_image_url, min_price
+                    FROM catalog_products
+                    WHERE slug = :slug
+                """)
                     .bind("slug", slug)
                     .map((rs, ctx) -> {
                         Map<String, Object> row = new HashMap<>();
@@ -87,73 +85,85 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
             Map<String, Object> p = productOpt.get();
             Long catalogProductId = (Long) p.get("id");
 
-            // 2. Busca SKUs
-            List<Map<String, Object>> skuRows = handle.createQuery("""
-                        SELECT cs.id, cs.code, cs.color_name, cs.color_hex, cs.size_name,
-                               cs.selling_price, cs.available_stock
-                        FROM catalog_skus cs
-                        WHERE cs.catalog_product_id = :catalogProductId
-                        ORDER BY cs.color_name, cs.size_name
-                    """)
+            // 2. Busca grupos de cor com suas imagens
+            List<Map<String, Object>> colorGroupRows = handle.createQuery("""
+                    SELECT id, color_name, color_hex
+                    FROM catalog_color_groups
+                    WHERE catalog_product_id = :catalogProductId
+                    ORDER BY color_name
+                """)
                     .bind("catalogProductId", catalogProductId)
                     .map((rs, ctx) -> {
                         Map<String, Object> row = new HashMap<>();
                         row.put("id", rs.getLong("id"));
-                        row.put("code", rs.getString("code"));
                         row.put("colorName", rs.getString("color_name"));
                         row.put("colorHex", rs.getString("color_hex"));
-                        row.put("sizeName", rs.getString("size_name"));
-                        row.put("sellingPrice", rs.getBigDecimal("selling_price"));
-                        row.put("availableStock", rs.getInt("available_stock"));
                         return row;
                     })
                     .list();
 
-            // 3. Busca imagens de todos os SKUs deste produto
-            List<Long> catalogSkuIds = skuRows.stream()
+            List<Long> colorGroupIds = colorGroupRows.stream()
                     .map(r -> (Long) r.get("id"))
                     .toList();
 
-            Map<Long, List<String>> imagesBySkuId = new HashMap<>();
-            if (!catalogSkuIds.isEmpty()) {
+            // 3. Busca imagens por grupo de cor
+            Map<Long, List<String>> imagesByGroupId = new HashMap<>();
+            if (!colorGroupIds.isEmpty()) {
                 handle.createQuery("""
-                            SELECT catalog_sku_id, image_url
-                            FROM catalog_sku_images
-                            WHERE catalog_sku_id IN (<ids>)
-                            ORDER BY "order"
-                        """)
-                        .bindList("ids", catalogSkuIds)
+                        SELECT catalog_color_group_id, image_url
+                        FROM catalog_color_images
+                        WHERE catalog_color_group_id IN (<ids>)
+                        ORDER BY "order"
+                    """)
+                        .bindList("ids", colorGroupIds)
                         .map((rs, ctx) -> Map.entry(
-                                rs.getLong("catalog_sku_id"),
+                                rs.getLong("catalog_color_group_id"),
                                 rs.getString("image_url")
                         ))
                         .list()
                         .forEach(entry ->
-                                imagesBySkuId
+                                imagesByGroupId
                                         .computeIfAbsent(entry.getKey(), k -> new ArrayList<>())
                                         .add(entry.getValue())
                         );
             }
 
-            // 4. Agrupa por cor
-            Map<String, List<Map<String, Object>>> byColor = skuRows.stream()
+            // 4. Busca SKUs com referência ao grupo de cor
+            List<Map<String, Object>> skuRows = handle.createQuery("""
+                    SELECT cs.id, cs.code, cs.size_name, cs.selling_price,
+                           cs.available_stock, cs.catalog_color_group_id
+                    FROM catalog_skus cs
+                    WHERE cs.catalog_product_id = :catalogProductId
+                    ORDER BY cs.catalog_color_group_id, cs.size_name
+                """)
+                    .bind("catalogProductId", catalogProductId)
+                    .map((rs, ctx) -> {
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("id", rs.getLong("id"));
+                        row.put("code", rs.getString("code"));
+                        row.put("sizeName", rs.getString("size_name"));
+                        row.put("sellingPrice", rs.getBigDecimal("selling_price"));
+                        row.put("availableStock", rs.getInt("available_stock"));
+                        row.put("catalogColorGroupId", rs.getLong("catalog_color_group_id"));
+                        return row;
+                    })
+                    .list();
+
+            // 5. Monta grupos de cor com SKUs e imagens já resolvidos
+            Map<Long, List<Map<String, Object>>> skusByGroupId = skuRows.stream()
                     .collect(Collectors.groupingBy(
-                            r -> r.get("colorName") + "|" + r.get("colorHex"),
+                            r -> (Long) r.get("catalogColorGroupId"),
                             LinkedHashMap::new,
                             Collectors.toList()
                     ));
 
-            List<CatalogColorGroupDTO> colorGroups = byColor.entrySet().stream()
-                    .map(entry -> {
-                        String[] parts = entry.getKey().split("\\|");
-                        String colorName = parts[0];
-                        String colorHex = parts.length > 1 ? parts[1] : "";
+            List<CatalogColorGroupDTO> colorGroups = colorGroupRows.stream()
+                    .map(group -> {
+                        Long groupId = (Long) group.get("id");
+                        List<String> images = imagesByGroupId.getOrDefault(groupId, List.of());
+                        List<Map<String, Object>> skus = skusByGroupId.getOrDefault(groupId, List.of());
 
-                        // Pega imagens do primeiro SKU da cor (compartilhadas)
-                        Long firstSkuId = (Long) entry.getValue().getFirst().get("id");
-                        List<String> images = imagesBySkuId.getOrDefault(firstSkuId, List.of());
-
-                        List<CatalogSkuSummaryDTO> skus = entry.getValue().stream()
+                        List<CatalogSkuSummaryDTO> skuDTOs = skus.stream()
                                 .map(r -> {
                                     int stock = (int) r.get("availableStock");
                                     return new CatalogSkuSummaryDTO(
@@ -166,12 +176,15 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                                 })
                                 .toList();
 
-                        return new CatalogColorGroupDTO(colorName, colorHex, images, skus);
+                        return new CatalogColorGroupDTO(
+                                (String) group.get("colorName"),
+                                (String) group.get("colorHex"),
+                                images,
+                                skuDTOs
+                        );
                     })
-                    .sorted(Comparator.comparing(CatalogColorGroupDTO::colorName))
                     .toList();
 
-            // Calcula maxPrice
             BigDecimal maxPrice = skuRows.stream()
                     .map(r -> (BigDecimal) r.get("sellingPrice"))
                     .filter(Objects::nonNull)
@@ -197,15 +210,16 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
         return jdbi.withHandle(handle -> {
 
             var skuOpt = handle.createQuery("""
-                        SELECT cp.name AS product_name, cp.slug AS product_slug,
-                               cs.code, cs.color_name, cs.color_hex, cs.size_name,
-                               cs.selling_price, cs.available_stock,
-                               cs.width, cs.height, cs.length, cs.weight,
-                               cs.id AS catalog_sku_id
-                        FROM catalog_skus cs
-                        JOIN catalog_products cp ON cp.id = cs.catalog_product_id
-                        WHERE cp.slug = :slug AND cs.code = :skuCode
-                    """)
+                    SELECT cp.name AS product_name, cp.slug AS product_slug,
+                           cs.code, cs.size_name, cs.selling_price, cs.available_stock,
+                           cs.width, cs.height, cs.length, cs.weight,
+                           cs.id AS catalog_sku_id,
+                           ccg.color_name, ccg.color_hex, ccg.id AS color_group_id
+                    FROM catalog_skus cs
+                    JOIN catalog_products cp ON cp.id = cs.catalog_product_id
+                    JOIN catalog_color_groups ccg ON ccg.id = cs.catalog_color_group_id
+                    WHERE cp.slug = :slug AND cs.code = :skuCode
+                """)
                     .bind("slug", slug)
                     .bind("skuCode", skuCode)
                     .map((rs, ctx) -> {
@@ -222,7 +236,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         row.put("height", rs.getBigDecimal("height"));
                         row.put("length", rs.getBigDecimal("length"));
                         row.put("weight", rs.getBigDecimal("weight"));
-                        row.put("catalogSkuId", rs.getLong("catalog_sku_id"));
+                        row.put("colorGroupId", rs.getLong("color_group_id"));
                         return row;
                     })
                     .findOne();
@@ -231,12 +245,13 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
 
             Map<String, Object> s = skuOpt.get();
 
+            // Imagens vêm do grupo de cor, não do SKU
             List<String> images = handle.createQuery("""
-                        SELECT image_url FROM catalog_sku_images
-                        WHERE catalog_sku_id = :id
-                        ORDER BY "order"
-                    """)
-                    .bind("id", (Long) s.get("catalogSkuId"))
+                    SELECT image_url FROM catalog_color_images
+                    WHERE catalog_color_group_id = :groupId
+                    ORDER BY "order"
+                """)
+                    .bind("groupId", (Long) s.get("colorGroupId"))
                     .mapTo(String.class)
                     .list();
 

@@ -67,9 +67,6 @@ public class Sku {
         return status;
     }
 
-    public boolean isActive() {
-        return this.status == SkuStatus.ACTIVE;
-    }
 
     public boolean isReady() {
         return this.status == SkuStatus.READY;
@@ -83,14 +80,35 @@ public class Sku {
         this.status = SkuStatus.INCOMPLETE;
     }
 
-    public void activate() {
-        if (!isReady()) {
-            throw new IllegalStateException("SKU não está pronto para ser ativado");
-        }
-        this.status = SkuStatus.ACTIVE;
-    }
-
     public void changeDimensions(BigDecimal width, BigDecimal height, BigDecimal length, BigDecimal weight) {
         this.dimensions = this.dimensions.merge(width, height, length, weight);
+    }
+
+    public boolean isPublished() {
+        return this.status == SkuStatus.PUBLISHED;
+    }
+
+    public boolean isBlocked() {
+        return this.status == SkuStatus.BLOCKED;
+    }
+
+    public boolean isIncomplete() {
+        return this.status == SkuStatus.INCOMPLETE;
+    }
+
+    public boolean isDiscontinued() {
+        return this.status == SkuStatus.DISCONTINUED;
+    }
+
+    public void markAsPublished() {
+        this.status = SkuStatus.PUBLISHED;
+    }
+
+    public void markAsBlocked() {
+        this.status = SkuStatus.BLOCKED;
+    }
+
+    public void markAsDiscontinued() {
+        this.status = SkuStatus.DISCONTINUED;
     }
 }

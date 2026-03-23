@@ -12,6 +12,8 @@ public interface SkuRepositoryPort {
 
     boolean existsByProductIdAndColorId(Long productId, Long colorId);
 
+    List<Sku> findByProductIdAndStatus(Long productId, SkuStatus status);
+
     List<Long> findIdsByProductIdAndColorId(Long productId, Long colorId);
 
     Optional<Sku> findById(Long skuId);
@@ -20,11 +22,13 @@ public interface SkuRepositoryPort {
 
     List<Sku> findByProductId(Long productId);
 
-    void updateStatusBatch(List<Sku> readySkus);
-
     void updateStatusByProductIdAndColorId(Long productId, Long colorId, SkuStatus skuStatus);
     Optional<Sku> findByProductIdAndSkuId(Long productId, Long skuId);
     void updateDimensions(Sku sku);
 
     boolean existsByProductIdAndSkuId(Long productId, Long skuId);
+
+    void updateStatusBatch(List<Long> skuIds, SkuStatus skuStatus);
+
+    List<Sku> findByProductIdAndStatusIn(Long productId, List<SkuStatus> ready);
 }

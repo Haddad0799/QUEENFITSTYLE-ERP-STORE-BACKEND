@@ -65,18 +65,12 @@ public class Product {
     }
 
     public void markAsDraft() {
-        if (this.status == ProductStatus.READY_FOR_SALE) {
+        if (this.status == ProductStatus.READY_FOR_SALE ||
+                this.status == ProductStatus.PUBLISHED) {
             this.status = ProductStatus.DRAFT;
         }
     }
 
-    public boolean isDraft() {
-        return this.status == ProductStatus.DRAFT;
-    }
-
-    public boolean isReadyForSale() {
-        return this.status == ProductStatus.READY_FOR_SALE;
-    }
 
     public void deactivate() {
         if (this.status == ProductStatus.INACTIVE) {
@@ -121,4 +115,23 @@ public class Product {
 
     public Long getPrimaryImageId() { return primaryImageId; }
 
+    public boolean isPublished() {
+        return this.status == ProductStatus.PUBLISHED;
+    }
+
+    public boolean isInactive() {
+        return this.status == ProductStatus.INACTIVE;
+    }
+
+    public boolean isArchived() {
+        return this.status == ProductStatus.ARCHIVED;
+    }
+
+    public boolean isDraft() {
+        return this.status == ProductStatus.DRAFT;
+    }
+
+    public boolean isReadyForSale() {
+        return this.status == ProductStatus.READY_FOR_SALE;
+    }
 }

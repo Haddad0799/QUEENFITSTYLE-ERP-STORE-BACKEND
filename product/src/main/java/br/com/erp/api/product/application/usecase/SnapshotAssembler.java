@@ -2,21 +2,27 @@ package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.dto.ProductSnapshot;
 import br.com.erp.api.product.application.dto.SkuSnapshot;
+import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.application.gateway.StorageGateway;
+import br.com.erp.api.product.application.provider.ColorProvider;
 import br.com.erp.api.product.application.provider.InventoryProvider;
 import br.com.erp.api.product.application.provider.PriceProvider;
+import br.com.erp.api.product.application.provider.SizeProvider;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.entity.ProductColorImage;
 import br.com.erp.api.product.domain.entity.Sku;
-import br.com.erp.api.product.application.provider.ColorProvider;
+import br.com.erp.api.product.domain.enumerated.SkuStatus;
+import br.com.erp.api.product.domain.exception.SkuNotFoundException;
 import br.com.erp.api.product.domain.port.ProductColorImageRepositoryPort;
-import br.com.erp.api.product.application.provider.SizeProvider;
+import br.com.erp.api.product.domain.port.ProductRepositoryPort;
+import br.com.erp.api.product.domain.port.SkuRepositoryPort;
 import br.com.erp.api.product.presentation.dto.response.SkuPriceDTO;
 import br.com.erp.api.product.presentation.dto.response.SkuStock;
 import br.com.erp.api.shared.application.projection.ColorDetailProjection;
 import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,34 +34,58 @@ public class SnapshotAssembler {
     private final StorageGateway storageGateway;
     private final InventoryProvider inventoryProvider;
     private final PriceProvider priceProvider;
-    private final ColorProvider colorLookup;
-    private final SizeProvider sizeLookup;
+    private final ColorProvider colorProvider;
+    private final SizeProvider sizeProvider;
     private final ProductColorImageRepositoryPort imageRepository;
+    private final ProductRepositoryPort productRepository;
+    private final SkuRepositoryPort skuRepository;
 
     public SnapshotAssembler(StorageGateway storageGateway,
                              InventoryProvider inventoryProvider,
                              PriceProvider priceProvider,
-                             ColorProvider colorLookup,
-                             SizeProvider sizeLookup,
-                             ProductColorImageRepositoryPort imageRepository) {
+                             ColorProvider colorProvider,
+                             SizeProvider sizeProvider,
+                             ProductColorImageRepositoryPort imageRepository,
+                             ProductRepositoryPort productRepository,
+                             SkuRepositoryPort skuRepository) {
         this.storageGateway = storageGateway;
         this.inventoryProvider = inventoryProvider;
         this.priceProvider = priceProvider;
-        this.colorLookup = colorLookup;
-        this.sizeLookup = sizeLookup;
+        this.colorProvider = colorProvider;
+        this.sizeProvider = sizeProvider;
         this.imageRepository = imageRepository;
+        this.productRepository = productRepository;
+        this.skuRepository = skuRepository;
     }
 
+    // Carga completa — usado pelo ProductPublishedEvent
+    public ProductSnapshot assemble(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+
+        List<Sku> activeSkus = skuRepository.findByProductIdAndStatusIn(
+                productId, List.of(SkuStatus.READY, SkuStatus.PUBLISHED)
+        );
+
+        String categoryName = productRepository.findCategoryNameByProductId(productId);
+        return assemble(product, activeSkus, categoryName);
+    }
+
+    // Carga completa a partir de entidades já carregadas — usado pelo PublishProductUseCase
     public ProductSnapshot assemble(Product product, List<Sku> activeSkus, String categoryName) {
 
-        // Batch lookup de cores e tamanhos
-        Set<Long> colorIds = activeSkus.stream().map(Sku::getColorId).collect(Collectors.toSet());
-        Set<Long> sizeIds = activeSkus.stream().map(Sku::getSizeId).collect(Collectors.toSet());
+        Set<Long> colorIds = activeSkus.stream()
+                .map(Sku::getColorId)
+                .collect(Collectors.toSet());
 
-        Map<Long, ColorDetailProjection> colors = colorLookup.findWithHexByIds(colorIds).stream()
+        Set<Long> sizeIds = activeSkus.stream()
+                .map(Sku::getSizeId)
+                .collect(Collectors.toSet());
+
+        Map<Long, ColorDetailProjection> colors = colorProvider.findWithHexByIds(colorIds).stream()
                 .collect(Collectors.toMap(ColorDetailProjection::id, c -> c));
 
-        Map<Long, String> sizes = sizeLookup.findByIds(sizeIds).stream()
+        Map<Long, String> sizes = sizeProvider.findByIds(sizeIds).stream()
                 .collect(Collectors.toMap(IdNameProjection::id, IdNameProjection::name));
 
         List<SkuSnapshot> skuSnapshots = activeSkus.stream()
@@ -88,7 +118,6 @@ public class SnapshotAssembler {
                     );
                 }).toList();
 
-        // Resolve URL da imagem principal
         String mainImageUrl = resolveMainImageUrl(product);
 
         return new ProductSnapshot(
@@ -102,15 +131,69 @@ public class SnapshotAssembler {
         );
     }
 
+    // Usado pelo SkuPriceUpdatedEvent — retorna só o preço
+    public BigDecimal assembleSkuSellingPrice(Long skuId) {
+        SkuPriceDTO price = priceProvider.getBySkuId(skuId);
+        return price.sellingPrice();
+    }
+
+    // Usado pelo ColorImagesUpdatedEvent — retorna URLs públicas das imagens de uma cor
+    public List<String> assembleColorImageUrls(Long productId, Long colorId) {
+        return imageRepository
+                .findByProductIdAndColorId(productId, colorId)
+                .stream()
+                .map(img -> storageGateway.getPublicUrl(img.getImageKey()))
+                .toList();
+    }
+
+    // Usado pelo SkuBecamePublishedEvent — snapshot completo de um SKU novo em produto publicado
+    public SkuSnapshot assembleSku(Long skuId) {
+        Sku sku = skuRepository.findById(skuId)
+                .orElseThrow(() -> new SkuNotFoundException(skuId));
+
+        SkuPriceDTO price = priceProvider.getBySkuId(skuId);
+        SkuStock stock = inventoryProvider.getBySkuId(skuId);
+
+        ColorDetailProjection color = colorProvider
+                .findWithHexByIds(Set.of(sku.getColorId()))
+                .stream().findFirst().orElse(null);
+
+        String sizeName = sizeProvider
+                .findByIds(Set.of(sku.getSizeId()))
+                .stream().findFirst()
+                .map(IdNameProjection::name)
+                .orElse("");
+
+        List<String> imageUrls = imageRepository
+                .findByProductIdAndColorId(sku.getProductId(), sku.getColorId())
+                .stream()
+                .map(img -> storageGateway.getPublicUrl(img.getImageKey()))
+                .toList();
+
+        return new SkuSnapshot(
+                sku.getId(),
+                sku.getCode().value(),
+                color != null ? color.name() : "",
+                color != null ? color.hexCode() : "",
+                sizeName,
+                price.sellingPrice(),
+                stock.available(),
+                sku.getDimensions().width(),
+                sku.getDimensions().height(),
+                sku.getDimensions().length(),
+                sku.getDimensions().weight(),
+                imageUrls
+        );
+    }
+
     private String resolveMainImageUrl(Product product) {
-        if (product.getPrimaryImageId() == null) {
-            return null;
-        }
-        List<ProductColorImage> primaryImages = imageRepository.findAllByIds(List.of(product.getPrimaryImageId()));
-        if (primaryImages.isEmpty()) {
-            return null;
-        }
+        if (product.getPrimaryImageId() == null) return null;
+
+        List<ProductColorImage> primaryImages = imageRepository
+                .findAllByIds(List.of(product.getPrimaryImageId()));
+
+        if (primaryImages.isEmpty()) return null;
+
         return storageGateway.getPublicUrl(primaryImages.getFirst().getImageKey());
     }
 }
-
