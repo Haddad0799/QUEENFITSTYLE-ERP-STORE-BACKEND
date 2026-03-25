@@ -25,7 +25,13 @@ public class ConfirmImageUploadUseCase {
     private final EvaluateSkuCompletenessUseCase evaluateSkuCompleteness;
     private final ImageProvider imageProvider;
 
-    public ConfirmImageUploadUseCase(ProductColorImageRepositoryPort imageRepository, ProductRepositoryPort productRepository, SkuRepositoryPort skuRepository, EvaluateSkuCompletenessUseCase evaluateSkuCompleteness, ImageProvider imageProvider) {
+    public ConfirmImageUploadUseCase(
+            ProductColorImageRepositoryPort imageRepository,
+            ProductRepositoryPort productRepository,
+            SkuRepositoryPort skuRepository,
+            EvaluateSkuCompletenessUseCase evaluateSkuCompleteness,
+            ImageProvider imageProvider
+    ) {
         this.imageRepository = imageRepository;
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
@@ -96,6 +102,9 @@ public class ConfirmImageUploadUseCase {
         }
 
         List<Long> skuIds = skuRepository.findIdsByProductIdAndColorId(productId, colorId);
-        skuIds.forEach(evaluateSkuCompleteness::execute);
+
+        // ✅ MUDANÇA: Usa executeBatch ao invés de forEach
+        // Isso evita disparar múltiplos eventos ProductPublishedEvent
+        evaluateSkuCompleteness.executeBatch(skuIds);
     }
 }
