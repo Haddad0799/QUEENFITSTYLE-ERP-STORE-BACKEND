@@ -5,7 +5,6 @@ import br.com.erp.api.product.application.event.ProductPublishedEvent;
 import br.com.erp.api.product.application.event.ProductUnpublishedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;

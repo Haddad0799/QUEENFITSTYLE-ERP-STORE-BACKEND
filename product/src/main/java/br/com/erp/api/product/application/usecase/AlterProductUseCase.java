@@ -2,6 +2,7 @@ package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.command.AlterProductCommand;
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
+import br.com.erp.api.product.application.port.ProductCatalogPort;
 import br.com.erp.api.product.application.service.ProductCatalogPublisher;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.exception.InvalidCategoryException;
@@ -15,7 +16,7 @@ public class AlterProductUseCase {
 
    private final CategoryProvider categoryProvider;
    private final ProductRepositoryPort productRepository;
-   private final ProductCatalogPublisher productCatalogPublisher;
+   private final ProductCatalogPort productCatalogPublisher;
 
     public AlterProductUseCase(CategoryProvider categoryProvider, ProductRepositoryPort productRepository, ProductCatalogPublisher productCatalogPublisher) {
         this.categoryProvider = categoryProvider;
@@ -48,8 +49,6 @@ public class AlterProductUseCase {
 
         productRepository.update(product);
 
-        if (product.isPublished()) {
-            productCatalogPublisher.publish(product.getId());
-        }
+        productCatalogPublisher.publishIfPublished(product.getId());
     }
 }

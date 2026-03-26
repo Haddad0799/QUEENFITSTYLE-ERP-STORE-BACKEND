@@ -1,6 +1,7 @@
 package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
+import br.com.erp.api.product.application.port.ProductCatalogPort;
 import br.com.erp.api.product.domain.entity.ProductColorImage;
 import br.com.erp.api.product.domain.port.ProductColorImageRepositoryPort;
 import br.com.erp.api.product.domain.port.ProductRepositoryPort;
@@ -15,13 +16,15 @@ public class ReorderProductImagesUseCase {
 
     private final ProductRepositoryPort productRepository;
     private final ProductColorImageRepositoryPort imageRepository;
+    private final ProductCatalogPort productCatalogPublisher;
 
     public ReorderProductImagesUseCase(
             ProductRepositoryPort productRepository,
-            ProductColorImageRepositoryPort imageRepository
+            ProductColorImageRepositoryPort imageRepository, ProductCatalogPort productCatalogPublisher
     ) {
         this.productRepository = productRepository;
         this.imageRepository = imageRepository;
+        this.productCatalogPublisher = productCatalogPublisher;
     }
 
     @Transactional
@@ -71,6 +74,7 @@ public class ReorderProductImagesUseCase {
 
         imageRepository.updateOrders(newOrders);
 
+        productCatalogPublisher.publishIfPublished(productId);
     }
 }
 

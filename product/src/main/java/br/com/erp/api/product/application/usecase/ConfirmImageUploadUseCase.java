@@ -103,8 +103,6 @@ public class ConfirmImageUploadUseCase {
 
         List<Long> skuIds = skuRepository.findIdsByProductIdAndColorId(productId, colorId);
 
-        // ✅ MUDANÇA: Usa executeBatch ao invés de forEach
-        // Isso evita disparar múltiplos eventos ProductPublishedEvent
         evaluateSkuCompleteness.executeBatch(skuIds);
     }
 }

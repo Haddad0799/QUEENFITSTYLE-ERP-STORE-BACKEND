@@ -1,4 +1,4 @@
-package br.com.erp.api.product.application.usecase;
+package br.com.erp.api.product.application.assembler;
 
 import br.com.erp.api.product.application.dto.ProductSnapshot;
 import br.com.erp.api.product.application.dto.SkuSnapshot;
@@ -131,60 +131,6 @@ public class SnapshotAssembler {
         );
     }
 
-    // Usado pelo SkuPriceUpdatedEvent — retorna só o preço
-    public BigDecimal assembleSkuSellingPrice(Long skuId) {
-        SkuPriceDTO price = priceProvider.getBySkuId(skuId);
-        return price.sellingPrice();
-    }
-
-    // Usado pelo ColorImagesUpdatedEvent — retorna URLs públicas das imagens de uma cor
-    public List<String> assembleColorImageUrls(Long productId, Long colorId) {
-        return imageRepository
-                .findByProductIdAndColorId(productId, colorId)
-                .stream()
-                .map(img -> storageGateway.getPublicUrl(img.getImageKey()))
-                .toList();
-    }
-
-    // Usado pelo SkuBecamePublishedEvent — snapshot completo de um SKU novo em produto publicado
-    public SkuSnapshot assembleSku(Long skuId) {
-        Sku sku = skuRepository.findById(skuId)
-                .orElseThrow(() -> new SkuNotFoundException(skuId));
-
-        SkuPriceDTO price = priceProvider.getBySkuId(skuId);
-        SkuStock stock = inventoryProvider.getBySkuId(skuId);
-
-        ColorDetailProjection color = colorProvider
-                .findWithHexByIds(Set.of(sku.getColorId()))
-                .stream().findFirst().orElse(null);
-
-        String sizeName = sizeProvider
-                .findByIds(Set.of(sku.getSizeId()))
-                .stream().findFirst()
-                .map(IdNameProjection::name)
-                .orElse("");
-
-        List<String> imageUrls = imageRepository
-                .findByProductIdAndColorId(sku.getProductId(), sku.getColorId())
-                .stream()
-                .map(img -> storageGateway.getPublicUrl(img.getImageKey()))
-                .toList();
-
-        return new SkuSnapshot(
-                sku.getId(),
-                sku.getCode().value(),
-                color != null ? color.name() : "",
-                color != null ? color.hexCode() : "",
-                sizeName,
-                price.sellingPrice(),
-                stock.available(),
-                sku.getDimensions().width(),
-                sku.getDimensions().height(),
-                sku.getDimensions().length(),
-                sku.getDimensions().weight(),
-                imageUrls
-        );
-    }
 
     private String resolveMainImageUrl(Product product) {
         if (product.getPrimaryImageId() == null) return null;

@@ -1,7 +1,7 @@
 package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
-import br.com.erp.api.product.application.service.ProductCatalogPublisher;
+import br.com.erp.api.product.application.port.ProductCatalogPort;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.entity.ProductColorImage;
 import br.com.erp.api.product.domain.port.ProductColorImageRepositoryPort;
@@ -16,10 +16,10 @@ public class SetPrimaryImageUseCase {
 
     private final ProductRepositoryPort productRepository;
     private final ProductColorImageRepositoryPort imageRepository;
-    private final ProductCatalogPublisher productCatalogPublisher;
+    private final ProductCatalogPort productCatalogPublisher;
 
     public SetPrimaryImageUseCase(ProductRepositoryPort productRepository,
-                                  ProductColorImageRepositoryPort imageRepository, ProductCatalogPublisher productCatalogPublisher) {
+                                  ProductColorImageRepositoryPort imageRepository, ProductCatalogPort productCatalogPublisher) {
         this.productRepository = productRepository;
         this.imageRepository = imageRepository;
         this.productCatalogPublisher = productCatalogPublisher;
@@ -45,9 +45,7 @@ public class SetPrimaryImageUseCase {
         product.definePrimaryImage(imageId);
         productRepository.updatePrimaryImage(product);
 
-        if (product.isPublished()) {
-            productCatalogPublisher.publish(productId);
-        }
+        productCatalogPublisher.publishIfPublished(productId);
     }
 }
 

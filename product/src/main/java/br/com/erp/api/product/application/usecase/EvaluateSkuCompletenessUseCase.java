@@ -98,12 +98,12 @@ public class EvaluateSkuCompletenessUseCase {
 
         if (hasImage) {
 
-            // 🔵 Se já está publicado → continua publicado
+            //Se já está publicado → continua publicado
             if (sku.isPublished()) {
                 return;
             }
 
-            // 🔴 Se estava incompleto
+            //Se estava incompleto
             if (sku.isIncomplete()) {
 
                 if (productPublished) {
@@ -115,12 +115,12 @@ public class EvaluateSkuCompletenessUseCase {
                 return;
             }
 
-            // 🟢 Caso padrão
+            //Caso padrão
             sku.markAsReady();
 
         } else {
 
-            // 🔻 Perdeu imagem → sempre vira incompleto
+            //Perdeu imagem → sempre vira incompleto
             sku.markAsIncomplete();
         }
     }

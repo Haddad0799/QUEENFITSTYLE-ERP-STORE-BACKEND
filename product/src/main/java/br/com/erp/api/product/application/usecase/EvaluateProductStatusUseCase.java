@@ -1,6 +1,7 @@
 package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
+import br.com.erp.api.product.application.port.ProductCatalogPort;
 import br.com.erp.api.product.application.service.ProductCatalogPublisher;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.entity.Sku;
@@ -16,12 +17,12 @@ public class EvaluateProductStatusUseCase {
 
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
-    private final ProductCatalogPublisher productCatalogPublisher;
+    private final ProductCatalogPort productCatalogPublisher;
 
     public EvaluateProductStatusUseCase(
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
-            ProductCatalogPublisher productCatalogPublisher
+            ProductCatalogPort productCatalogPublisher
     ) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;

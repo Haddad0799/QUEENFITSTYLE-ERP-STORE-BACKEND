@@ -21,5 +21,7 @@ public class DeactivateProductUseCase {
         product.deactivate();
 
         productRepository.update(product);
+
+
     }
 }
