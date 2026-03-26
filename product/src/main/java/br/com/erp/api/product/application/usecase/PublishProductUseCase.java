@@ -1,8 +1,7 @@
 package br.com.erp.api.product.application.usecase;
 
-import br.com.erp.api.product.application.dto.ProductSnapshot;
-import br.com.erp.api.product.application.event.ProductPublishedEvent;
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
+import br.com.erp.api.product.application.service.ProductCatalogPublisher;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.enumerated.SkuStatus;
@@ -20,20 +19,16 @@ public class PublishProductUseCase {
 
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
-    private final SnapshotAssembler snapshotAssembler;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ProductCatalogPublisher productCatalogPublisher;
 
     public PublishProductUseCase(
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
-            SnapshotAssembler snapshotAssembler,
-            ApplicationEventPublisher eventPublisher
+            ProductCatalogPublisher productCatalogPublisher
     ) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
-        this.snapshotAssembler = snapshotAssembler;
-        this.eventPublisher = eventPublisher;
-        // CatalogGateway removido — sync vai por evento
+        this.productCatalogPublisher = productCatalogPublisher;
     }
 
     @Transactional
@@ -58,7 +53,6 @@ public class PublishProductUseCase {
 
         // Monta snapshot completo com os dados atuais
         // O AFTER_COMMIT garante que o listener lê os dados já commitados
-        ProductSnapshot snapshot = snapshotAssembler.assemble(productId);
-        eventPublisher.publishEvent(new ProductPublishedEvent(productId, snapshot));
+        productCatalogPublisher.publish(productId);
     }
 }

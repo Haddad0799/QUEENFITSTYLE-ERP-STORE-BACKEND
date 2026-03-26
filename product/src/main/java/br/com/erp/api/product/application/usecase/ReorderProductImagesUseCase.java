@@ -70,6 +70,7 @@ public class ReorderProductImagesUseCase {
         }
 
         imageRepository.updateOrders(newOrders);
+
     }
 }
 

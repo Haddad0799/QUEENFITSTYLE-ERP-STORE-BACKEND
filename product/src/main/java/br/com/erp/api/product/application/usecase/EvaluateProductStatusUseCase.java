@@ -1,14 +1,11 @@
 package br.com.erp.api.product.application.usecase;
 
-import br.com.erp.api.product.application.dto.ProductSnapshot;
-import br.com.erp.api.product.application.event.ProductPublishedEvent;
-import br.com.erp.api.product.application.event.ProductUnpublishedEvent;
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
+import br.com.erp.api.product.application.service.ProductCatalogPublisher;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import br.com.erp.api.product.domain.port.SkuRepositoryPort;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,18 +16,16 @@ public class EvaluateProductStatusUseCase {
 
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
-    private final ApplicationEventPublisher eventPublisher;
-    private final SnapshotAssembler snapshotAssembler;
+    private final ProductCatalogPublisher productCatalogPublisher;
 
     public EvaluateProductStatusUseCase(
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
-            ApplicationEventPublisher eventPublisher, SnapshotAssembler snapshotAssembler
+            ProductCatalogPublisher productCatalogPublisher
     ) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
-        this.eventPublisher = eventPublisher;
-        this.snapshotAssembler = snapshotAssembler;
+        this.productCatalogPublisher = productCatalogPublisher;
     }
 
     @Transactional
@@ -47,23 +42,18 @@ public class EvaluateProductStatusUseCase {
         boolean hasReady = skus.stream()
                 .anyMatch(Sku::isReady);
 
-        // 🔴 CASO 1: Produto publicado sem SKUs ativos → despublica
         if (product.isPublished() && !hasPublishedOrBlocked) {
             product.markAsDraft();
             productRepository.updateStatus(product);
-
-            eventPublisher.publishEvent(new ProductUnpublishedEvent(productId));
+            productCatalogPublisher.unpublish(productId);
             return;
         }
 
-        // 🟢 CASO 2: Produto publicado e tem SKUs READY → republica snapshot
         if (product.isPublished() && hasReady) {
-            ProductSnapshot snapshot = snapshotAssembler.assemble(productId);
-            eventPublisher.publishEvent(new ProductPublishedEvent(productId, snapshot));
+            productCatalogPublisher.publish(productId);
             return;
         }
 
-        // 🟡 CASO 3: Produto NÃO publicado → só atualiza estado interno
         if (!product.isPublished()) {
             if (hasReady) {
                 product.markAsReadyForSale();
