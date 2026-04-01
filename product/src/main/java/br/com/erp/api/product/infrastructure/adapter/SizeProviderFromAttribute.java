@@ -6,6 +6,7 @@ import br.com.erp.api.product.application.provider.SizeProvider;
 import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,6 +41,12 @@ public class SizeProviderFromAttribute implements SizeProvider {
                         size.label()
                 ))
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
+    public Optional<IdNameProjection> findByName(String name) {
+        return sizeQueryService.findByName(name)
+                .map(s -> new IdNameProjection(s.id(), s.label()));
     }
 }
 

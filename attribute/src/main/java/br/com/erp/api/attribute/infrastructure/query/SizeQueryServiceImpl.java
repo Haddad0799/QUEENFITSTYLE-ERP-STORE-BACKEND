@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Set;
+import java.util.Optional;
 
 @Service
 public class SizeQueryServiceImpl implements SizeQueryService {
@@ -56,6 +57,25 @@ public class SizeQueryServiceImpl implements SizeQueryService {
                                 rs.getInt("display_order")
                         ))
                         .list()
+        );
+    }
+
+    @Override
+    public Optional<SizeOutput> findByName(String name) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                        SELECT id, label, type, display_order
+                        FROM sizes
+                        WHERE LOWER(label) = LOWER(:name)
+                        """)
+                        .bind("name", name)
+                        .map((rs, ctx) -> new SizeOutput(
+                                rs.getLong("id"),
+                                rs.getString("label"),
+                                rs.getString("type"),
+                                rs.getInt("display_order")
+                        ))
+                        .findOne()
         );
     }
 }

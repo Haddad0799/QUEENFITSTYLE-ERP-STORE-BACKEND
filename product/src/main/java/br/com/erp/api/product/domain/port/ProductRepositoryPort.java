@@ -13,4 +13,6 @@ public interface ProductRepositoryPort {
     void updateStatus(Product product);
     void updatePrimaryImage(Product product);
     String findCategoryNameByProductId(Long productId);
+
+    Optional<Product> findBySlug(String slug);
 }

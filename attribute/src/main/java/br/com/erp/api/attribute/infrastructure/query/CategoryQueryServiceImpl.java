@@ -8,6 +8,7 @@ import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CategoryQueryServiceImpl implements CategoryQueryService {
@@ -65,6 +66,24 @@ public class CategoryQueryServiceImpl implements CategoryQueryService {
                         .bind("id", id)
                         .mapTo(Boolean.class)
                         .one()
+        );
+    }
+
+    @Override
+    public Optional<CategoryDetailsDTO> findByName(String name) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT
+                  id,
+                  display_name AS name,
+                  active
+                FROM categories
+                WHERE LOWER(display_name) = LOWER(:name)
+                  AND active = true
+            """)
+                        .bind("name", name)
+                        .map(ConstructorMapper.of(CategoryDetailsDTO.class))
+                        .findOne()
         );
     }
 

@@ -4,7 +4,6 @@ import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.application.gateway.StorageGateway;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.entity.ProductColorImage;
-import br.com.erp.api.product.domain.enumerated.SkuStatus;
 import br.com.erp.api.product.domain.port.ProductColorImageRepositoryPort;
 import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import br.com.erp.api.product.domain.port.SkuRepositoryPort;
@@ -25,20 +24,20 @@ public class DeleteProductImagesUseCase {
     private final StorageGateway storageGateway;
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
-    private final EvaluateProductStatusUseCase evaluateProductStatus;
+    private final EvaluateSkuCompletenessUseCase evaluateSkuCompleteness;
 
     public DeleteProductImagesUseCase(
             ProductColorImageRepositoryPort imageRepository,
             StorageGateway storageGateway,
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
-            EvaluateProductStatusUseCase evaluateProductStatus
+            EvaluateSkuCompletenessUseCase evaluateSkuCompleteness
     ) {
         this.imageRepository = imageRepository;
         this.storageGateway = storageGateway;
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
-        this.evaluateProductStatus = evaluateProductStatus;
+        this.evaluateSkuCompleteness = evaluateSkuCompleteness;
     }
 
     @Transactional
@@ -74,13 +73,9 @@ public class DeleteProductImagesUseCase {
         imageRepository.deleteAllByIds(imageIds);
 
         // 3) Atualiza status dos SKUs se não restarem imagens para essa cor
-        boolean stillHasImages = imageRepository.existsByProductIdAndColorId(productId, colorId);
-        if (!stillHasImages) {
-            skuRepository.updateStatusByProductIdAndColorId(productId, colorId, SkuStatus.INCOMPLETE);
-        }
+        List<Long> skuIds = skuRepository.findIdsByProductIdAndColorId(productId, colorId);
 
-        // 4) Reavalia o status do produto após possível degradação dos SKUs
-        evaluateProductStatus.execute(productId);
+        evaluateSkuCompleteness.executeBatch(skuIds);
 
         // 5) Remove do storage POR ÚLTIMO
         try {

@@ -31,4 +31,5 @@ public interface SkuRepositoryPort {
     void updateStatusBatch(List<Long> skuIds, SkuStatus skuStatus);
 
     List<Sku> findByProductIdAndStatusIn(Long productId, List<SkuStatus> ready);
+
 }

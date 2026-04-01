@@ -50,18 +50,22 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
 
     @Override
     public Map<String, Long> saveAll(Long productId, List<Sku> skus) {
+
         if (skus == null || skus.isEmpty()) return Map.of();
 
         return jdbi.withHandle(handle -> {
+
+            //1. INSERT COM ON CONFLICT
             var batch = handle.prepareBatch("""
-                INSERT INTO skus (
-                    product_id, sku_code, color_id, size_id,
-                    width, height, length, weight, status
-                ) VALUES (
-                    :productId, :code, :colorId, :sizeId,
-                    :width, :height, :length, :weight, :status
-                )
-            """);
+            INSERT INTO skus (
+                product_id, sku_code, color_id, size_id,
+                width, height, length, weight, status
+            ) VALUES (
+                :productId, :code, :colorId, :sizeId,
+                :width, :height, :length, :weight, :status
+            )
+            ON CONFLICT (product_id, color_id, size_id) DO NOTHING
+        """);
 
             for (Sku sku : skus) {
                 batch.bind("productId", productId)
@@ -76,7 +80,21 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                         .add();
             }
 
-            return batch.executePreparedBatch("id", "sku_code")
+            batch.execute();
+
+            //2. BUSCAR TODOS (novos + existentes)
+            List<String> skuCodes = skus.stream()
+                    .map(s -> s.getCode().value())
+                    .toList();
+
+            return handle.createQuery("""
+                SELECT id, sku_code
+                FROM skus
+                WHERE product_id = :productId
+                  AND sku_code IN (<codes>)
+            """)
+                    .bind("productId", productId)
+                    .bindList("codes", skuCodes)
                     .map((rs, ctx) -> Map.entry(
                             rs.getString("sku_code"),
                             rs.getLong("id")
@@ -197,6 +215,8 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                         .list()
         );
     }
+
+
 
     @Override
     public void updateStatus(Sku sku) {

@@ -7,6 +7,7 @@ import br.com.erp.api.shared.application.projection.ColorDetailProjection;
 import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -58,6 +59,12 @@ public class ColorProviderFromAttribute implements ColorProvider {
                         color.hexaCode()
                 ))
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
+    public Optional<IdNameProjection> findByName(String name) {
+        return colorQueryService.findByName(name)
+                .map(c -> new IdNameProjection(c.id(), c.name()));
     }
 }
 

@@ -6,6 +6,7 @@ import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -54,6 +55,25 @@ public class ColorQueryServiceImpl implements ColorQueryService {
                                 rs.getString("hex_code")
                         ))
                         .list()
+        );
+    }
+
+    @Override
+    public Optional<ColorOutput> findByName(String name) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                        SELECT id, name, hex_code
+                        FROM colors
+                        WHERE LOWER(name) = LOWER(:name)
+                          -- only active colors should be considered if there's an active flag; adjust if necessary
+                        """)
+                        .bind("name", name)
+                        .map((rs, ctx) -> new ColorOutput(
+                                rs.getLong("id"),
+                                rs.getString("name"),
+                                rs.getString("hex_code")
+                        ))
+                        .findOne()
         );
     }
 }

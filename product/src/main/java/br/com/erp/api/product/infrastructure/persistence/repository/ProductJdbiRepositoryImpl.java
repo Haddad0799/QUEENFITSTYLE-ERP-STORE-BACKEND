@@ -155,5 +155,26 @@ WHERE slug = :slug
         );
     }
 
+    @Override
+    public Optional<Product> findBySlug(String slug) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                SELECT
+                    id,
+                    name,
+                    description,
+                    slug,
+                    category_id,
+                    status,
+                    primary_image_id
+                FROM products
+                WHERE slug = :slug
+            """)
+                        .bind("slug", slug)
+                        .map(new ProductRowMapper())
+                        .findOne()
+        );
+    }
+
 
 }

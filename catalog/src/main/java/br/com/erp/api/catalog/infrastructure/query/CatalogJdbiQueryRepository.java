@@ -4,6 +4,8 @@ import br.com.erp.api.catalog.application.query.CatalogQueryRepository;
 import br.com.erp.api.catalog.application.query.filter.CatalogFilter;
 import br.com.erp.api.catalog.presentation.dto.*;
 import org.jdbi.v3.core.Jdbi;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +20,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
 
     private final Jdbi jdbi;
     private final CatalogFilterSqlResolver filterResolver;
+    private static final Logger log = LoggerFactory.getLogger(CatalogJdbiQueryRepository.class);
 
     public CatalogJdbiQueryRepository(Jdbi jdbi, CatalogFilterSqlResolver filterResolver) {
         this.jdbi = jdbi;
@@ -28,10 +31,16 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
     public Page<CatalogProductSummaryDTO> findAll(CatalogFilter filter, Pageable pageable) {
 
         CatalogPageQuery pageQuery = filterResolver.build(filter, pageable);
+        // DEBUG: log SQL + params to help diagnosing unexpected empty pages
+        if (log.isDebugEnabled()) {
+            log.debug("Catalog select SQL:\n{}", pageQuery.selectSql());
+            log.debug("Catalog select params: {}", pageQuery.params());
+        }
 
         List<CatalogProductSummaryDTO> content = jdbi.withHandle(handle -> {
             var query = handle.createQuery(pageQuery.selectSql());
             pageQuery.params().forEach(query::bind);
+
             return query.map((rs, ctx) -> new CatalogProductSummaryDTO(
                     rs.getString("name"),
                     rs.getString("slug"),
@@ -41,20 +50,29 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
             )).list();
         });
 
+        if (log.isDebugEnabled()) {
+            log.debug("Catalog count SQL:\n{}", pageQuery.countSql());
+            // show params excluding limit/offset for clarity
+            Map<String, Object> countParams = new HashMap<>(pageQuery.params());
+            countParams.remove("limit");
+            countParams.remove("offset");
+            log.debug("Catalog count params: {}", countParams);
+        }
+
         long total = jdbi.withHandle(handle -> {
             var query = handle.createQuery(pageQuery.countSql());
-            // Bind somente os params de filtro (sem limit/offset) para o count
+
             pageQuery.params().forEach((key, value) -> {
                 if (!"limit".equals(key) && !"offset".equals(key)) {
                     query.bind(key, value);
                 }
             });
+
             return query.mapTo(Long.class).one();
         });
 
         return new PageImpl<>(content, pageable, total);
     }
-
     @Override
     public Optional<CatalogProductDetailDTO> findBySlug(String slug) {
 
