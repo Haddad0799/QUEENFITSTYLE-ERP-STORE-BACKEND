@@ -156,6 +156,22 @@ WHERE slug = :slug
     }
 
     @Override
+    public String findCategoryNormalizedNameByProductId(Long productId) {
+        return jdbi.withHandle(handle ->
+                Objects.requireNonNull(handle.createQuery("""
+                                    SELECT c.normalized_name
+                                    FROM products p
+                                    JOIN categories c ON c.id = p.category_id
+                                    WHERE p.id = :productId
+                                """)
+                        .bind("productId", productId)
+                        .mapTo(String.class)
+                        .findOne()
+                        .orElse(null))
+        );
+    }
+
+    @Override
     public Optional<Product> findBySlug(String slug) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""

@@ -19,7 +19,7 @@ public class CatalogFilterSqlResolver {
         StringBuilder productFilters = new StringBuilder();
 
         if (filter.hasCategory()) {
-            productFilters.append(" AND cp2.category_name = :category ");
+            productFilters.append(" AND cp2.category_normalized_name = :category ");
             params.put("category", filter.category());
         }
 
@@ -63,7 +63,7 @@ public class CatalogFilterSqlResolver {
         // SELECT (CORRIGIDO)
         // ───────────────
         String selectSql = """
-            SELECT cp.name, cp.slug, cp.category_name, cp.main_image_url, cp.min_price
+            SELECT cp.name, cp.slug, cp.category_name, cp.category_normalized_name, cp.main_image_url, cp.min_price
             FROM (
             SELECT cp2.id
             FROM catalog_products cp2
@@ -86,12 +86,12 @@ public class CatalogFilterSqlResolver {
         // ───────────────
         String countSql = """
             SELECT COUNT(*)
-            FROM catalog_products cp
+            FROM catalog_products cp2
             WHERE 1=1
             %s
             AND EXISTS (
                 SELECT 1 FROM catalog_skus cs
-                WHERE cs.catalog_product_id = cp.id
+                WHERE cs.catalog_product_id = cp2.id
                 AND %s
             )
         """.formatted(productFilters, skuWhere);

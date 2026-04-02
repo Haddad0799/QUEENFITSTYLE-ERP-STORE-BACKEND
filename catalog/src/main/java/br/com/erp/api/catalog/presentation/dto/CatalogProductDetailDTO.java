@@ -8,6 +8,7 @@ public record CatalogProductDetailDTO(
         String description,
         String slug,
         String categoryName,
+        String categoryNormalizedName,
         String mainImageUrl,
         BigDecimal minPrice,
         BigDecimal maxPrice,

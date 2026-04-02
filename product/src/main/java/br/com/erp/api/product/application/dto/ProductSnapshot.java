@@ -8,6 +8,7 @@ public record ProductSnapshot(
         String description,
         String slug,
         String categoryName,
+        String categoryNormalizedName,
         String mainImageUrl,
         List<SkuSnapshot> skus
 ) {}

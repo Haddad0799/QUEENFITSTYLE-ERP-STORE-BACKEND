@@ -3,6 +3,7 @@ package br.com.erp.api.attribute.infrastructure.query;
 import br.com.erp.api.attribute.application.query.CategoryQueryService;
 import br.com.erp.api.attribute.application.exception.CategoryNotFoundException;
 import br.com.erp.api.attribute.presentation.dto.category.response.CategoryDetailsDTO;
+import br.com.erp.api.attribute.presentation.dto.category.response.StoreCategoryDTO;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,22 @@ public class CategoryQueryServiceImpl implements CategoryQueryService {
             FROM categories
         """)
                         .map(ConstructorMapper.of(CategoryDetailsDTO.class))
+                        .list()
+        );
+    }
+
+    @Override
+    public List<StoreCategoryDTO> findAllActive() {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+            SELECT
+              display_name AS name,
+              normalized_name AS normalizedName
+            FROM categories
+            WHERE active = true
+            ORDER BY display_name
+        """)
+                        .map(ConstructorMapper.of(StoreCategoryDTO.class))
                         .list()
         );
     }

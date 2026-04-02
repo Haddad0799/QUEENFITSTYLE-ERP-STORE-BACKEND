@@ -68,11 +68,12 @@ public class SnapshotAssembler {
         );
 
         String categoryName = productRepository.findCategoryNameByProductId(productId);
-        return assemble(product, activeSkus, categoryName);
+        String categoryNormalizedName = productRepository.findCategoryNormalizedNameByProductId(productId);
+        return assemble(product, activeSkus, categoryName, categoryNormalizedName);
     }
 
     // Carga completa a partir de entidades já carregadas — usado pelo PublishProductUseCase
-    public ProductSnapshot assemble(Product product, List<Sku> activeSkus, String categoryName) {
+    public ProductSnapshot assemble(Product product, List<Sku> activeSkus, String categoryName, String categoryNormalizedName) {
 
         Set<Long> colorIds = activeSkus.stream()
                 .map(Sku::getColorId)
@@ -126,6 +127,7 @@ public class SnapshotAssembler {
                 product.getDescription(),
                 product.getSlugValue(),
                 categoryName,
+                categoryNormalizedName,
                 mainImageUrl,
                 skuSnapshots
         );

@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Repository
@@ -53,15 +54,16 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
             // 2. INSERT product
             Long catalogProductId = handle.createUpdate("""
                 INSERT INTO catalog_products
-                (product_id, name, description, slug, category_name, main_image_url, min_price)
+                (product_id, name, description, slug, category_name, category_normalized_name, main_image_url, min_price)
                 VALUES
-                (:productId, :name, :description, :slug, :categoryName, :mainImageUrl, :minPrice)
+                (:productId, :name, :description, :slug, :categoryName, :categoryNormalizedName, :mainImageUrl, :minPrice)
             """)
                     .bind("productId", snapshot.productId())
                     .bind("name", snapshot.name())
                     .bind("description", snapshot.description())
                     .bind("slug", snapshot.slug())
                     .bind("categoryName", snapshot.categoryName())
+                    .bind("categoryNormalizedName", snapshot.categoryNormalizedName())
                     .bind("mainImageUrl", snapshot.mainImageUrl())
                     .bind("minPrice", minPrice)
                     .executeAndReturnGeneratedKeys("id")
@@ -140,6 +142,16 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
                 }
             }
         });
+    }
+
+    @Override
+    public Optional<String> findSlugByProductId(Long productId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("SELECT slug FROM catalog_products WHERE product_id = :productId")
+                        .bind("productId", productId)
+                        .mapTo(String.class)
+                        .findOne()
+        );
     }
 
 }

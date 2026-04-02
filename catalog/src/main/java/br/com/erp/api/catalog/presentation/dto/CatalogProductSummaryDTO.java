@@ -6,6 +6,7 @@ public record CatalogProductSummaryDTO(
         String name,
         String slug,
         String categoryName,
+        String categoryNormalizedName,
         String mainImageUrl,
         BigDecimal minPrice
 ) {}

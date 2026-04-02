@@ -45,6 +45,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                     rs.getString("name"),
                     rs.getString("slug"),
                     rs.getString("category_name"),
+                    rs.getString("category_normalized_name"),
                     rs.getString("main_image_url"),
                     rs.getBigDecimal("min_price")
             )).list();
@@ -80,7 +81,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
 
             // 1. Busca produto
             var productOpt = handle.createQuery("""
-                    SELECT id, name, description, slug, category_name, main_image_url, min_price
+                    SELECT id, name, description, slug, category_name, category_normalized_name, main_image_url, min_price
                     FROM catalog_products
                     WHERE slug = :slug
                 """)
@@ -92,6 +93,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         row.put("description", rs.getString("description"));
                         row.put("slug", rs.getString("slug"));
                         row.put("categoryName", rs.getString("category_name"));
+                        row.put("categoryNormalizedName", rs.getString("category_normalized_name"));
                         row.put("mainImageUrl", rs.getString("main_image_url"));
                         row.put("minPrice", rs.getBigDecimal("min_price"));
                         return row;
@@ -214,6 +216,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                     (String) p.get("description"),
                     (String) p.get("slug"),
                     (String) p.get("categoryName"),
+                    (String) p.get("categoryNormalizedName"),
                     (String) p.get("mainImageUrl"),
                     (BigDecimal) p.get("minPrice"),
                     maxPrice,
