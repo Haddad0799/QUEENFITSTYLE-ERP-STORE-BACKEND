@@ -182,7 +182,7 @@ Hierarquia de handlers: Específico → Domain → NotFound → Genérico.
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### ERP (Back-office)
 
