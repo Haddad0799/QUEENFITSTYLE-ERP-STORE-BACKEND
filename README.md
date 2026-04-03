@@ -1,285 +1,232 @@
-# QueenFitStyle ERP
+# Queenfitstyle Platform
 
-ERP modular para e-commerce de moda fitness, desenvolvido em **Java 21 + Spring Boot 3**, aplicando na prática os princípios de **Clean Architecture**, **Domain-Driven Design (DDD)** e **Arquitetura Hexagonal (Ports & Adapters)**.
+Sistema completo de e-commerce para moda fitness, composto por três aplicações independentes:
 
-> **Estratégia Monolith First** — um monólito modular com fronteiras claras entre módulos, pensado desde o início para uma migração fluida para microsserviços quando necessário.
+- ERP backend (Java + Spring Boot)
+- Painel administrativo (React)
+- Loja virtual (Next.js com SSR e ISR)
+
+O sistema foi projetado para resolver problemas reais de gestão de catálogo e garantir sincronização eficiente entre operação interna e vitrine pública.
 
 ---
 
-## Arquitetura
+## Problema
 
-```
+E-commerces de pequeno e médio porte enfrentam desafios recorrentes:
+
+- Erros manuais no cadastro de produtos e SKUs
+- Produtos publicados incompletos (sem preço, estoque ou imagem)
+- Inconsistência entre ERP e loja virtual
+- Baixa performance na vitrine devido a queries complexas
+- Atualizações lentas que exigem rebuild completo do frontend
+
+---
+
+## Solução
+
+Desenvolvi um ecossistema integrado que:
+
+- Garante que produtos só sejam publicados quando completos
+- Automatiza a sincronização entre ERP e loja via eventos
+- Utiliza projeções otimizadas para leitura (sem JOINs pesados)
+- Atualiza páginas do frontend em segundos via ISR (On-Demand)
+- Permite importação em massa com validação inteligente
+
+---
+
+## Resultado
+
+- Redução de erros operacionais no cadastro de produtos
+- Atualização quase em tempo real da loja
+- Melhor performance na vitrine pública
+- Arquitetura preparada para evolução e escala
+
+---
+
+## Arquitetura (Visão Geral)
+
+Fluxo principal do sistema:
+
+1. Produto é criado ou atualizado no ERP
+2. Evento de domínio é disparado
+3. O catálogo gera um snapshot desnormalizado
+4. O frontend Next.js é notificado via webhook
+5. As páginas afetadas são revalidadas automaticamente (ISR)
+
+---
+
+## Estrutura do Sistema
+
+O backend segue a abordagem Monolith First, com módulos bem definidos:
+
 queenfitstyle/
-├── app/              ← Bootstrap da aplicação (Spring Boot main, configs, exception handler)
-├── product/          ← Produtos, SKUs, imagens, importação em massa, publicação
-├── catalog/          ← Vitrine pública (snapshots desnormalizados, filtros dinâmicos)
-├── attribute/        ← Categorias, Cores, Tamanhos (dados cadastrais)
-├── inventory/        ← Controle de estoque
-├── pricing/          ← Precificação (custo e venda)
-├── storage/          ← Upload de imagens (MinIO / S3)
-└── shared/           ← Migrations Flyway, exceções base, projeções compartilhadas
-```
+├── app
+├── product
+├── catalog
+├── attribute
+├── inventory
+├── pricing
+├── storage
+└── shared
 
-Cada módulo segue a mesma estrutura interna de camadas:
+Cada módulo possui:
 
-```
-module/
-├── domain/           ← Entidades, Value Objects, Ports, Exceções (ZERO dependência de framework)
-├── application/      ← Use Cases, Services, Events, DTOs, Providers (orquestração)
-├── infrastructure/   ← Adapters JDBI, Listeners, Parsers (implementações concretas)
-└── presentation/     ← Controllers REST, DTOs de request/response
-```
-
-### Por que isso importa?
-
-- O **domínio é puro Java** — nenhuma entidade usa `@Entity`, `@Column` ou qualquer anotação de framework
-- Os **Ports** (interfaces) pertencem ao domínio; os **Adapters** (implementações) ficam na infraestrutura
-- Use Cases dependem apenas de abstrações — nunca de banco, HTTP ou frameworks
-- Módulos se comunicam via **interfaces (Providers/Gateways)** e **eventos de domínio**, nunca por acesso direto
+- domain: regras de negócio puras (sem dependência de framework)
+- application: casos de uso e orquestração
+- infrastructure: implementações técnicas (banco, integrações)
+- presentation: controllers REST
 
 ---
 
-## Decisões Técnicas Relevantes
+## Decisões Técnicas
 
-### JDBI no lugar de JPA/Hibernate
+### Arquitetura
 
-Optei por **JDBI com queries nativas** ao invés de JPA para:
+- Clean Architecture
+- Domain-Driven Design (DDD)
+- Arquitetura Hexagonal (Ports & Adapters)
+- Monolith First com separação por módulos
 
-- Manter o domínio **100% livre de anotações** de persistência
-- Ter **controle total sobre o SQL** gerado (sem surpresas do Hibernate)
-- Usar **batch inserts otimizados** para importação em massa
-- Construir **queries dinâmicas** com filtros compostos no catálogo
+### Persistência
 
-As entidades são reconstruídas via métodos `restore()` / construtores de reconstituição, mantendo a separação entre domínio e persistência.
+Uso de JDBI ao invés de JPA/Hibernate:
 
-### Catálogo como Projeção (CQRS Simplificado)
+- Controle total sobre SQL
+- Melhor performance em importação em massa
+- Queries dinâmicas mais previsíveis
+- Domínio livre de anotações de persistência
 
-O módulo `catalog` não é um CRUD — é uma **projeção de leitura otimizada**:
+### Catálogo como Projeção (CQRS simplificado)
 
-1. O `product` module publica um evento `ProductPublishedEvent` contendo um **snapshot completo**
-2. O `CatalogEventListener` escuta o evento **após o commit** (`@TransactionalEventListener(AFTER_COMMIT)`)
-3. O `CatalogSyncService` faz um **replace atômico** (DELETE + INSERT em transação) nas tabelas desnormalizadas
-4. O catálogo de loja consulta essas tabelas com **queries otimizadas e filtros dinâmicos** (categoria, cor, tamanho, faixa de preço, busca por nome)
+- Escrita ocorre no módulo de produto
+- Leitura ocorre no módulo de catálogo
+- Snapshot desnormalizado para performance
+- Replace atômico (DELETE + INSERT)
 
-Isso garante que a vitrine pública seja **rápida, independente e resiliente** — sem JOINs complexos em runtime.
+### Comunicação entre módulos
 
-### Revalidação de Cache ISR (On-Demand)
+- Interfaces (Providers / Gateways)
+- Eventos de domínio
+- Nenhum acesso direto entre módulos
 
-Após persistir o snapshot no catálogo, o backend notifica automaticamente o frontend Next.js para invalidar o cache estático (ISR) via webhook:
+---
 
-```
-Evento (publish/unpublish)
-  → CatalogEventListener (AFTER_COMMIT, @Async)
-    → CatalogSyncService (persiste snapshot)
-      → CatalogRevalidationPort → NextJsRevalidationAdapter
-        → POST /api/revalidate { tags: ["catalog-products", "catalog-product-{slug}"] }
-          → Next.js revalidateTag()
-```
+## Sincronização com Frontend (ISR)
 
-- A interface `CatalogRevalidationPort` pertence ao domínio — o adapter HTTP é infraestrutura
-- Tags invalidadas: `catalog-products` (listagem) + `catalog-product-{slug}` (detalhe)
-- Falhas no webhook **não propagam** para a transação principal (resiliência via try-catch)
-- Secret compartilhado via header `x-revalidate-secret` para autenticação
+Após atualização do catálogo:
 
-Isso permite que páginas estáticas do Next.js sejam atualizadas em segundos após qualquer mudança no catálogo, sem rebuild completo.
+Evento de domínio  
+→ CatalogEventListener (AFTER_COMMIT)  
+→ Persistência do snapshot  
+→ Chamada HTTP para Next.js  
+→ Revalidação de cache via tags  
 
-### Upload de Imagens via Pre-signed URLs
+Tags invalidadas:
+- catalog-products
+- catalog-product-{slug}
 
-O fluxo de upload é em duas etapas, garantindo segurança:
+Resultado:
+Atualização da loja em segundos sem rebuild completo.
 
-1. **Request** → `POST /erp/products/{id}/images/upload-url` retorna Pre-signed URLs do MinIO (válidas por 1h)
-2. O frontend faz upload direto para o MinIO (o backend **nunca** recebe o binário)
-3. **Confirm** → `POST /erp/products/{id}/images/confirm` registra as imagens e reavalia os status dos SKUs
+---
 
-Regras de negócio:
-- Máximo de **5 imagens por cor** por produto
-- A primeira imagem se torna automaticamente a **imagem principal**
-- Upload dispara **reavaliação automática** de completude dos SKUs
+## Upload de Imagens
 
-### Importação em Massa de Produtos
+Fluxo baseado em Pre-signed URLs:
 
-O `ImportProductsFromFileUseCase` processa planilhas Excel (.xlsx) com validação inteligente:
+1. Backend gera URL temporária
+2. Frontend envia direto para o storage (MinIO/S3)
+3. Backend apenas confirma o upload
 
-1. **Parse** — Apache POI extrai as linhas via `ProductImportParserPort` (interface na application, implementação na infra)
-2. **Validação linha a linha** — rejeita linhas inválidas sem abortar o resto
-3. **Agrupamento** — agrupa SKUs por produto (nome + categoria)
-4. **Processamento por grupo** — cada grupo roda em `REQUIRES_NEW` (isolamento transacional)
-5. **Resolução de atributos** — categoria, cor e tamanho são resolvidos pelo nome via Providers
-6. **Batch insert** — SKUs são inseridos em lote com tratamento de duplicidade pelo banco
-7. **Inicialização cruzada** — estoque e preço são inicializados via Gateways para os módulos `inventory` e `pricing`
+Benefícios:
 
-Resultado: um `ImportResult` com total processado, sucessos e lista de erros por produto.
+- Redução de carga no backend
+- Melhor escalabilidade
+- Upload mais rápido
 
-### Máquina de Estados de Produto e SKU
+---
 
-O ciclo de vida é gerenciado por **regras de domínio**, não por flags:
+## Importação em Massa
 
-```
-SKU:       INCOMPLETE → READY → PUBLISHED → BLOCKED / DISCONTINUED
-Product:   DRAFT → READY_FOR_SALE → PUBLISHED → INACTIVE / ARCHIVED
-```
+Processamento de arquivos Excel com:
 
-- `EvaluateSkuCompletenessUseCase` — reavalia se um SKU está completo (tem preço, estoque, imagem)
-- `EvaluateProductStatusUseCase` — reavalia se o produto deve ser publicado, despublicado ou voltar a rascunho
-- Toda mudança em preço, estoque ou imagem **dispara reavaliação automática em cascata**
+- Validação linha a linha
+- Isolamento transacional por grupo
+- Agrupamento de SKUs por produto
+- Batch insert otimizado
+- Relatório detalhado de erros
 
-### Value Objects com Validação no Domínio
+---
 
-```java
-public record Slug(String value) {
-    // Gerado automaticamente a partir do nome, sem acentos, lowercase, hifenizado
-    public static Slug fromName(String name) { ... }
-}
+## Regras de Negócio
 
-public record SkuCode(String value) {
-    // Regex: ^[A-Z0-9]+(-[A-Z0-9]+)*$ — mínimo 3, máximo 50 caracteres
-}
+Ciclo de vida controlado por domínio:
 
-public record Dimensions(BigDecimal width, BigDecimal height, BigDecimal length, BigDecimal weight) {
-    // Todos devem ser positivos — validação no construtor compacto do record
-}
+SKU:
+INCOMPLETE → READY → PUBLISHED → BLOCKED / DISCONTINUED
 
-public record CategoryName(String displayName, String normalizedName) {
-    // "Calças" → displayName: "Calças", normalizedName: "CALCAS"
-    // Usado para filtros URL-safe no catálogo
-}
-```
+Produto:
+DRAFT → READY_FOR_SALE → PUBLISHED → INACTIVE / ARCHIVED
 
-### Tratamento de Erros com RFC 7807 (Problem Detail)
-
-O `GlobalExceptionHandler` retorna erros padronizados seguindo a RFC 7807:
-
-```json
-{
-  "type": "https://example.com/probs/duplicate-sku-combination",
-  "title": "Combinação de SKU já existente",
-  "status": 422,
-  "detail": "Algumas combinações já existem.",
-  "conflicts": [{ "colorName": "Preto", "sizeName": "M", "existingSkuCode": "QFS-PRETO-M" }],
-  "timestamp": "2025-10-15T14:30:00",
-  "path": "/erp/products/1/skus"
-}
-```
-
-Hierarquia de handlers: Específico → Domain → NotFound → Genérico.
+Mudanças em preço, estoque ou imagem disparam reavaliação automática.
 
 ---
 
 ## Stack Tecnológica
 
-| Camada | Tecnologia |
-|---|---|
-| Linguagem | Java 21 (Records, Sealed Classes, Pattern Matching) |
-| Framework | Spring Boot 3.3 |
-| Persistência | JDBI 3 (queries nativas, sem ORM) |
-| Banco de Dados | PostgreSQL 15 |
-| Migrations | Flyway |
-| Object Storage | MinIO (compatível S3) |
-| Parsing Excel | Apache POI |
-| Documentação API | SpringDoc / Swagger UI |
-| Infraestrutura | Docker Compose |
-| Build | Maven (multi-module) |
+- Java 21
+- Spring Boot 3
+- PostgreSQL
+- JDBI
+- Flyway
+- MinIO (S3)
+- Docker
+- Maven
+
+Frontend:
+
+- React (ERP)
+- Next.js (Loja)
+- TypeScript
+- Tailwind CSS
 
 ---
 
-## API Endpoints
+## Repositórios
 
-### ERP (Back-office)
+Backend:
+https://github.com/Haddad0799/queenfitstyle-erp
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/erp/products` | Criar produto |
-| `PATCH` | `/erp/products/{id}` | Alterar produto |
-| `POST` | `/erp/products/{id}/publish` | Publicar produto no catálogo |
-| `POST` | `/erp/products/import` | Importação em massa (Excel) |
-| `POST` | `/erp/products/{id}/images/upload-url` | Solicitar URLs de upload |
-| `POST` | `/erp/products/{id}/images/confirm` | Confirmar imagens enviadas |
-| `POST` | `/erp/products/{id}/skus` | Adicionar SKU ao produto |
-| `GET` | `/erp/categories` | Listar todas as categorias |
-| `POST` | `/erp/categories` | Criar categoria |
+Painel administrativo:
+https://github.com/Haddad0799/queenfitstyle-erp-frontend
 
-### Store (Vitrine Pública)
-
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `GET` | `/store/products` | Listar produtos com filtros |
-| `GET` | `/store/products/{slug}` | Detalhes do produto (cores, SKUs, imagens) |
-| `GET` | `/store/products/{slug}/skus/{code}` | Detalhes de um SKU específico |
-| `GET` | `/store/categories` | Categorias ativas (nome + nome normalizado) |
-
-**Filtros do catálogo:** `?category=CALCAS&color=Preto&minPrice=50&maxPrice=200&search=legging&sizeName=M`
+Loja virtual:
+https://github.com/Haddad0799/queenfitstyle-store
 
 ---
 
-## Como Executar
+## Como executar
 
-### Pré-requisitos
+Pré-requisitos:
 
 - Java 21+
-- Docker e Docker Compose
-- Maven 3.9+ (ou use o wrapper `./mvnw`)
+- Docker
+- Maven
 
-### Setup
+Passos:
 
-```bash
-# 1. Clone o repositório
-git clone https://github.com/Haddad0799/queenfitstyle-erp.git
-cd queenfitstyle-erp
+1. Clonar repositório
+2. Configurar variáveis de ambiente
+3. Subir infraestrutura com Docker Compose
+4. Executar aplicação
 
-# 2. Configure as variáveis de ambiente
-cp .env.example .env
-# Edite o .env com suas credenciais
-
-# 3. Suba a infraestrutura
-docker-compose up -d
-
-# 4. Execute a aplicação
-./mvnw spring-boot:run -pl app
-```
-
-A aplicação estará disponível em `http://localhost:8080`
-
-Swagger UI: `http://localhost:8080/swagger-ui.html`
+A aplicação estará disponível em:
+http://localhost:8080
 
 ---
 
-## Estrutura de Módulos Maven
+## Considerações
 
-```xml
-queenfitstyle (parent POM)
-├── app          → Spring Boot main, configs, exception handler
-├── shared       → Flyway migrations, exceções base, projeções
-├── attribute    → Categorias, Cores, Tamanhos
-├── product      → Produtos, SKUs, Imagens, Importação, Publicação
-├── catalog      → Vitrine pública (projeção desnormalizada)
-├── inventory    → Controle de estoque
-├── pricing      → Precificação
-└── storage      → Upload MinIO (Pre-signed URLs)
-```
+Este projeto foi desenvolvido de forma independente, cobrindo desde a modelagem de domínio até decisões de arquitetura, com foco em resolver problemas reais de negócio e garantir consistência entre sistemas.
 
----
-
-## Padrões e Práticas Aplicadas
-
-- **Hexagonal Architecture** — Ports & Adapters com domínio independente
-- **Domain-Driven Design** — Entidades ricas, Value Objects imutáveis, Aggregates
-- **CQRS simplificado** — Separação de escrita (Product) e leitura (Catalog)
-- **Event-Driven** — `@TransactionalEventListener(AFTER_COMMIT)` para sincronização assíncrona
-- **Monolith First** — Módulos isolados com fronteiras claras para futura decomposição
-- **RFC 7807** — Respostas de erro padronizadas com `ProblemDetail`
-- **Batch Processing** — Importação em massa com isolamento transacional por grupo
-- **Pre-signed URLs** — Upload seguro sem tráfego de binários pelo backend
-- **ISR On-Demand** — Revalidação de cache do Next.js via webhook após mudanças no catálogo
-- **Flyway** — Versionamento incremental do schema (19 migrations)
-- **Provider Pattern** — Comunicação entre módulos via interfaces, sem acoplamento direto
-
----
-
-## Licença
-
-Este projeto é de uso pessoal e educacional.
-
----
-
-Desenvolvido por [Lucas Haddad](https://github.com/Haddad0799)
-
+O objetivo é evoluir continuamente o sistema e aplicar esses aprendizados em ambiente profissional.
