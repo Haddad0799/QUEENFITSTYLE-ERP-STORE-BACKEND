@@ -52,7 +52,7 @@ public class CatalogEventListener {
                 log.error("Erro ao publicar produto {} no catálogo", productId, e);
                 throw e;
             } finally {
-                // Remove o lock após um breve delay para evitar acúmulo de memória
+                // Remove o lock após um breve delay para evitar acúmulo de memória,
                 // mas mantém proteção caso eventos duplicados cheguem muito próximos
                 scheduleLockRemoval(productId);
             }

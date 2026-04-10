@@ -7,4 +7,8 @@ public class InvalidCategoryException extends DomainException {
     public InvalidCategoryException() {
         super("A categoria à qual o produto pertence não existe ou está inativa.");
     }
+
+    public InvalidCategoryException(String message) {
+        super(message);
+    }
 }

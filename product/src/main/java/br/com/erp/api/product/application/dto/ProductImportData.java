@@ -3,6 +3,7 @@ package br.com.erp.api.product.application.dto;
 import java.math.BigDecimal;
 
 public record ProductImportData(
+        int rowNumber,
         String name,
         String description,
         String category,

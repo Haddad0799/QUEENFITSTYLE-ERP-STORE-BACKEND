@@ -7,6 +7,10 @@ public record CatalogSkuSummaryDTO(
         String sizeName,
         BigDecimal sellingPrice,
         int availableStock,
-        boolean inStock
+        boolean inStock,
+        BigDecimal width,
+        BigDecimal height,
+        BigDecimal length,
+        BigDecimal weight
 ) {}
 
