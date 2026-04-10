@@ -1,232 +1,128 @@
-# Queenfitstyle Platform
+# QueenFitStyle ERP Backend
 
-Sistema completo de e-commerce para moda fitness, composto por três aplicações independentes:
-
-- ERP backend (Java + Spring Boot)
-- Painel administrativo (React)
-- Loja virtual (Next.js com SSR e ISR)
-
-O sistema foi projetado para resolver problemas reais de gestão de catálogo e garantir sincronização eficiente entre operação interna e vitrine pública.
+Backend de um sistema de e-commerce com ERP integrado, responsável pela gestão de produtos, estoque e sincronização com a loja online.
 
 ---
 
 ## Problema
 
-E-commerces de pequeno e médio porte enfrentam desafios recorrentes:
+Em sistemas de e-commerce, é comum enfrentar:
 
-- Erros manuais no cadastro de produtos e SKUs
-- Produtos publicados incompletos (sem preço, estoque ou imagem)
-- Inconsistência entre ERP e loja virtual
-- Baixa performance na vitrine devido a queries complexas
-- Atualizações lentas que exigem rebuild completo do frontend
+- inconsistência entre dados do ERP e da loja  
+- produtos publicados com informações incompletas  
+- dificuldade na gestão de SKUs (cor, tamanho, estoque)  
+- processos manuais e lentos para cadastro em massa  
+- alto custo para atualização do catálogo no frontend  
 
 ---
 
 ## Solução
 
-Desenvolvi um ecossistema integrado que:
+Este projeto resolve esses problemas através de:
 
-- Garante que produtos só sejam publicados quando completos
-- Automatiza a sincronização entre ERP e loja via eventos
-- Utiliza projeções otimizadas para leitura (sem JOINs pesados)
-- Atualiza páginas do frontend em segundos via ISR (On-Demand)
-- Permite importação em massa com validação inteligente
-
----
-
-## Resultado
-
-- Redução de erros operacionais no cadastro de produtos
-- Atualização quase em tempo real da loja
-- Melhor performance na vitrine pública
-- Arquitetura preparada para evolução e escala
+- validação de regras de negócio antes da publicação de produtos  
+- separação clara entre gestão interna (ERP) e catálogo da loja  
+- sincronização automatizada entre sistemas  
+- importação em massa de produtos com validação de dados  
+- upload de imagens direto para storage (S3/MinIO)  
+- atualização eficiente do catálogo no frontend  
 
 ---
 
-## Arquitetura (Visão Geral)
+## Funcionalidades
 
-Fluxo principal do sistema:
-
-1. Produto é criado ou atualizado no ERP
-2. Evento de domínio é disparado
-3. O catálogo gera um snapshot desnormalizado
-4. O frontend Next.js é notificado via webhook
-5. As páginas afetadas são revalidadas automaticamente (ISR)
-
----
-
-## Estrutura do Sistema
-
-O backend segue a abordagem Monolith First, com módulos bem definidos:
-
-queenfitstyle/
-├── app
-├── product
-├── catalog
-├── attribute
-├── inventory
-├── pricing
-├── storage
-└── shared
-
-Cada módulo possui:
-
-- domain: regras de negócio puras (sem dependência de framework)
-- application: casos de uso e orquestração
-- infrastructure: implementações técnicas (banco, integrações)
-- presentation: controllers REST
+- Gestão de produtos, SKUs, categorias, cores e tamanhos  
+- Controle de estado do produto (rascunho, publicado, inconsistente)  
+- Importação em massa via planilha (Excel)  
+- Upload de imagens com pre-signed URLs  
+- Sincronização entre ERP e e-commerce  
+- Atualização otimizada do catálogo da loja  
 
 ---
 
-## Decisões Técnicas
+## Minha atuação
 
-### Arquitetura
+Neste projeto, fui responsável por:
 
-- Clean Architecture
-- Domain-Driven Design (DDD)
-- Arquitetura Hexagonal (Ports & Adapters)
-- Monolith First com separação por módulos
-
-### Persistência
-
-Uso de JDBI ao invés de JPA/Hibernate:
-
-- Controle total sobre SQL
-- Melhor performance em importação em massa
-- Queries dinâmicas mais previsíveis
-- Domínio livre de anotações de persistência
-
-### Catálogo como Projeção (CQRS simplificado)
-
-- Escrita ocorre no módulo de produto
-- Leitura ocorre no módulo de catálogo
-- Snapshot desnormalizado para performance
-- Replace atômico (DELETE + INSERT)
-
-### Comunicação entre módulos
-
-- Interfaces (Providers / Gateways)
-- Eventos de domínio
-- Nenhum acesso direto entre módulos
+- desenvolvimento do backend com Java e Spring Boot  
+- definição das principais soluções técnicas  
+- implementação de APIs e regras de negócio  
+- integração entre ERP e e-commerce  
+- modelagem do domínio (produto, estoque, catálogo, etc.)  
+- organização do código e estrutura do sistema  
 
 ---
 
-## Sincronização com Frontend (ISR)
+## Organização do projeto
 
-Após atualização do catálogo:
+O sistema foi estruturado em módulos independentes por domínio:
 
-Evento de domínio  
-→ CatalogEventListener (AFTER_COMMIT)  
-→ Persistência do snapshot  
-→ Chamada HTTP para Next.js  
-→ Revalidação de cache via tags  
+- Product: gestão de produtos e SKUs  
+- Inventory: controle de estoque  
+- Pricing: precificação  
+- Catalog: dados otimizados para o e-commerce  
+- Attribute: categorias, cores e tamanhos  
 
-Tags invalidadas:
-- catalog-products
-- catalog-product-{slug}
+Cada módulo segue uma organização separando:
 
-Resultado:
-Atualização da loja em segundos sem rebuild completo.
-
----
-
-## Upload de Imagens
-
-Fluxo baseado em Pre-signed URLs:
-
-1. Backend gera URL temporária
-2. Frontend envia direto para o storage (MinIO/S3)
-3. Backend apenas confirma o upload
-
-Benefícios:
-
-- Redução de carga no backend
-- Melhor escalabilidade
-- Upload mais rápido
+- regras de negócio  
+- casos de uso  
+- acesso a dados  
+- exposição via API  
 
 ---
 
-## Importação em Massa
+## Fluxo do sistema
 
-Processamento de arquivos Excel com:
-
-- Validação linha a linha
-- Isolamento transacional por grupo
-- Agrupamento de SKUs por produto
-- Batch insert otimizado
-- Relatório detalhado de erros
-
----
-
-## Regras de Negócio
-
-Ciclo de vida controlado por domínio:
-
-SKU:
-INCOMPLETE → READY → PUBLISHED → BLOCKED / DISCONTINUED
-
-Produto:
-DRAFT → READY_FOR_SALE → PUBLISHED → INACTIVE / ARCHIVED
-
-Mudanças em preço, estoque ou imagem disparam reavaliação automática.
+1. Produto é criado ou atualizado no ERP  
+2. Sistema valida regras de negócio (ex: produto completo)  
+3. Produto é publicado  
+4. Evento dispara atualização do catálogo  
+5. Dados são sincronizados com a loja  
+6. Frontend (Next.js) é revalidado automaticamente  
 
 ---
 
-## Stack Tecnológica
+## Stack
 
-- Java 21
-- Spring Boot 3
-- PostgreSQL
-- JDBI
-- Flyway
-- MinIO (S3)
-- Docker
-- Maven
-
-Frontend:
-
-- React (ERP)
-- Next.js (Loja)
-- TypeScript
-- Tailwind CSS
+- Backend: Java, Spring Boot  
+- Banco de Dados: PostgreSQL  
+- Mensageria/Eventos: RabbitMQ (se aplicável)  
+- Storage: MinIO (S3 compatible)  
+- DevOps: Docker  
 
 ---
 
-## Repositórios
+## Diferenciais e integrações
 
-Backend:
-https://github.com/Haddad0799/queenfitstyle-erp
+- Separação clara entre regras de negócio e infraestrutura  
+- Organização modular por domínio  
+- Upload direto para storage (sem passar pelo backend)  
+- Tratamento de consistência entre sistemas  
+- Processamento de importação em lote com validação  
+- Estrutura preparada para evolução e escalabilidade  
 
-Painel administrativo:
-https://github.com/Haddad0799/queenfitstyle-erp-frontend
+Integração com:
 
-Loja virtual:
-https://github.com/Haddad0799/queenfitstyle-store
+- ERP (Frontend):  
+  https://github.com/Haddad0799/QUEENFITSTYLE-ERP-UI  
 
----
-
-## Como executar
-
-Pré-requisitos:
-
-- Java 21+
-- Docker
-- Maven
-
-Passos:
-
-1. Clonar repositório
-2. Configurar variáveis de ambiente
-3. Subir infraestrutura com Docker Compose
-4. Executar aplicação
-
-A aplicação estará disponível em:
-http://localhost:8080
+- E-commerce (Next.js):  
+  https://github.com/Haddad0799/QUEENFITSTYLE-STORE-UI  
 
 ---
 
-## Considerações
+## Como rodar o projeto
 
-Este projeto foi desenvolvido de forma independente, cobrindo desde a modelagem de domínio até decisões de arquitetura, com foco em resolver problemas reais de negócio e garantir consistência entre sistemas.
+```bash
+# Clonar repositório
+git clone https://github.com/Haddad0799/QUEENFITSTYLE-ERP-STORE-BACKEND
 
-O objetivo é evoluir continuamente o sistema e aplicar esses aprendizados em ambiente profissional.
+# Entrar na pasta
+cd QUEENFITSTYLE-ERP-STORE-BACKEND
+
+# Subir dependências
+docker-compose up -d
+
+# Rodar aplicação
+./mvnw spring-boot:run
