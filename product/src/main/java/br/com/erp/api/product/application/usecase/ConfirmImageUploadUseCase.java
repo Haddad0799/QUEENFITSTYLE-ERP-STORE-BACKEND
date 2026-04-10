@@ -27,6 +27,7 @@ public class ConfirmImageUploadUseCase {
 
     public ConfirmImageUploadUseCase(
             ProductColorImageRepositoryPort imageRepository,
+
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
             EvaluateSkuCompletenessUseCase evaluateSkuCompleteness,

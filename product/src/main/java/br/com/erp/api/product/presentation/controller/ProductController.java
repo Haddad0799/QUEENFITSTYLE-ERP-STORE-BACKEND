@@ -12,6 +12,7 @@ import br.com.erp.api.product.application.usecase.PublishProductUseCase;
 import br.com.erp.api.product.domain.enumerated.ProductStatus;
 import br.com.erp.api.product.presentation.dto.request.AlterProductDTO;
 import br.com.erp.api.product.presentation.dto.request.CreateProductDTO;
+import br.com.erp.api.product.presentation.dto.response.ImportResultResponse;
 import br.com.erp.api.product.presentation.dto.response.PageResponse;
 import br.com.erp.api.product.presentation.dto.response.ProductDetailsDTO;
 import br.com.erp.api.product.presentation.dto.response.ProductSummaryDTO;
@@ -102,10 +103,10 @@ public class ProductController {
     }
 
     @PostMapping("/import")
-    public ResponseEntity<?> importProducts(
+    public ResponseEntity<ImportResultResponse> importProducts(
             @RequestParam("file") MultipartFile file
     ) {
         ImportResult result = importProductsFromExcelUseCase.execute(file);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(ImportResultResponse.from(result));
     }
 }

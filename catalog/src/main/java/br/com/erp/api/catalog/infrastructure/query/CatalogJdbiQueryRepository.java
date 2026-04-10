@@ -151,7 +151,8 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
             // 4. Busca SKUs com referência ao grupo de cor
             List<Map<String, Object>> skuRows = handle.createQuery("""
                     SELECT cs.id, cs.code, cs.size_name, cs.selling_price,
-                           cs.available_stock, cs.catalog_color_group_id
+                           cs.available_stock, cs.catalog_color_group_id,
+                           cs.width, cs.height, cs.length, cs.weight
                     FROM catalog_skus cs
                     WHERE cs.catalog_product_id = :catalogProductId
                     ORDER BY cs.catalog_color_group_id, cs.size_name
@@ -165,6 +166,10 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         row.put("sellingPrice", rs.getBigDecimal("selling_price"));
                         row.put("availableStock", rs.getInt("available_stock"));
                         row.put("catalogColorGroupId", rs.getLong("catalog_color_group_id"));
+                        row.put("width", rs.getBigDecimal("width"));
+                        row.put("height", rs.getBigDecimal("height"));
+                        row.put("length", rs.getBigDecimal("length"));
+                        row.put("weight", rs.getBigDecimal("weight"));
                         return row;
                     })
                     .list();
@@ -191,7 +196,11 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                                             (String) r.get("sizeName"),
                                             (BigDecimal) r.get("sellingPrice"),
                                             stock,
-                                            stock > 0
+                                            stock > 0,
+                                            (BigDecimal) r.get("width"),
+                                            (BigDecimal) r.get("height"),
+                                            (BigDecimal) r.get("length"),
+                                            (BigDecimal) r.get("weight")
                                     );
                                 })
                                 .toList();

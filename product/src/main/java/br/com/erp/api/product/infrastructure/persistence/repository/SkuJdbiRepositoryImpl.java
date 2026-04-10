@@ -1,5 +1,6 @@
 package br.com.erp.api.product.infrastructure.persistence.repository;
 
+import br.com.erp.api.product.application.dto.SkuBatchResult;
 import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.enumerated.SkuStatus;
 import br.com.erp.api.product.domain.port.SkuRepositoryPort;
@@ -11,9 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -100,6 +99,78 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                             rs.getLong("id")
                     ))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        });
+    }
+
+    @Override
+    public SkuBatchResult saveAllWithDiff(Long productId, List<Sku> skus) {
+        if (skus == null || skus.isEmpty()) {
+            return new SkuBatchResult(Map.of(), Set.of());
+        }
+
+        return jdbi.withHandle(handle -> {
+            List<String> skuCodes = skus.stream()
+                    .map(s -> s.getCode().value())
+                    .toList();
+
+            // 1. SELECT: quais já existem ANTES do insert
+            Set<String> existingBefore = new HashSet<>(
+                    handle.createQuery("""
+                        SELECT sku_code FROM skus
+                        WHERE product_id = :productId AND sku_code IN (<codes>)
+                    """)
+                            .bind("productId", productId)
+                            .bindList("codes", skuCodes)
+                            .mapTo(String.class)
+                            .list()
+            );
+
+            // 2. INSERT com ON CONFLICT DO NOTHING
+            var batch = handle.prepareBatch("""
+                INSERT INTO skus (
+                    product_id, sku_code, color_id, size_id,
+                    width, height, length, weight, status
+                ) VALUES (
+                    :productId, :code, :colorId, :sizeId,
+                    :width, :height, :length, :weight, :status
+                )
+                ON CONFLICT (product_id, color_id, size_id) DO NOTHING
+            """);
+
+            for (Sku sku : skus) {
+                batch.bind("productId", productId)
+                        .bind("code", sku.getCode().value())
+                        .bind("colorId", sku.getColorId())
+                        .bind("sizeId", sku.getSizeId())
+                        .bind("width", sku.getDimensions().width())
+                        .bind("height", sku.getDimensions().height())
+                        .bind("length", sku.getDimensions().length())
+                        .bind("weight", sku.getDimensions().weight())
+                        .bind("status", sku.getStatus())
+                        .add();
+            }
+
+            batch.execute();
+
+            // 3. SELECT: todos os IDs (novos + já existentes)
+            Map<String, Long> allSkuCodeToId = handle.createQuery("""
+                SELECT id, sku_code FROM skus
+                WHERE product_id = :productId AND sku_code IN (<codes>)
+            """)
+                    .bind("productId", productId)
+                    .bindList("codes", skuCodes)
+                    .map((rs, ctx) -> Map.entry(
+                            rs.getString("sku_code"),
+                            rs.getLong("id")
+                    ))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+            // 4. Diff: novos = todos que existem agora mas NÃO existiam antes
+            Set<String> newSkuCodes = allSkuCodeToId.keySet().stream()
+                    .filter(code -> !existingBefore.contains(code))
+                    .collect(Collectors.toSet());
+
+            return new SkuBatchResult(allSkuCodeToId, newSkuCodes);
         });
     }
 

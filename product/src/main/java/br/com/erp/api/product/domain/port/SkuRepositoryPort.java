@@ -1,5 +1,6 @@
 package br.com.erp.api.product.domain.port;
 
+import br.com.erp.api.product.application.dto.SkuBatchResult;
 import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.enumerated.SkuStatus;
 
@@ -9,6 +10,13 @@ import java.util.Optional;
 
 public interface SkuRepositoryPort {
     Map<String, Long> saveAll(Long productId, List<Sku> skus);
+
+    /**
+     * Batch insert com diferenciação de SKUs novos vs existentes.
+     * Faz SELECT antes do INSERT para saber quais já existiam.
+     * Retorna SkuBatchResult com todos os IDs e o conjunto dos realmente criados.
+     */
+    SkuBatchResult saveAllWithDiff(Long productId, List<Sku> skus);
 
     boolean existsByProductIdAndColorId(Long productId, Long colorId);
 
