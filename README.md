@@ -87,7 +87,6 @@ Cada módulo segue uma organização separando:
 
 - Backend: Java, Spring Boot  
 - Banco de Dados: PostgreSQL  
-- Mensageria/Eventos: RabbitMQ (se aplicável)  
 - Storage: MinIO (S3 compatible)  
 - DevOps: Docker  
 
