@@ -45,19 +45,19 @@ public class ApachePoiProductParser implements ProductImportParserPort {
                 try {
                     ProductImportData data = new ProductImportData(
                             rowNumber,
-                            getString(row, 0),
-                            getString(row, 1),
-                            getString(row, 2),
-                            getString(row, 3),
-                            getString(row, 4),
-                            getString(row, 5),
-                            getDecimal(row, 6),
-                            getDecimal(row, 7),
-                            getDecimal(row, 8),
-                            getDecimal(row, 9),
-                            getDecimal(row, 10),
-                            getDecimal(row, 11),
-                            getInteger(row, 12)
+                            getString(row, 0),   // name
+                            getString(row, 1),   // slug
+                            getString(row, 2),   // category
+                            getString(row, 3),   // color
+                            getString(row, 4),   // size
+                            getString(row, 5),   // skuCode
+                            getDecimal(row, 6),  // width
+                            getDecimal(row, 7),  // height
+                            getDecimal(row, 8),  // length
+                            getDecimal(row, 9),  // weight
+                            getDecimal(row, 10), // costPrice
+                            getDecimal(row, 11), // sellingPrice
+                            getInteger(row, 12)  // stockQuantity
                     );
                     list.add(data);
                 } catch (Exception e) {

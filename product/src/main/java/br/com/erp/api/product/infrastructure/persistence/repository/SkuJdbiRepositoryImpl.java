@@ -332,5 +332,25 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                         .execute()
         );
     }
+
+    @Override
+    public void deleteById(Long skuId) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("DELETE FROM skus WHERE id = :id")
+                        .bind("id", skuId)
+                        .execute()
+        );
+    }
+
+    @Override
+    public void deleteByIds(List<Long> skuIds) {
+        if (skuIds == null || skuIds.isEmpty()) return;
+
+        jdbi.useHandle(handle ->
+                handle.createUpdate("DELETE FROM skus WHERE id IN (<ids>)")
+                        .bindList("ids", skuIds)
+                        .execute()
+        );
+    }
 }
 

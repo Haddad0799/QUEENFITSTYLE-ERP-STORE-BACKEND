@@ -15,6 +15,8 @@ public class Product {
     private Long categoryId;
     private ProductStatus status;
 
+    private Product() {}
+
     public Product(String name, String description, Long categoryId) {
         this.name = name;
         this.description = description;
@@ -24,11 +26,23 @@ public class Product {
         this.primaryImageId = null;
     }
 
+    public static Product createWithSlug(String name, String slug, Long categoryId) {
+        Product product = new Product();
+        product.name = name;
+        product.slug = Slug.fromValue(slug);
+        product.categoryId = categoryId;
+        product.status = ProductStatus.DRAFT;
+        return product;
+    }
+
     public static Product restore(long id, String name, String description,
                                   Slug slug, long categoryId, ProductStatus status, Long primaryImageId) {
-        Product product = new Product(name, description, categoryId);
+        Product product = new Product();
         product.id = id;
+        product.name = name;
+        product.description = description;
         product.slug = slug;
+        product.categoryId = categoryId;
         product.status = status;
         product.primaryImageId = primaryImageId;
         return product;
@@ -49,6 +63,12 @@ public class Product {
 
     public void recategorize(Long newCategoryId) {
         this.categoryId = newCategoryId;
+    }
+
+    public void assertDeletable() {
+        if (this.status == ProductStatus.PUBLISHED) {
+            throw new IllegalStateException("Produto publicado não pode ser excluído. Despublique-o antes.");
+        }
     }
 
     public void publish() {

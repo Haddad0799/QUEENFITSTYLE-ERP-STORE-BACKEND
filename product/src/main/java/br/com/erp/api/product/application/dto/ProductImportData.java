@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public record ProductImportData(
         int rowNumber,
         String name,
-        String description,
+        String slug,
         String category,
         String color,
         String size,

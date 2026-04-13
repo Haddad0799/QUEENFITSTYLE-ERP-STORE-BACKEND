@@ -54,9 +54,15 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
             // 2. INSERT product
             Long catalogProductId = handle.createUpdate("""
                 INSERT INTO catalog_products
-                (product_id, name, description, slug, category_name, category_normalized_name, main_image_url, min_price)
+                (product_id, name, description, slug, category_name, category_normalized_name,
+                 subcategory_id, subcategory_name, subcategory_normalized_name,
+                 parent_category_id, parent_category_name, parent_category_normalized_name,
+                 main_image_url, min_price)
                 VALUES
-                (:productId, :name, :description, :slug, :categoryName, :categoryNormalizedName, :mainImageUrl, :minPrice)
+                (:productId, :name, :description, :slug, :categoryName, :categoryNormalizedName,
+                 :subcategoryId, :subcategoryName, :subcategoryNormalizedName,
+                 :parentCategoryId, :parentCategoryName, :parentCategoryNormalizedName,
+                 :mainImageUrl, :minPrice)
             """)
                     .bind("productId", snapshot.productId())
                     .bind("name", snapshot.name())
@@ -64,6 +70,12 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
                     .bind("slug", snapshot.slug())
                     .bind("categoryName", snapshot.categoryName())
                     .bind("categoryNormalizedName", snapshot.categoryNormalizedName())
+                    .bind("subcategoryId", snapshot.categoryId())
+                    .bind("subcategoryName", snapshot.categoryName())
+                    .bind("subcategoryNormalizedName", snapshot.categoryNormalizedName())
+                    .bind("parentCategoryId", snapshot.parentCategoryId())
+                    .bind("parentCategoryName", snapshot.parentCategoryName())
+                    .bind("parentCategoryNormalizedName", snapshot.parentCategoryNormalizedName())
                     .bind("mainImageUrl", snapshot.mainImageUrl())
                     .bind("minPrice", minPrice)
                     .executeAndReturnGeneratedKeys("id")

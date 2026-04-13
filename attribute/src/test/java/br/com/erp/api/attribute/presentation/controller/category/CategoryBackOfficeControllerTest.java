@@ -4,6 +4,7 @@ import br.com.erp.api.attribute.application.output.CategoryOutput;
 import br.com.erp.api.attribute.application.usecase.CreateCategoryUseCase;
 import br.com.erp.api.attribute.application.usecase.ActivateCategoryUseCase;
 import br.com.erp.api.attribute.application.usecase.DeactivateCategoryUseCase;
+import br.com.erp.api.attribute.application.usecase.DeleteCategoryUseCase;
 import br.com.erp.api.attribute.application.usecase.RenameCategoryUseCase;
 import br.com.erp.api.attribute.presentation.dto.category.request.CreateCategoryDTO;
 import br.com.erp.api.attribute.presentation.mapper.CategoryControllerMapper;
@@ -41,7 +42,8 @@ class CategoryBackOfficeControllerTest {
                 renameCategoryUseCase,
                 activateCategoryUseCase,
                 deactivateCategoryUseCase,
-                null,
+                null, // deleteCategoryUseCase
+                null, // categoryQueryService
                 mapper
         );
 
@@ -55,13 +57,13 @@ class CategoryBackOfficeControllerTest {
 
     @Test
     void createCategory_shouldReturnCreatedAndLocationAndBody() {
-        var dto = new CreateCategoryDTO("Treino");
+        var dto = new CreateCategoryDTO("Treino", null);
 
         when(createCategoryUseCase.execute(ArgumentMatchers.any()))
-                .thenReturn(new CategoryOutput(42L, "Treino", true));
+                .thenReturn(new CategoryOutput(42L, "Treino", "TREINO", true, null));
 
         when(mapper.toDetailsDTO(ArgumentMatchers.any()))
-                .thenReturn(new br.com.erp.api.attribute.presentation.dto.category.response.CategoryDetailsDTO(42L, "Treino", true));
+                .thenReturn(new br.com.erp.api.attribute.presentation.dto.category.response.CategoryDetailsDTO(42L, "Treino", "TREINO", true, null));
 
         ResponseEntity<?> resp = controller.createCategory(dto);
 
@@ -70,4 +72,3 @@ class CategoryBackOfficeControllerTest {
         assertThat(resp.getBody()).isNotNull();
     }
 }
-

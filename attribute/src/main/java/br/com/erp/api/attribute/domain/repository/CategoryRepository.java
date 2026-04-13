@@ -11,5 +11,9 @@ public interface CategoryRepository {
     Optional<Category> findById(Long id);
     void update(Category category);
     boolean existsByName(String name);
+    void deleteById(Long id);
+    boolean hasProductsAssociated(Long categoryId);
+    boolean hasPublishedProducts(Long categoryId);
+    boolean hasSubcategories(Long parentId);
+    boolean hasActiveSubcategories(Long parentId);
 }
-

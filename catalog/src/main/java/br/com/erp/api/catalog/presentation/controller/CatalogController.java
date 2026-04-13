@@ -25,6 +25,7 @@ public class CatalogController {
     @GetMapping
     public Page<CatalogProductSummaryDTO> listProducts(
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) String subcategory,
             @RequestParam(required = false) String color,
             // legacy: clients may send 'size' for SKU filter or pagination; prefer explicit 'sizeName'
             @RequestParam(name = "size", required = false) String rawSize,
@@ -51,7 +52,7 @@ public class CatalogController {
             }
         }
 
-        CatalogFilter filter = new CatalogFilter(category, color, effectiveSizeName, minPrice, maxPrice, search);
+        CatalogFilter filter = new CatalogFilter(category, subcategory, color, effectiveSizeName, minPrice, maxPrice, search);
         return catalogQueryService.listProducts(filter, pageable);
     }
 

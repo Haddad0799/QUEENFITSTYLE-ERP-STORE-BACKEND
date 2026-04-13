@@ -6,6 +6,7 @@ import br.com.erp.api.product.application.query.ProductAdminQueryService;
 import br.com.erp.api.product.application.query.filter.ProductFilter;
 import br.com.erp.api.product.application.usecase.AlterProductUseCase;
 import br.com.erp.api.product.application.usecase.CreateProductUseCase;
+import br.com.erp.api.product.application.usecase.DeleteProductUseCase;
 import br.com.erp.api.product.application.usecase.ImportProductsFromFileUseCase;
 import br.com.erp.api.product.application.dto.ImportResult;
 import br.com.erp.api.product.application.usecase.PublishProductUseCase;
@@ -33,16 +34,20 @@ public class ProductController {
     private final ProductAdminQueryService productAdminQueryService;
     private final PublishProductUseCase publishProductUseCase;
     private final ImportProductsFromFileUseCase importProductsFromExcelUseCase;
+    private final DeleteProductUseCase deleteProductUseCase;
 
     public ProductController(CreateProductUseCase createProductUseCase,
                              AlterProductUseCase alterProductUseCase,
                              ProductAdminQueryService productAdminQueryService,
-                             PublishProductUseCase publishProductUseCase, ImportProductsFromFileUseCase importProductsFromExcelUseCase) {
+                             PublishProductUseCase publishProductUseCase,
+                             ImportProductsFromFileUseCase importProductsFromExcelUseCase,
+                             DeleteProductUseCase deleteProductUseCase) {
         this.createProductUseCase = createProductUseCase;
         this.alterProductUseCase = alterProductUseCase;
         this.productAdminQueryService = productAdminQueryService;
         this.publishProductUseCase = publishProductUseCase;
         this.importProductsFromExcelUseCase = importProductsFromExcelUseCase;
+        this.deleteProductUseCase = deleteProductUseCase;
     }
 
     @GetMapping
@@ -108,5 +113,11 @@ public class ProductController {
     ) {
         ImportResult result = importProductsFromExcelUseCase.execute(file);
         return ResponseEntity.ok(ImportResultResponse.from(result));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        deleteProductUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,9 +1,11 @@
 package br.com.erp.api.product.application.assembler;
 
+import br.com.erp.api.product.application.dto.CategorySnapshot;
 import br.com.erp.api.product.application.dto.ProductSnapshot;
 import br.com.erp.api.product.application.dto.SkuSnapshot;
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
 import br.com.erp.api.product.application.gateway.StorageGateway;
+import br.com.erp.api.product.application.provider.CategoryProvider;
 import br.com.erp.api.product.application.provider.ColorProvider;
 import br.com.erp.api.product.application.provider.InventoryProvider;
 import br.com.erp.api.product.application.provider.PriceProvider;
@@ -12,7 +14,6 @@ import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.entity.ProductColorImage;
 import br.com.erp.api.product.domain.entity.Sku;
 import br.com.erp.api.product.domain.enumerated.SkuStatus;
-import br.com.erp.api.product.domain.exception.SkuNotFoundException;
 import br.com.erp.api.product.domain.port.ProductColorImageRepositoryPort;
 import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import br.com.erp.api.product.domain.port.SkuRepositoryPort;
@@ -22,7 +23,6 @@ import br.com.erp.api.shared.application.projection.ColorDetailProjection;
 import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +36,7 @@ public class SnapshotAssembler {
     private final PriceProvider priceProvider;
     private final ColorProvider colorProvider;
     private final SizeProvider sizeProvider;
+    private final CategoryProvider categoryProvider;
     private final ProductColorImageRepositoryPort imageRepository;
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
@@ -45,6 +46,7 @@ public class SnapshotAssembler {
                              PriceProvider priceProvider,
                              ColorProvider colorProvider,
                              SizeProvider sizeProvider,
+                             CategoryProvider categoryProvider,
                              ProductColorImageRepositoryPort imageRepository,
                              ProductRepositoryPort productRepository,
                              SkuRepositoryPort skuRepository) {
@@ -53,6 +55,7 @@ public class SnapshotAssembler {
         this.priceProvider = priceProvider;
         this.colorProvider = colorProvider;
         this.sizeProvider = sizeProvider;
+        this.categoryProvider = categoryProvider;
         this.imageRepository = imageRepository;
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
@@ -67,13 +70,17 @@ public class SnapshotAssembler {
                 productId, List.of(SkuStatus.READY, SkuStatus.PUBLISHED)
         );
 
-        String categoryName = productRepository.findCategoryNameByProductId(productId);
-        String categoryNormalizedName = productRepository.findCategoryNormalizedNameByProductId(productId);
-        return assemble(product, activeSkus, categoryName, categoryNormalizedName);
+        // Busca subcategoria (categoria direta do produto) e categoria pai
+        CategorySnapshot subcategory = categoryProvider.findById(product.getCategoryId());
+        CategorySnapshot parentCategory = subcategory.parentId() != null
+                ? categoryProvider.findById(subcategory.parentId())
+                : null;
+
+        return assemble(product, activeSkus, subcategory, parentCategory);
     }
 
-    // Carga completa a partir de entidades já carregadas — usado pelo PublishProductUseCase
-    public ProductSnapshot assemble(Product product, List<Sku> activeSkus, String categoryName, String categoryNormalizedName) {
+    private ProductSnapshot assemble(Product product, List<Sku> activeSkus,
+                                     CategorySnapshot subcategory, CategorySnapshot parentCategory) {
 
         Set<Long> colorIds = activeSkus.stream()
                 .map(Sku::getColorId)
@@ -126,8 +133,12 @@ public class SnapshotAssembler {
                 product.getName(),
                 product.getDescription(),
                 product.getSlugValue(),
-                categoryName,
-                categoryNormalizedName,
+                subcategory.id(),
+                subcategory.name(),
+                subcategory.normalizedName(),
+                parentCategory != null ? parentCategory.id() : null,
+                parentCategory != null ? parentCategory.name() : null,
+                parentCategory != null ? parentCategory.normalizedName() : null,
                 mainImageUrl,
                 skuSnapshots
         );

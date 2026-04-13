@@ -1,10 +1,11 @@
 package br.com.erp.api.attribute.presentation.dto.category.response;
 
-public record CategoryDetailsDTO(
+import java.util.List;
+
+public record CategoryTreeDTO(
         Long id,
         String name,
         String normalizedName,
-        Boolean active,
-        Long parentId
-) {
-}
+        List<CategoryTreeDTO> subcategories
+) {}
+

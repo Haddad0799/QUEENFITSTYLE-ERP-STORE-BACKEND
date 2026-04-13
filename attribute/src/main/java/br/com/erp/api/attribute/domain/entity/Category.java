@@ -9,16 +9,32 @@ public class Category {
     private Long id;
     private CategoryName name;
     private Boolean active;
+    private Long parentId;
 
     public Category(CategoryName name) {
         this.name = name;
         this.active = true;
+        this.parentId = null;
+    }
+
+    public Category(CategoryName name, Long parentId) {
+        this.name = name;
+        this.active = true;
+        this.parentId = parentId;
     }
 
     public Category(Long id, CategoryName name, Boolean active) {
         this.id = id;
         this.name = name;
         this.active = active;
+        this.parentId = null;
+    }
+
+    public Category(Long id, CategoryName name, Boolean active, Long parentId) {
+        this.id = id;
+        this.name = name;
+        this.active = active;
+        this.parentId = parentId;
     }
 
     public String getNormalizedName() {
@@ -27,6 +43,14 @@ public class Category {
 
     public String getDisplayName(){
         return this.name.displayName();
+    }
+
+    public boolean isSubcategory() {
+        return this.parentId != null;
+    }
+
+    public boolean isParent() {
+        return this.parentId == null;
     }
 
     public void deactivate() {
@@ -42,7 +66,6 @@ public class Category {
         }
         this.active = true;
     }
-
 
     public void rename(CategoryName newName) {
 
@@ -61,5 +84,8 @@ public class Category {
     public Boolean isActive() {
         return this.active;
     }
-}
 
+    public Long getParentId() {
+        return this.parentId;
+    }
+}

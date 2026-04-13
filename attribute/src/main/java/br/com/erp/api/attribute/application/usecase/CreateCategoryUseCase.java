@@ -4,8 +4,10 @@ import br.com.erp.api.attribute.application.command.CreateCategoryCommand;
 import br.com.erp.api.attribute.application.output.CategoryOutput;
 import br.com.erp.api.attribute.domain.entity.Category;
 import br.com.erp.api.attribute.domain.exception.category.CategoryAlreadyExistsException;
+import br.com.erp.api.attribute.domain.exception.category.SubcategoryDepthExceededException;
 import br.com.erp.api.attribute.domain.repository.CategoryRepository;
 import br.com.erp.api.attribute.domain.valueobject.CategoryName;
+import br.com.erp.api.shared.application.exception.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,17 @@ public class CreateCategoryUseCase {
     public CategoryOutput execute(CreateCategoryCommand command) {
         CategoryName name = new CategoryName(command.name());
 
+        // Valida parentId se informado
+        if (command.parentId() != null) {
+            Category parent = categoryRepository.findById(command.parentId())
+                    .orElseThrow(() -> new EntityNotFoundException("Categoria pai", command.parentId()));
+
+            // Hierarquia máxima de 2 níveis: subcategoria não pode ser pai
+            if (parent.isSubcategory()) {
+                throw new SubcategoryDepthExceededException();
+            }
+        }
+
         Optional<Category> existing = categoryRepository.findByNormalizedName(name.normalizedName());
 
         if (existing.isPresent()) {
@@ -35,21 +48,25 @@ public class CreateCategoryUseCase {
             category.activate();
             Category saved = categoryRepository.save(category);
 
-            return new CategoryOutput(
-                    saved.getId(),
-                    saved.getDisplayName(),
-                    saved.isActive()
-            );
+            return toOutput(saved);
         }
 
-        Category newCategory = new Category(name);
+        Category newCategory = command.parentId() != null
+                ? new Category(name, command.parentId())
+                : new Category(name);
+
         Category saved = categoryRepository.save(newCategory);
 
+        return toOutput(saved);
+    }
+
+    private CategoryOutput toOutput(Category category) {
         return new CategoryOutput(
-                saved.getId(),
-                saved.getDisplayName(),
-                saved.isActive()
+                category.getId(),
+                category.getDisplayName(),
+                category.getNormalizedName(),
+                category.isActive(),
+                category.getParentId()
         );
     }
 }
-

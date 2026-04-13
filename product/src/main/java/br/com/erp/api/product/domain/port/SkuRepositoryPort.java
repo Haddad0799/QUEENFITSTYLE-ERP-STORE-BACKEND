@@ -40,4 +40,8 @@ public interface SkuRepositoryPort {
 
     List<Sku> findByProductIdAndStatusIn(Long productId, List<SkuStatus> ready);
 
+    void deleteById(Long skuId);
+
+    void deleteByIds(List<Long> skuIds);
+
 }
