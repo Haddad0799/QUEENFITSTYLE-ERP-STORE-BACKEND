@@ -10,16 +10,16 @@ import org.springframework.stereotype.Component;
 public class CategoryControllerMapper {
 
     public CreateCategoryCommand toCreateCommand(CreateCategoryDTO dto) {
-        return new CreateCategoryCommand(dto.name());
+        return new CreateCategoryCommand(dto.name(), dto.parentId());
     }
 
     public CategoryDetailsDTO toDetailsDTO(CategoryOutput output) {
         return new CategoryDetailsDTO(
                 output.id(),
                 output.name(),
-                output.active()
+                output.normalizedName(),
+                output.active(),
+                output.parentId()
         );
     }
-
 }
-

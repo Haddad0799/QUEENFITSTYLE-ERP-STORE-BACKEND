@@ -5,8 +5,8 @@ import java.math.BigDecimal;
 public record CatalogProductSummaryDTO(
         String name,
         String slug,
-        String categoryName,
-        String categoryNormalizedName,
+        CatalogCategoryDTO category,
+        CatalogCategoryDTO subcategory,
         String mainImageUrl,
         BigDecimal minPrice
 ) {}

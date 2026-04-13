@@ -143,6 +143,10 @@ public class ImportProductsFromFileUseCase {
             errors.add(ProductImportError.validation(line, name, category, skuCode, "name",
                     "Nome do produto é obrigatório"));
         }
+        if (isBlank(row.slug())) {
+            errors.add(ProductImportError.validation(line, name, category, skuCode, "slug",
+                    "Slug do produto é obrigatório"));
+        }
         if (isBlank(category)) {
             errors.add(ProductImportError.validation(line, name, category, skuCode, "category",
                     "Categoria é obrigatória"));
@@ -201,7 +205,7 @@ public class ImportProductsFromFileUseCase {
     private Map<String, List<ProductImportData>> groupByProduct(List<ProductImportData> rows) {
         return rows.stream()
                 .collect(Collectors.groupingBy(
-                        r -> normalize(r.name()) + "|" + normalize(r.category())
+                        r -> normalize(r.slug()) + "|" + normalize(r.category())
                 ));
     }
 

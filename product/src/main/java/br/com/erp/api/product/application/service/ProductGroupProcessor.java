@@ -16,7 +16,6 @@ import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import br.com.erp.api.product.domain.port.SkuRepositoryPort;
 import br.com.erp.api.product.domain.valueobject.Dimensions;
 import br.com.erp.api.product.domain.valueobject.SkuCode;
-import br.com.erp.api.product.domain.valueobject.Slug;
 import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,7 +138,7 @@ public class ProductGroupProcessor {
     }
 
     private Long createOrGetProduct(ProductImportData data, Long categoryId, boolean[] created) {
-        String slug = Slug.fromName(data.name()).value();
+        String slug = data.slug();
 
         return productRepository.findBySlug(slug)
                 .map(existing -> {
@@ -147,7 +146,7 @@ public class ProductGroupProcessor {
                     return existing.getId();
                 })
                 .orElseGet(() -> {
-                    Product product = new Product(data.name(), data.description(), categoryId);
+                    Product product = Product.createWithSlug(data.name(), slug, categoryId);
                     created[0] = true;
                     return productRepository.save(product);
                 });
@@ -236,12 +235,20 @@ public class ProductGroupProcessor {
 
     private void validateGroup(List<ProductImportData> rows) {
         String category = rows.getFirst().category();
+        String slug = rows.getFirst().slug();
 
-        boolean mismatch = rows.stream()
+        boolean categoryMismatch = rows.stream()
                 .anyMatch(r -> !r.category().equalsIgnoreCase(category));
 
-        if (mismatch) {
+        if (categoryMismatch) {
             throw new IllegalStateException("Produto com múltiplas categorias na mesma planilha");
+        }
+
+        boolean slugMismatch = rows.stream()
+                .anyMatch(r -> !r.slug().equalsIgnoreCase(slug));
+
+        if (slugMismatch) {
+            throw new IllegalStateException("Produto com múltiplos slugs na mesma planilha");
         }
     }
 }

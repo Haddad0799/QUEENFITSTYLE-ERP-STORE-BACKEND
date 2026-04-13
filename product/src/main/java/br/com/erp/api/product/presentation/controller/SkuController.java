@@ -4,9 +4,11 @@ import br.com.erp.api.product.application.command.*;
 import br.com.erp.api.product.application.query.SkuQueryService;
 import br.com.erp.api.product.application.query.filter.SkuFilter;
 import br.com.erp.api.product.application.usecase.AddSkuToProductUseCase;
+import br.com.erp.api.product.application.usecase.DeleteSkuUseCase;
 import br.com.erp.api.product.application.usecase.RegisterSkuStockMovementUseCase;
 import br.com.erp.api.product.application.usecase.UpdateSkuDimensionsUseCase;
 import br.com.erp.api.product.application.usecase.UpdateSkuPriceUseCase;
+import br.com.erp.api.product.presentation.dto.request.BatchDeleteSkusDTO;
 import br.com.erp.api.product.presentation.dto.request.CreateSkuDTO;
 import br.com.erp.api.product.presentation.dto.request.StockMovementDTO;
 import br.com.erp.api.product.presentation.dto.request.UpdateSkuDimensionsDTO;
@@ -30,13 +32,20 @@ public class SkuController {
     private final UpdateSkuDimensionsUseCase updateSkuDimensionsUseCase;
     private final RegisterSkuStockMovementUseCase registerSkuStockMovementUseCase;
     private final UpdateSkuPriceUseCase updateSkuPriceUseCase;
+    private final DeleteSkuUseCase deleteSkuUseCase;
 
-    public SkuController(AddSkuToProductUseCase addSkuToProductUseCase, SkuQueryService skuQueryService, UpdateSkuDimensionsUseCase updateSkuDimensionsUseCase, RegisterSkuStockMovementUseCase registerSkuStockMovementUseCase, UpdateSkuPriceUseCase updateSkuPriceUseCase) {
+    public SkuController(AddSkuToProductUseCase addSkuToProductUseCase,
+                         SkuQueryService skuQueryService,
+                         UpdateSkuDimensionsUseCase updateSkuDimensionsUseCase,
+                         RegisterSkuStockMovementUseCase registerSkuStockMovementUseCase,
+                         UpdateSkuPriceUseCase updateSkuPriceUseCase,
+                         DeleteSkuUseCase deleteSkuUseCase) {
         this.addSkuToProductUseCase = addSkuToProductUseCase;
         this.skuQueryService = skuQueryService;
         this.updateSkuDimensionsUseCase = updateSkuDimensionsUseCase;
         this.registerSkuStockMovementUseCase = registerSkuStockMovementUseCase;
         this.updateSkuPriceUseCase = updateSkuPriceUseCase;
+        this.deleteSkuUseCase = deleteSkuUseCase;
     }
 
     @PostMapping
@@ -137,6 +146,15 @@ public class SkuController {
                 dto.sellingPrice()
         ));
 
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/batch-delete")
+    public ResponseEntity<Void> batchDeleteSkus(
+            @PathVariable Long productId,
+            @RequestBody @Valid BatchDeleteSkusDTO dto
+    ) {
+        deleteSkuUseCase.execute(productId, dto.skuIds());
         return ResponseEntity.noContent().build();
     }
 

@@ -192,5 +192,13 @@ WHERE slug = :slug
         );
     }
 
+    @Override
+    public void deleteById(Long id) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("DELETE FROM products WHERE id = :id")
+                        .bind("id", id)
+                        .execute()
+        );
+    }
 
 }

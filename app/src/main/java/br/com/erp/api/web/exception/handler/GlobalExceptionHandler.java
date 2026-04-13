@@ -85,7 +85,49 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).headers(headers).body(problem);
     }
 
-    // 4️⃣ Genérico
+    // 4️⃣ Estado inválido (ex: excluir produto publicado)
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ProblemDetail> handleIllegalState(
+            IllegalStateException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                ex.getMessage()
+        );
+        problem.setTitle("Operação não permitida");
+        problem.setType(URI.create("https://example.com/probs/illegal-state"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).headers(headers).body(problem);
+    }
+
+    // 5️⃣ Argumento inválido
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ProblemDetail> handleIllegalArgument(
+            IllegalArgumentException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage()
+        );
+        problem.setTitle("Argumento inválido");
+        problem.setType(URI.create("https://example.com/probs/illegal-argument"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.badRequest().headers(headers).body(problem);
+    }
+
+    // 6️⃣ Genérico
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleGenericException(
             Exception ex,

@@ -41,14 +41,30 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
             var query = handle.createQuery(pageQuery.selectSql());
             pageQuery.params().forEach(query::bind);
 
-            return query.map((rs, ctx) -> new CatalogProductSummaryDTO(
-                    rs.getString("name"),
-                    rs.getString("slug"),
-                    rs.getString("category_name"),
-                    rs.getString("category_normalized_name"),
-                    rs.getString("main_image_url"),
-                    rs.getBigDecimal("min_price")
-            )).list();
+            return query.map((rs, ctx) -> {
+                long parentCatIdRaw = rs.getLong("parent_category_id");
+                Long parentCatId = rs.wasNull() ? null : parentCatIdRaw;
+
+                long subCatIdRaw = rs.getLong("subcategory_id");
+                Long subCatId = rs.wasNull() ? null : subCatIdRaw;
+
+                CatalogCategoryDTO category = parentCatId != null
+                        ? new CatalogCategoryDTO(parentCatId, rs.getString("parent_category_name"), rs.getString("parent_category_normalized_name"))
+                        : new CatalogCategoryDTO(null, rs.getString("category_name"), rs.getString("category_normalized_name"));
+
+                CatalogCategoryDTO subcategory = subCatId != null
+                        ? new CatalogCategoryDTO(subCatId, rs.getString("subcategory_name"), rs.getString("subcategory_normalized_name"))
+                        : null;
+
+                return new CatalogProductSummaryDTO(
+                        rs.getString("name"),
+                        rs.getString("slug"),
+                        category,
+                        subcategory,
+                        rs.getString("main_image_url"),
+                        rs.getBigDecimal("min_price")
+                );
+            }).list();
         });
 
         if (log.isDebugEnabled()) {
@@ -81,7 +97,11 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
 
             // 1. Busca produto
             var productOpt = handle.createQuery("""
-                    SELECT id, name, description, slug, category_name, category_normalized_name, main_image_url, min_price
+                    SELECT id, name, description, slug,
+                           category_name, category_normalized_name,
+                           subcategory_id, subcategory_name, subcategory_normalized_name,
+                           parent_category_id, parent_category_name, parent_category_normalized_name,
+                           main_image_url, min_price
                     FROM catalog_products
                     WHERE slug = :slug
                 """)
@@ -94,6 +114,17 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         row.put("slug", rs.getString("slug"));
                         row.put("categoryName", rs.getString("category_name"));
                         row.put("categoryNormalizedName", rs.getString("category_normalized_name"));
+
+                        long subCatIdRaw = rs.getLong("subcategory_id");
+                        row.put("subcategoryId", rs.wasNull() ? null : subCatIdRaw);
+                        row.put("subcategoryName", rs.getString("subcategory_name"));
+                        row.put("subcategoryNormalizedName", rs.getString("subcategory_normalized_name"));
+
+                        long parentCatIdRaw = rs.getLong("parent_category_id");
+                        row.put("parentCategoryId", rs.wasNull() ? null : parentCatIdRaw);
+                        row.put("parentCategoryName", rs.getString("parent_category_name"));
+                        row.put("parentCategoryNormalizedName", rs.getString("parent_category_normalized_name"));
+
                         row.put("mainImageUrl", rs.getString("main_image_url"));
                         row.put("minPrice", rs.getBigDecimal("min_price"));
                         return row;
@@ -220,12 +251,23 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                     .max(BigDecimal::compareTo)
                     .orElse(null);
 
+            Long parentCatId = (Long) p.get("parentCategoryId");
+            Long subCatId = (Long) p.get("subcategoryId");
+
+            CatalogCategoryDTO category = parentCatId != null
+                    ? new CatalogCategoryDTO(parentCatId, (String) p.get("parentCategoryName"), (String) p.get("parentCategoryNormalizedName"))
+                    : new CatalogCategoryDTO(null, (String) p.get("categoryName"), (String) p.get("categoryNormalizedName"));
+
+            CatalogCategoryDTO subcategory = subCatId != null
+                    ? new CatalogCategoryDTO(subCatId, (String) p.get("subcategoryName"), (String) p.get("subcategoryNormalizedName"))
+                    : null;
+
             return Optional.of(new CatalogProductDetailDTO(
                     (String) p.get("name"),
                     (String) p.get("description"),
                     (String) p.get("slug"),
-                    (String) p.get("categoryName"),
-                    (String) p.get("categoryNormalizedName"),
+                    category,
+                    subcategory,
                     (String) p.get("mainImageUrl"),
                     (BigDecimal) p.get("minPrice"),
                     maxPrice,

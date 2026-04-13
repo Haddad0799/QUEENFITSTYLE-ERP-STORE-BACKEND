@@ -20,13 +20,14 @@ public class CategoryJdbiRepository implements CategoryRepository {
     public Category save(Category category) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
-                INSERT INTO categories (display_name, normalized_name, active)
-                VALUES (:displayName, :normalizedName, :active)
-                RETURNING id, display_name, normalized_name, active
+                INSERT INTO categories (display_name, normalized_name, active, parent_id)
+                VALUES (:displayName, :normalizedName, :active, :parentId)
+                RETURNING id, display_name, normalized_name, active, parent_id
             """)
                         .bind("displayName", category.getDisplayName())
                         .bind("normalizedName", category.getNormalizedName())
                         .bind("active", category.isActive())
+                        .bind("parentId", category.getParentId())
                         .map(new CategoryRowMapper())
                         .one()
         );
@@ -36,7 +37,7 @@ public class CategoryJdbiRepository implements CategoryRepository {
     public Optional<Category> findByNormalizedName(String name) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
-                SELECT id, display_name, normalized_name, active
+                SELECT id, display_name, normalized_name, active, parent_id
                 FROM categories
                 WHERE normalized_name = :name
             """)
@@ -50,7 +51,7 @@ public class CategoryJdbiRepository implements CategoryRepository {
     public Optional<Category> findById(Long id) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
-                SELECT id, display_name, normalized_name, active
+                SELECT id, display_name, normalized_name, active, parent_id
                 FROM categories
                 WHERE id = :id
             """)
@@ -92,5 +93,71 @@ public class CategoryJdbiRepository implements CategoryRepository {
         );
     }
 
+    @Override
+    public void deleteById(Long id) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("DELETE FROM categories WHERE id = :id")
+                        .bind("id", id)
+                        .execute()
+        );
+    }
+
+    @Override
+    public boolean hasProductsAssociated(Long categoryId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                    SELECT COUNT(1) > 0
+                    FROM products
+                    WHERE category_id = :categoryId
+                """)
+                        .bind("categoryId", categoryId)
+                        .mapTo(Boolean.class)
+                        .one()
+        );
+    }
+
+    @Override
+    public boolean hasPublishedProducts(Long categoryId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                    SELECT COUNT(1) > 0
+                    FROM products
+                    WHERE category_id = :categoryId
+                      AND status = 'PUBLISHED'
+                """)
+                        .bind("categoryId", categoryId)
+                        .mapTo(Boolean.class)
+                        .one()
+        );
+    }
+
+    @Override
+    public boolean hasSubcategories(Long parentId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                    SELECT COUNT(1) > 0
+                    FROM categories
+                    WHERE parent_id = :parentId
+                """)
+                        .bind("parentId", parentId)
+                        .mapTo(Boolean.class)
+                        .one()
+        );
+    }
+
+    @Override
+    public boolean hasActiveSubcategories(Long parentId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                    SELECT COUNT(1) > 0
+                    FROM categories
+                    WHERE parent_id = :parentId
+                      AND active = true
+                """)
+                        .bind("parentId", parentId)
+                        .mapTo(Boolean.class)
+                        .one()
+        );
+    }
 }
 

@@ -41,6 +41,11 @@ public class CreateProductUseCase {
         if (!categoryLookup.existsActiveById(id)) {
             throw new InvalidCategoryException();
         }
+
+        if (!categoryLookup.isSubcategory(id)) {
+            throw new InvalidCategoryException("Produtos só podem ser vinculados a subcategorias.");
+        }
+
         return id;
     }
 
@@ -52,4 +57,3 @@ public class CreateProductUseCase {
     }
 
 }
-

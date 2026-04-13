@@ -6,17 +6,20 @@ import br.com.erp.api.attribute.application.query.CategoryQueryService;
 import br.com.erp.api.attribute.application.usecase.ActivateCategoryUseCase;
 import br.com.erp.api.attribute.application.usecase.CreateCategoryUseCase;
 import br.com.erp.api.attribute.application.usecase.DeactivateCategoryUseCase;
+import br.com.erp.api.attribute.application.usecase.DeleteCategoryUseCase;
 import br.com.erp.api.attribute.application.usecase.RenameCategoryUseCase;
 import br.com.erp.api.attribute.presentation.dto.category.request.CreateCategoryDTO;
 import br.com.erp.api.attribute.presentation.dto.category.request.RenameCategoryDTO;
 import br.com.erp.api.attribute.presentation.dto.category.response.CategoriesDetailsDTO;
 import br.com.erp.api.attribute.presentation.dto.category.response.CategoryDetailsDTO;
+import br.com.erp.api.attribute.presentation.dto.category.response.CategoryTreeDTO;
 import br.com.erp.api.attribute.presentation.mapper.CategoryControllerMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 
 //Controller utilizado pelo ERP, responsável por administração do ecommerce.
 @RestController
@@ -26,17 +29,26 @@ public class CategoryController {
     private final RenameCategoryUseCase renameCategoryUseCase;
     private final ActivateCategoryUseCase activateCategoryUseCase;
     private final DeactivateCategoryUseCase deactivateCategoryUseCase;
+    private final DeleteCategoryUseCase deleteCategoryUseCase;
     private final CategoryQueryService categoryQueryService;
     private final CategoryControllerMapper mapper;
 
-    public CategoryController(CreateCategoryUseCase createCategoryUseCase, RenameCategoryUseCase renameCategoryUseCase, ActivateCategoryUseCase activateCategoryUseCase, DeactivateCategoryUseCase deactivateCategoryUseCase, CategoryQueryService categoryQueryService, CategoryControllerMapper mapper) {
+    public CategoryController(CreateCategoryUseCase createCategoryUseCase,
+                              RenameCategoryUseCase renameCategoryUseCase,
+                              ActivateCategoryUseCase activateCategoryUseCase,
+                              DeactivateCategoryUseCase deactivateCategoryUseCase,
+                              DeleteCategoryUseCase deleteCategoryUseCase,
+                              CategoryQueryService categoryQueryService,
+                              CategoryControllerMapper mapper) {
         this.createCategoryUseCase = createCategoryUseCase;
         this.renameCategoryUseCase = renameCategoryUseCase;
         this.activateCategoryUseCase = activateCategoryUseCase;
         this.deactivateCategoryUseCase = deactivateCategoryUseCase;
+        this.deleteCategoryUseCase = deleteCategoryUseCase;
         this.categoryQueryService = categoryQueryService;
         this.mapper = mapper;
     }
+
     @PostMapping
     public ResponseEntity<CategoryDetailsDTO> createCategory(@RequestBody CreateCategoryDTO dto) {
         CreateCategoryCommand command = mapper.toCreateCommand(dto);
@@ -56,6 +68,11 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<CategoriesDetailsDTO> getAllCategories() {
         return ResponseEntity.ok(new CategoriesDetailsDTO(categoryQueryService.findAll()));
+    }
+
+    @GetMapping("/tree")
+    public ResponseEntity<List<CategoryTreeDTO>> getCategoriesAsTree() {
+        return ResponseEntity.ok(categoryQueryService.findAllActiveAsTree());
     }
 
     @GetMapping("/{id}")
@@ -84,5 +101,9 @@ public class CategoryController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        deleteCategoryUseCase.execute(id);
+        return ResponseEntity.noContent().build();
+    }
 }
-

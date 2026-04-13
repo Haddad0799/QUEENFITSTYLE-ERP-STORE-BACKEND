@@ -21,4 +21,5 @@ public interface ProductColorImageRepositoryPort {
     List<ProductColorImage> findAllByProductIdGroupedByColor(Long productId);
 
     void updateOrders(Map<Long, Integer> imageIdToOrder);
+    List<String> findAllKeysByProductId(Long productId);
 }

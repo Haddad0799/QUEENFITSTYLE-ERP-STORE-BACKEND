@@ -304,4 +304,18 @@ public class ProductColorImageJdbiRepository implements ProductColorImageReposit
             batch.execute();
         });
     }
+
+    @Override
+    public List<String> findAllKeysByProductId(Long productId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                    SELECT image_key
+                    FROM product_color_images
+                    WHERE product_id = :productId
+                """)
+                        .bind("productId", productId)
+                        .mapTo(String.class)
+                        .list()
+        );
+    }
 }

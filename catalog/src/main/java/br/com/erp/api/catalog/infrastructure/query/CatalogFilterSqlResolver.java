@@ -19,8 +19,15 @@ public class CatalogFilterSqlResolver {
         StringBuilder productFilters = new StringBuilder();
 
         if (filter.hasCategory()) {
-            productFilters.append(" AND cp2.category_normalized_name = :category ");
+            // Filtra pela categoria pai — lista todos os produtos de todas as subcategorias filhas
+            productFilters.append(" AND cp2.parent_category_normalized_name = :category ");
             params.put("category", filter.category());
+        }
+
+        if (filter.hasSubcategory()) {
+            // Filtra pela subcategoria diretamente
+            productFilters.append(" AND cp2.subcategory_normalized_name = :subcategory ");
+            params.put("subcategory", filter.subcategory());
         }
 
         if (filter.hasSearch()) {
@@ -60,10 +67,14 @@ public class CatalogFilterSqlResolver {
         String skuWhere = String.join(" AND ", skuConditions);
 
         // ───────────────
-        // SELECT (CORRIGIDO)
+        // SELECT
         // ───────────────
         String selectSql = """
-            SELECT cp.name, cp.slug, cp.category_name, cp.category_normalized_name, cp.main_image_url, cp.min_price
+            SELECT cp.name, cp.slug,
+                   cp.parent_category_id, cp.parent_category_name, cp.parent_category_normalized_name,
+                   cp.subcategory_id, cp.subcategory_name, cp.subcategory_normalized_name,
+                   cp.category_name, cp.category_normalized_name,
+                   cp.main_image_url, cp.min_price
             FROM (
             SELECT cp2.id
             FROM catalog_products cp2
