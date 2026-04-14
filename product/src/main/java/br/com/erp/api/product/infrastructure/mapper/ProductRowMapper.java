@@ -26,6 +26,7 @@ public class ProductRowMapper implements RowMapper<Product> {
                 Slug.fromValue(rs.getString("slug")),
                 rs.getLong("category_id"),
                 status,
+                rs.getBoolean("is_launch"),
                 primaryImage
         );
     }

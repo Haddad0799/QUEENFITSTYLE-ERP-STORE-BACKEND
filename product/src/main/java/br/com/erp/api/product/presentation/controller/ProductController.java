@@ -73,7 +73,8 @@ public class ProductController {
         var command = new CreateProductCommand(
                 dto.name(),
                 dto.description(),
-                dto.categoryId()
+                dto.categoryId(),
+                dto.isLaunch()
         );
 
         Long newProductId = createProductUseCase.execute(command);
@@ -94,7 +95,8 @@ public class ProductController {
         var command = new AlterProductCommand(id,
                 dto.name(),
                 dto.description(),
-                dto.categoryId());
+                dto.categoryId(),
+                dto.isLaunch());
 
         alterProductUseCase.execute(command);
 

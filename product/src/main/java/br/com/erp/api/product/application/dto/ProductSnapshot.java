@@ -7,6 +7,7 @@ public record ProductSnapshot(
         String name,
         String description,
         String slug,
+        boolean isLaunch,
         Long categoryId,
         String categoryName,
         String categoryNormalizedName,

@@ -12,6 +12,7 @@ public record ProductDetailsDTO(
         String mainImageUrl,
         Long categoryId,
         String categoryName,
+        boolean isLaunch,
         ProductStatus status,
         List<SkuSummaryDTO> skus
 ) {}

@@ -28,7 +28,8 @@ public class CreateProductUseCase {
         Product product = new Product(
                 command.name(),
                 command.description(),
-                categoryId
+                categoryId,
+                command.isLaunch()
         );
 
         validateDuplicateProduct(product);

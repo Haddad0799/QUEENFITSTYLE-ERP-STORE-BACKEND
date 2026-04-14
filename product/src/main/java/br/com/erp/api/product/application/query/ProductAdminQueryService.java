@@ -29,6 +29,7 @@ public class ProductAdminQueryService {
                         resolveUrl(dto.mainImageUrl()),
                         dto.slug(),
                         dto.categoryName(),
+                        dto.isLaunch(),
                         dto.status()
                 ));
     }
@@ -43,6 +44,7 @@ public class ProductAdminQueryService {
                 resolveUrl(dto.mainImageUrl()),
                 dto.categoryId(),
                 dto.categoryName(),
+                dto.isLaunch(),
                 dto.status(),
                 dto.skus()
         );

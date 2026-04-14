@@ -39,6 +39,7 @@ public class ProductFilterSqlResolver {
             p.name,
             p.slug,
             c.display_name AS category_name,
+            p.is_launch,
             p.status,
             pci.image_key AS main_image_key
     """ + baseSql + resolveOrderBy(pageable) + """

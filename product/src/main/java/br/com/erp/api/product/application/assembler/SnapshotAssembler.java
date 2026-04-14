@@ -133,6 +133,7 @@ public class SnapshotAssembler {
                 product.getName(),
                 product.getDescription(),
                 product.getSlugValue(),
+                product.isLaunch(),
                 subcategory.id(),
                 subcategory.name(),
                 subcategory.normalizedName(),

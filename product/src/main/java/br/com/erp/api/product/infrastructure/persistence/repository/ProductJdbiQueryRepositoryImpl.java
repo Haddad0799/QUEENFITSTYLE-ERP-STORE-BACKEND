@@ -48,6 +48,7 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
                             rs.getString("main_image_key"),
                             rs.getString("slug"),
                             rs.getString("category_name"),
+                            rs.getBoolean("is_launch"),
                             rs.getString("status")
                     )
             ).list();
@@ -75,6 +76,7 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
             p.name,
             p.description,
             p.slug,
+            p.is_launch,
             p.status,
             c.id AS category_id,
             c.display_name AS category_name,
@@ -94,6 +96,7 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
                                 rs.getString("main_image_key"),
                                 rs.getLong("category_id"),
                                 rs.getString("category_name"),
+                                rs.getBoolean("is_launch"),
                                 ProductStatus.valueOf(rs.getString("status")),
                                 List.of()
                         ))
@@ -133,6 +136,7 @@ public class ProductJdbiQueryRepositoryImpl implements ProductQueryRepository {
                 productData.mainImageUrl(),
                 productData.categoryId(),
                 productData.categoryName(),
+                productData.isLaunch(),
                 productData.status(),
                 skus
         );

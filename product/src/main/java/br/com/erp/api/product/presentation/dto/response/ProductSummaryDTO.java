@@ -6,5 +6,6 @@ public record ProductSummaryDTO(
         String mainImageUrl,
         String slug,
         String categoryName,
+        boolean isLaunch,
         String status
 ) {}

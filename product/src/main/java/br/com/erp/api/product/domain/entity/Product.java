@@ -10,6 +10,7 @@ public class Product {
     private Long id;
     private String name;
     private String description;
+    private boolean isLaunch;
     private Long primaryImageId;
     private Slug slug;
     private Long categoryId;
@@ -17,9 +18,10 @@ public class Product {
 
     private Product() {}
 
-    public Product(String name, String description, Long categoryId) {
+    public Product(String name, String description, Long categoryId, boolean isLaunch) {
         this.name = name;
         this.description = description;
+        this.isLaunch = isLaunch;
         this.categoryId = categoryId;
         this.slug = Slug.fromName(name);
         this.status = ProductStatus.DRAFT;
@@ -27,16 +29,22 @@ public class Product {
     }
 
     public static Product createWithSlug(String name, String slug, Long categoryId) {
+        return createWithSlug(name, slug, categoryId, false);
+    }
+
+    public static Product createWithSlug(String name, String slug, Long categoryId, boolean isLaunch) {
         Product product = new Product();
         product.name = name;
         product.slug = Slug.fromValue(slug);
         product.categoryId = categoryId;
+        product.isLaunch = isLaunch;
         product.status = ProductStatus.DRAFT;
         return product;
     }
 
     public static Product restore(long id, String name, String description,
-                                  Slug slug, long categoryId, ProductStatus status, Long primaryImageId) {
+                                  Slug slug, long categoryId, ProductStatus status,
+                                  boolean isLaunch, Long primaryImageId) {
         Product product = new Product();
         product.id = id;
         product.name = name;
@@ -44,6 +52,7 @@ public class Product {
         product.slug = slug;
         product.categoryId = categoryId;
         product.status = status;
+        product.isLaunch = isLaunch;
         product.primaryImageId = primaryImageId;
         return product;
     }
@@ -63,6 +72,10 @@ public class Product {
 
     public void recategorize(Long newCategoryId) {
         this.categoryId = newCategoryId;
+    }
+
+    public void changeLaunch(boolean isLaunch) {
+        this.isLaunch = isLaunch;
     }
 
     public void assertDeletable() {
@@ -153,5 +166,9 @@ public class Product {
 
     public boolean isReadyForSale() {
         return this.status == ProductStatus.READY_FOR_SALE;
+    }
+
+    public boolean isLaunch() {
+        return isLaunch;
     }
 }
