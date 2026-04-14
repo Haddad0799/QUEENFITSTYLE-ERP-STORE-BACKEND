@@ -1,5 +1,7 @@
 package br.com.erp.api.web.exception.handler;
 
+import br.com.erp.api.product.application.exception.AiEmptyResponseException;
+import br.com.erp.api.product.application.exception.AiIntegrationException;
 import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
 import br.com.erp.api.shared.application.exception.EntityNotFoundException;
 import br.com.erp.api.shared.domain.exception.DomainException;
@@ -21,7 +23,6 @@ public class GlobalExceptionHandler {
 
     private static final String PROBLEM_JSON = "application/problem+json";
 
-    // 1️⃣ Handler específico primeiro
     @ExceptionHandler(DuplicateSkuCombinationException.class)
     public ResponseEntity<ProblemDetail> handleDuplicateSku(
             DuplicateSkuCombinationException ex,
@@ -43,7 +44,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.unprocessableEntity().headers(headers).body(problem);
     }
 
-    // 2️⃣ Depois handler genérico de regra de negócio
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<ProblemDetail> handleDomainException(
             DomainException ex,
@@ -64,7 +64,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.unprocessableEntity().headers(headers).body(problem);
     }
 
-    // 3️⃣ Not found
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ProblemDetail> handleEntityNotFound(
             EntityNotFoundException ex,
@@ -85,7 +84,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).headers(headers).body(problem);
     }
 
-    // 4️⃣ Estado inválido (ex: excluir produto publicado)
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ProblemDetail> handleIllegalState(
             IllegalStateException ex,
@@ -106,7 +104,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).headers(headers).body(problem);
     }
 
-    // 5️⃣ Argumento inválido
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ProblemDetail> handleIllegalArgument(
             IllegalArgumentException ex,
@@ -127,7 +124,46 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().headers(headers).body(problem);
     }
 
-    // 6️⃣ Genérico
+    @ExceptionHandler(AiIntegrationException.class)
+    public ResponseEntity<ProblemDetail> handleAiIntegration(
+            AiIntegrationException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_GATEWAY,
+                ex.getMessage()
+        );
+        problem.setTitle("Falha na integração com IA");
+        problem.setType(URI.create("https://example.com/probs/ai-integration"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).headers(headers).body(problem);
+    }
+
+    @ExceptionHandler(AiEmptyResponseException.class)
+    public ResponseEntity<ProblemDetail> handleAiEmptyResponse(
+            AiEmptyResponseException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_GATEWAY,
+                ex.getMessage()
+        );
+        problem.setTitle("Resposta inválida do provedor de IA");
+        problem.setType(URI.create("https://example.com/probs/ai-empty-response"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).headers(headers).body(problem);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleGenericException(
             Exception ex,
