@@ -1,6 +1,7 @@
 package br.com.erp.api.product.presentation.dto.response;
 
 import br.com.erp.api.product.application.dto.ImportResult;
+import br.com.erp.api.product.application.dto.ImportedProductResult;
 import br.com.erp.api.product.application.dto.ProductImportError;
 
 import java.util.List;
@@ -13,7 +14,8 @@ public record ImportResultResponse(
         int skusCreated,
         int skusIgnored,
         int skusFailed,
-        List<ProductImportError> errors
+        List<ProductImportError> errors,
+        List<ImportedProductResult> products
 ) {
 
     public static ImportResultResponse from(ImportResult result) {
@@ -25,8 +27,8 @@ public record ImportResultResponse(
                 result.skusCreated(),
                 result.skusIgnored(),
                 result.skusFailed(),
-                result.errors()
+                result.errors(),
+                result.products()
         );
     }
 }
-

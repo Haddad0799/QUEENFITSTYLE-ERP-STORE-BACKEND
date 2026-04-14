@@ -12,12 +12,10 @@ public record ImportResult(
         int skusCreated,
         int skusIgnored,
         int skusFailed,
-        List<ProductImportError> errors
+        List<ProductImportError> errors,
+        List<ImportedProductResult> products
 ) {
 
-    /**
-     * Builder mutável para acumular contadores ao longo do fluxo de importação.
-     */
     public static class Builder {
 
         private int totalRows;
@@ -27,7 +25,9 @@ public record ImportResult(
         private int skusCreated;
         private int skusIgnored;
         private int skusFailed;
+
         private final List<ProductImportError> errors = new ArrayList<>();
+        private final List<ImportedProductResult> products = new ArrayList<>();
 
         public void setTotalRows(int totalRows) {
             this.totalRows = totalRows;
@@ -65,6 +65,10 @@ public record ImportResult(
             this.errors.addAll(errors);
         }
 
+        public void addProductResult(ImportedProductResult productResult) {
+            this.products.add(productResult);
+        }
+
         public ImportResult build() {
             return new ImportResult(
                     totalRows,
@@ -74,7 +78,8 @@ public record ImportResult(
                     skusCreated,
                     skusIgnored,
                     skusFailed,
-                    Collections.unmodifiableList(errors)
+                    Collections.unmodifiableList(errors),
+                    Collections.unmodifiableList(products)
             );
         }
     }

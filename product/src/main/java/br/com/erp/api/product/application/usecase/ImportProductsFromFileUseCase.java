@@ -2,8 +2,10 @@ package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.dto.GroupProcessingResult;
 import br.com.erp.api.product.application.dto.ImportResult;
+import br.com.erp.api.product.application.dto.ImportedProductResult;
 import br.com.erp.api.product.application.dto.ProductImportData;
 import br.com.erp.api.product.application.dto.ProductImportError;
+import br.com.erp.api.product.application.dto.ProductImportStatus;
 import br.com.erp.api.product.application.exception.ImportFileParseException;
 import br.com.erp.api.product.application.port.ProductImportParserPort;
 import br.com.erp.api.product.application.service.ProductGroupProcessor;
@@ -38,14 +40,12 @@ public class ImportProductsFromFileUseCase {
 
         ImportResult.Builder builder = new ImportResult.Builder();
 
-        // --- 1. Parse ---
         List<ProductImportData> rows = parseFile(file);
         builder.setTotalRows(rows.size());
 
         log.info("Importação iniciada: {} linhas extraídas do arquivo [{}]",
                 rows.size(), file.getOriginalFilename());
 
-        // --- 2. Validação linha a linha ---
         List<ProductImportData> validRows = new ArrayList<>();
 
         for (ProductImportData row : rows) {
@@ -68,20 +68,18 @@ public class ImportProductsFromFileUseCase {
             return builder.build();
         }
 
-        // --- 3. Agrupar por produto (nome + categoria) ---
         Map<String, List<ProductImportData>> grouped = groupByProduct(validRows);
 
         log.info("Linhas válidas: {}. Produtos identificados: {}", validRows.size(), grouped.size());
 
-        // --- 4. Processar cada grupo ---
         for (var entry : grouped.entrySet()) {
             String groupKey = entry.getKey();
             List<ProductImportData> groupRows = entry.getValue();
+            ProductImportData first = groupRows.getFirst();
 
             try {
                 GroupProcessingResult result = productGroupProcessor.process(groupRows);
 
-                // Acumular contadores
                 if (result.productCreated()) {
                     builder.incrementProductsCreated();
                 } else {
@@ -92,15 +90,21 @@ public class ImportProductsFromFileUseCase {
                 builder.addSkusIgnored(result.skusIgnored());
                 builder.addSkusFailed(result.skusFailed());
                 builder.addErrors(result.errors());
+                builder.addProductResult(buildProductResult(first, groupRows, result));
 
             } catch (Exception e) {
-                // Falha no produto inteiro → todos os SKUs do grupo são ignorados
-                ProductImportData first = groupRows.getFirst();
-                builder.addError(ProductImportError.product(
-                        first.rowNumber(), first.name(), first.category(),
+                ProductImportError productError = ProductImportError.product(
+                        first.rowNumber(),
+                        first.name(),
+                        first.category(),
                         e.getMessage()
-                ));
-                log.error("Falha ao processar grupo [{}]: {}", groupKey, e.getMessage());
+                );
+
+                builder.addError(productError);
+                builder.addSkusFailed(groupRows.size());
+                builder.addProductResult(buildFailedProductResult(first, groupRows, productError));
+
+                log.error("Falha ao processar grupo [{}]: {}", groupKey, e.getMessage(), e);
             }
         }
 
@@ -108,13 +112,49 @@ public class ImportProductsFromFileUseCase {
 
         log.info("Importação finalizada: totalLinhas={}, linhasVálidas={}, " +
                         "produtosCriados={}, produtosReaproveitados={}, " +
-                        "skusCriados={}, skusIgnorados={}, skusFalhos={}, erros={}",
+                        "skusCriados={}, skusIgnorados={}, skusFalhos={}, erros={}, produtosDetalhados={}",
                 result.totalRows(), result.validRows(),
                 result.productsCreated(), result.productsReused(),
                 result.skusCreated(), result.skusIgnored(), result.skusFailed(),
-                result.errors().size());
+                result.errors().size(), result.products().size());
 
         return result;
+    }
+
+    private ImportedProductResult buildProductResult(
+            ProductImportData first,
+            List<ProductImportData> groupRows,
+            GroupProcessingResult result
+    ) {
+        return new ImportedProductResult(
+                first.name(),
+                first.slug(),
+                first.category(),
+                groupRows.size(),
+                result.productCreated() ? ProductImportStatus.CREATED : ProductImportStatus.REUSED,
+                result.skusCreated(),
+                result.skusIgnored(),
+                result.skusFailed(),
+                result.errors()
+        );
+    }
+
+    private ImportedProductResult buildFailedProductResult(
+            ProductImportData first,
+            List<ProductImportData> groupRows,
+            ProductImportError productError
+    ) {
+        return new ImportedProductResult(
+                first.name(),
+                first.slug(),
+                first.category(),
+                groupRows.size(),
+                ProductImportStatus.FAILED,
+                0,
+                0,
+                groupRows.size(),
+                List.of(productError)
+        );
     }
 
     private List<ProductImportData> parseFile(MultipartFile file) {
@@ -127,10 +167,6 @@ public class ImportProductsFromFileUseCase {
         }
     }
 
-    /**
-     * Validação completa de uma linha. Retorna lista vazia se válida.
-     * Cada erro é um ProductImportError estruturado.
-     */
     private List<ProductImportError> validateRow(ProductImportData row) {
         List<ProductImportError> errors = new ArrayList<>();
         int line = row.rowNumber();
@@ -138,7 +174,6 @@ public class ImportProductsFromFileUseCase {
         String category = row.category();
         String skuCode = row.skuCode();
 
-        // --- Campos obrigatórios de texto ---
         if (isBlank(name)) {
             errors.add(ProductImportError.validation(line, name, category, skuCode, "name",
                     "Nome do produto é obrigatório"));
@@ -164,17 +199,14 @@ public class ImportProductsFromFileUseCase {
                     "Tamanho é obrigatório"));
         }
 
-        // --- Dimensões (todas obrigatórias e positivas) ---
         validatePositive(row.width(), "width", "Largura", line, name, category, skuCode, errors);
         validatePositive(row.height(), "height", "Altura", line, name, category, skuCode, errors);
         validatePositive(row.length(), "length", "Comprimento", line, name, category, skuCode, errors);
         validatePositive(row.weight(), "weight", "Peso", line, name, category, skuCode, errors);
 
-        // --- Preços (obrigatórios e positivos) ---
         validatePositive(row.costPrice(), "costPrice", "Preço de custo", line, name, category, skuCode, errors);
         validatePositive(row.sellingPrice(), "sellingPrice", "Preço de venda", line, name, category, skuCode, errors);
 
-        // --- Estoque (obrigatório e não-negativo) ---
         if (row.stockQuantity() == null) {
             errors.add(ProductImportError.validation(line, name, category, skuCode, "stockQuantity",
                     "Quantidade em estoque é obrigatória"));
