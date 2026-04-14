@@ -38,3 +38,9 @@ nextjs:
   revalidate:
     url: ${NEXTJS_REVALIDATE_URL:http://localhost:3000/api/revalidate}
     secret: ${NEXTJS_REVALIDATE_SECRET:G7kL9pQ2vX5rT8zM4yH1B6}
+
+openai:
+  api:
+    url: ${OPENAI_API_URL:https://api.openai.com/v1/responses}
+    key: ${OPENAI_API_KEY:}
+  model: ${OPENAI_MODEL:gpt-4.1-mini}
