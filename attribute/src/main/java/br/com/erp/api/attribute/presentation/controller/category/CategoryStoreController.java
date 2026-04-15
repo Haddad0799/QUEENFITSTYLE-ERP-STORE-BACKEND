@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Deprecated(since = "2026-04-15", forRemoval = false)
 @RestController
 @RequestMapping("/store/categories")
 public class CategoryStoreController {
