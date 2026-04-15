@@ -57,12 +57,12 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
                 (product_id, name, description, slug, category_name, category_normalized_name,
                  subcategory_id, subcategory_name, subcategory_normalized_name,
                  parent_category_id, parent_category_name, parent_category_normalized_name,
-                 main_image_url, min_price)
+                 main_image_url, min_price, is_launch)
                 VALUES
                 (:productId, :name, :description, :slug, :categoryName, :categoryNormalizedName,
                  :subcategoryId, :subcategoryName, :subcategoryNormalizedName,
                  :parentCategoryId, :parentCategoryName, :parentCategoryNormalizedName,
-                 :mainImageUrl, :minPrice)
+                 :mainImageUrl, :minPrice, :isLaunch)
             """)
                     .bind("productId", snapshot.productId())
                     .bind("name", snapshot.name())
@@ -78,6 +78,7 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
                     .bind("parentCategoryNormalizedName", snapshot.parentCategoryNormalizedName())
                     .bind("mainImageUrl", snapshot.mainImageUrl())
                     .bind("minPrice", minPrice)
+                    .bind("isLaunch", snapshot.isLaunch())
                     .executeAndReturnGeneratedKeys("id")
                     .mapTo(Long.class)
                     .one();

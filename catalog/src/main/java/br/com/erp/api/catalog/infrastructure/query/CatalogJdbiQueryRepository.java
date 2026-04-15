@@ -59,6 +59,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                 return new CatalogProductSummaryDTO(
                         rs.getString("name"),
                         rs.getString("slug"),
+                        rs.getBoolean("is_launch"),
                         category,
                         subcategory,
                         rs.getString("main_image_url"),
@@ -98,6 +99,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
             // 1. Busca produto
             var productOpt = handle.createQuery("""
                     SELECT id, name, description, slug,
+                           is_launch,
                            category_name, category_normalized_name,
                            subcategory_id, subcategory_name, subcategory_normalized_name,
                            parent_category_id, parent_category_name, parent_category_normalized_name,
@@ -112,6 +114,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         row.put("name", rs.getString("name"));
                         row.put("description", rs.getString("description"));
                         row.put("slug", rs.getString("slug"));
+                        row.put("isLaunch", rs.getBoolean("is_launch"));
                         row.put("categoryName", rs.getString("category_name"));
                         row.put("categoryNormalizedName", rs.getString("category_normalized_name"));
 
@@ -266,6 +269,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                     (String) p.get("name"),
                     (String) p.get("description"),
                     (String) p.get("slug"),
+                    (Boolean) p.get("isLaunch"),
                     category,
                     subcategory,
                     (String) p.get("mainImageUrl"),

@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record CatalogProductSummaryDTO(
         String name,
         String slug,
+        boolean isLaunch,
         CatalogCategoryDTO category,
         CatalogCategoryDTO subcategory,
         String mainImageUrl,

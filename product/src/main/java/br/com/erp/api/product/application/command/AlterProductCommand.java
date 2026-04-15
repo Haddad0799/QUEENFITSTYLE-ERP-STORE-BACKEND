@@ -4,6 +4,7 @@ public record AlterProductCommand(
         Long productId,
         String name,
         String description,
-        Long categoryId
+        Long categoryId,
+        Boolean isLaunch
 ) {
 }

@@ -26,23 +26,20 @@ public record CategoryName(
         return trimmed;
     }
 
-
     private static String normalize(String input) {
-        // Remove acentos
         String noAccents = Normalizer.normalize(input, Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
 
-        // Remove números
-        noAccents = noAccents.replaceAll("[0-9]", "");
+        String normalized = noAccents
+                .toLowerCase()
+                .replaceAll("[0-9]", "")
+                .replaceAll("[^a-z]+", "-")
+                .replaceAll("(^-+|-+$)", "");
 
-        // Substitui espaços por _
-        noAccents = noAccents.replaceAll("\\s+", "_");
+        if (normalized.isBlank()) {
+            throw new InvalidNameException("Nome inválido para normalização");
+        }
 
-        // Remove caracteres especiais (mantém letras e _)
-        noAccents = noAccents.replaceAll("[^a-zA-Z_]", "");
-
-        // Tudo em maiúsculo
-        return noAccents.toUpperCase();
+        return normalized;
     }
 }
-

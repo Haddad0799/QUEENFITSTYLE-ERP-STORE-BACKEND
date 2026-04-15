@@ -4,7 +4,10 @@ import br.com.erp.api.catalog.application.query.filter.CatalogFilter;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class CatalogFilterSqlResolver {
@@ -13,19 +16,19 @@ public class CatalogFilterSqlResolver {
 
         Map<String, Object> params = new HashMap<>();
 
-        // ───────────────
-        // Filtros PRODUTO
-        // ───────────────
         StringBuilder productFilters = new StringBuilder();
 
         if (filter.hasCategory()) {
-            // Filtra pela categoria pai — lista todos os produtos de todas as subcategorias filhas
-            productFilters.append(" AND cp2.parent_category_normalized_name = :category ");
+            productFilters.append("""
+                     AND (
+                        cp2.parent_category_normalized_name = :category
+                        OR cp2.subcategory_normalized_name = :category
+                     )
+                    """);
             params.put("category", filter.category());
         }
 
         if (filter.hasSubcategory()) {
-            // Filtra pela subcategoria diretamente
             productFilters.append(" AND cp2.subcategory_normalized_name = :subcategory ");
             params.put("subcategory", filter.subcategory());
         }
@@ -35,9 +38,6 @@ public class CatalogFilterSqlResolver {
             params.put("search", "%" + filter.search() + "%");
         }
 
-        // ───────────────
-        // Filtros SKU
-        // ───────────────
         List<String> skuConditions = new ArrayList<>();
 
         if (filter.hasColor()) {
@@ -46,7 +46,6 @@ public class CatalogFilterSqlResolver {
         }
 
         if (filter.hasSizeName()) {
-            // use a distinct placeholder name to avoid collision with pagination 'size' param
             skuConditions.add("cs.size_name = :skuSize");
             params.put("skuSize", filter.sizeName());
         }
@@ -61,16 +60,12 @@ public class CatalogFilterSqlResolver {
             params.put("maxPrice", filter.maxPrice());
         }
 
-        // regra de negócio
         skuConditions.add("cs.available_stock > 0");
 
         String skuWhere = String.join(" AND ", skuConditions);
 
-        // ───────────────
-        // SELECT
-        // ───────────────
         String selectSql = """
-            SELECT cp.name, cp.slug,
+            SELECT cp.name, cp.slug, cp.is_launch,
                    cp.parent_category_id, cp.parent_category_name, cp.parent_category_normalized_name,
                    cp.subcategory_id, cp.subcategory_name, cp.subcategory_normalized_name,
                    cp.category_name, cp.category_normalized_name,
@@ -92,9 +87,6 @@ public class CatalogFilterSqlResolver {
             ORDER BY cp.published_at DESC
         """.formatted(productFilters, skuWhere);
 
-        // ───────────────
-        // COUNT
-        // ───────────────
         String countSql = """
             SELECT COUNT(*)
             FROM catalog_products cp2

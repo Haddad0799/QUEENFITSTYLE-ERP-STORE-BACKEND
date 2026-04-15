@@ -52,8 +52,20 @@ public class CatalogController {
             }
         }
 
-        CatalogFilter filter = new CatalogFilter(category, subcategory, color, effectiveSizeName, minPrice, maxPrice, search);
+        CatalogFilter filter = new CatalogFilter(
+                normalize(category),
+                normalize(subcategory),
+                color,
+                effectiveSizeName,
+                minPrice,
+                maxPrice,
+                search
+        );
         return catalogQueryService.listProducts(filter, pageable);
+    }
+
+    private String normalize(String value) {
+        return value == null ? null : value.trim().toLowerCase();
     }
 
     @GetMapping("/{slug}")

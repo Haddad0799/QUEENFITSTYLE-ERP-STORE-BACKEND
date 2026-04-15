@@ -7,6 +7,7 @@ public record CatalogProductDetailDTO(
         String name,
         String description,
         String slug,
+        boolean isLaunch,
         CatalogCategoryDTO category,
         CatalogCategoryDTO subcategory,
         String mainImageUrl,

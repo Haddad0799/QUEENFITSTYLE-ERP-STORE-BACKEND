@@ -47,6 +47,10 @@ public class AlterProductUseCase {
             product.recategorize(command.categoryId());
         }
 
+        if (command.isLaunch() != null) {
+            product.changeLaunch(command.isLaunch());
+        }
+
         productRepository.update(product);
 
         productCatalogPublisher.publishIfPublished(product.getId());

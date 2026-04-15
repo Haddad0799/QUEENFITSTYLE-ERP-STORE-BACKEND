@@ -22,14 +22,15 @@ public class ProductJdbiRepositoryImpl implements ProductRepositoryPort {
     public Long save(Product product) {
         return jdbi.withHandle(handle ->
                 handle.createUpdate("""
-            INSERT INTO products (name, description, slug, category_id, status)
-            VALUES (:name, :description, :slug, :categoryId, :status)
+            INSERT INTO products (name, description, slug, category_id, status, is_launch)
+            VALUES (:name, :description, :slug, :categoryId, :status, :isLaunch)
         """)
                         .bind("name", product.getName())
                         .bind("description", product.getDescription())
                         .bind("slug", product.getSlugValue())
                         .bind("categoryId", product.getCategoryId())
                         .bind("status", product.getStatus().name())
+                        .bind("isLaunch", product.isLaunch())
                         .executeAndReturnGeneratedKeys("id")
                         .mapTo(Long.class)
                         .one()
@@ -46,7 +47,8 @@ public class ProductJdbiRepositoryImpl implements ProductRepositoryPort {
                 description = :description,
                 slug = :slug,
                 category_id = :categoryId,
-                status = :status
+                status = :status,
+                is_launch = :isLaunch
             WHERE id = :id
         """)
                         .bind("id", product.getId())
@@ -55,6 +57,7 @@ public class ProductJdbiRepositoryImpl implements ProductRepositoryPort {
                         .bind("slug", product.getSlugValue())
                         .bind("categoryId", product.getCategoryId())
                         .bind("status", product.getStatus().name())
+                        .bind("isLaunch", product.isLaunch())
                         .execute()
         );
     }
@@ -85,6 +88,7 @@ WHERE slug = :slug
             slug,
             category_id,
             status,
+            is_launch,
             primary_image_id
         FROM products
         WHERE id = :id
@@ -182,6 +186,7 @@ WHERE slug = :slug
                     slug,
                     category_id,
                     status,
+                    is_launch,
                     primary_image_id
                 FROM products
                 WHERE slug = :slug
