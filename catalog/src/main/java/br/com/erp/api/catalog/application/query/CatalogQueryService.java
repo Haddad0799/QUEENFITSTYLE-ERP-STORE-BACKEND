@@ -16,18 +16,18 @@ import java.util.List;
 public class CatalogQueryService {
 
     private final CatalogQueryRepository queryRepository;
-    private final CatalogCategoryQueryRepository categoryQueryRepository;
+    private final CatalogCategoryScopeResolver categoryScopeResolver;
 
     public CatalogQueryService(
             CatalogQueryRepository queryRepository,
-            CatalogCategoryQueryRepository categoryQueryRepository
+            CatalogCategoryScopeResolver categoryScopeResolver
     ) {
         this.queryRepository = queryRepository;
-        this.categoryQueryRepository = categoryQueryRepository;
+        this.categoryScopeResolver = categoryScopeResolver;
     }
 
     public Page<CatalogProductSummaryDTO> listProducts(CatalogFilter filter, Pageable pageable) {
-        List<String> categorySlugs = resolveCategorySlugs(filter);
+        List<String> categorySlugs = categoryScopeResolver.resolve(filter);
         if (filter.hasCategory() && categorySlugs.isEmpty()) {
             return new PageImpl<>(List.of(), pageable, 0);
         }
@@ -43,13 +43,5 @@ public class CatalogQueryService {
     public CatalogSkuDetailDTO getSkuBySlugAndCode(String slug, String skuCode) {
         return queryRepository.findSkuBySlugAndCode(slug, skuCode)
                 .orElseThrow(() -> new RuntimeException("SKU nao encontrado: " + skuCode));
-    }
-
-    private List<String> resolveCategorySlugs(CatalogFilter filter) {
-        if (!filter.hasCategory()) {
-            return List.of();
-        }
-
-        return categoryQueryRepository.findCategoryAndDescendantSlugs(filter.category());
     }
 }

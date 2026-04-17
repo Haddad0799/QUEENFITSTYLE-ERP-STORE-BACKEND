@@ -34,13 +34,13 @@ public class CatalogFilterSqlResolver {
         List<String> skuConditions = new ArrayList<>();
 
         if (filter.hasColor()) {
-            skuConditions.add("cs.color_name = :color");
+            skuConditions.add("ccg.color_name = :color");
             params.put("color", filter.color());
         }
 
-        if (filter.hasSizeName()) {
-            skuConditions.add("cs.size_name = :skuSize");
-            params.put("skuSize", filter.sizeName());
+        if (filter.hasLabel()) {
+            skuConditions.add("cs.size_name = :label");
+            params.put("label", filter.label());
         }
 
         if (filter.hasMinPrice()) {
@@ -70,6 +70,7 @@ public class CatalogFilterSqlResolver {
             %s
             AND EXISTS (
                 SELECT 1 FROM catalog_skus cs
+                JOIN catalog_color_groups ccg ON ccg.id = cs.catalog_color_group_id
                 WHERE cs.catalog_product_id = cp2.id
                 AND %s
         )
@@ -87,6 +88,7 @@ public class CatalogFilterSqlResolver {
             %s
             AND EXISTS (
                 SELECT 1 FROM catalog_skus cs
+                JOIN catalog_color_groups ccg ON ccg.id = cs.catalog_color_group_id
                 WHERE cs.catalog_product_id = cp2.id
                 AND %s
             )

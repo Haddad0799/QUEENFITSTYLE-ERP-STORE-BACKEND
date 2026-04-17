@@ -26,28 +26,16 @@ public class CatalogController {
     public Page<CatalogProductSummaryDTO> listProducts(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String color,
-            @RequestParam(name = "size", required = false) String rawSize,
-            @RequestParam(name = "sizeName", required = false) String sizeName,
+            @RequestParam(required = false) String label,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String search,
             Pageable pageable
     ) {
-        String effectiveSizeName = null;
-        if (sizeName != null && !sizeName.isBlank()) {
-            effectiveSizeName = sizeName;
-        } else if (rawSize != null && !rawSize.isBlank()) {
-            try {
-                Integer.parseInt(rawSize);
-            } catch (NumberFormatException e) {
-                effectiveSizeName = rawSize;
-            }
-        }
-
         CatalogFilter filter = new CatalogFilter(
                 normalize(category),
                 color,
-                effectiveSizeName,
+                label,
                 minPrice,
                 maxPrice,
                 search
