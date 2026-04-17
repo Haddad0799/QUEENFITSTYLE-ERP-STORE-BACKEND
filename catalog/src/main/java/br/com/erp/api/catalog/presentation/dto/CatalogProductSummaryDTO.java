@@ -10,6 +10,7 @@ public record CatalogProductSummaryDTO(
         CatalogCategoryDTO subcategory,
         String mainImageUrl,
         String displayImageUrl,
+        CatalogColorDTO mainColor,
         BigDecimal minPrice
 ) {}
 

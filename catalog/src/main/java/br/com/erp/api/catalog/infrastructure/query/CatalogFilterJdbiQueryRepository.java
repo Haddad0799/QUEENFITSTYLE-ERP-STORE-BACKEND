@@ -2,8 +2,8 @@ package br.com.erp.api.catalog.infrastructure.query;
 
 import br.com.erp.api.catalog.application.query.CatalogFilterQueryRepository;
 import br.com.erp.api.catalog.application.query.filter.ResolvedCatalogFilter;
-import br.com.erp.api.catalog.presentation.dto.CatalogAvailableColorDTO;
 import br.com.erp.api.catalog.presentation.dto.CatalogAvailableFiltersDTO;
+import br.com.erp.api.catalog.presentation.dto.CatalogColorDTO;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Query;
 import org.springframework.stereotype.Repository;
@@ -23,12 +23,12 @@ public class CatalogFilterJdbiQueryRepository implements CatalogFilterQueryRepos
 
     @Override
     public CatalogAvailableFiltersDTO findAvailableFilters(ResolvedCatalogFilter filter) {
-        List<CatalogAvailableColorDTO> colors = findAvailableColors(filter);
+        List<CatalogColorDTO> colors = findAvailableColors(filter);
         List<String> sizes = findDistinctValues("cs.size_name", "cs.size_name", filter, true, false);
         return new CatalogAvailableFiltersDTO(colors, sizes);
     }
 
-    private List<CatalogAvailableColorDTO> findAvailableColors(ResolvedCatalogFilter filter) {
+    private List<CatalogColorDTO> findAvailableColors(ResolvedCatalogFilter filter) {
         QuerySpec querySpec = buildQuerySpec(filter, false, true);
         String sql = """
             SELECT DISTINCT ccg.color_name AS name, ccg.color_hex AS hex
@@ -47,7 +47,7 @@ public class CatalogFilterJdbiQueryRepository implements CatalogFilterQueryRepos
         return jdbi.withHandle(handle -> {
             Query query = handle.createQuery(sql);
             bindQuery(query, querySpec);
-            return query.map((rs, ctx) -> new CatalogAvailableColorDTO(
+            return query.map((rs, ctx) -> new CatalogColorDTO(
                     rs.getString("name"),
                     rs.getString("hex")
             )).list();

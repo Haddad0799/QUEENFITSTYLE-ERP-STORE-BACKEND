@@ -56,6 +56,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                 CatalogCategoryDTO subcategory = subCatId != null
                         ? new CatalogCategoryDTO(subCatId, rs.getString("subcategory_name"), rs.getString("subcategory_normalized_name"))
                         : null;
+                CatalogColorDTO mainColor = mapColor(rs.getString("main_color_name"), rs.getString("main_color_hex"));
 
                 return new CatalogProductSummaryDTO(
                         rs.getString("name"),
@@ -65,6 +66,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         subcategory,
                         rs.getString("main_image_url"),
                         rs.getString("display_image_url"),
+                        mainColor,
                         rs.getBigDecimal("min_price")
                 );
             }).list();
@@ -356,5 +358,12 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
             }
         });
         pageQuery.listParams().forEach(query::bindList);
+    }
+
+    private CatalogColorDTO mapColor(String name, String hex) {
+        if (name == null || name.isBlank() || hex == null || hex.isBlank()) {
+            return null;
+        }
+        return new CatalogColorDTO(name, hex);
     }
 }

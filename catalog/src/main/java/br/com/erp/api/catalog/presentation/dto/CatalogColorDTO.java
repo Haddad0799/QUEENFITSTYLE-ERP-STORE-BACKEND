@@ -1,6 +1,6 @@
 package br.com.erp.api.catalog.presentation.dto;
 
-public record CatalogAvailableColorDTO(
+public record CatalogColorDTO(
         String name,
         String hex
 ) {}
