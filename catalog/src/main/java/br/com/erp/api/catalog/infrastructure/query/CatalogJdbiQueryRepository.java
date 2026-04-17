@@ -64,6 +64,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         category,
                         subcategory,
                         rs.getString("main_image_url"),
+                        rs.getString("display_image_url"),
                         rs.getBigDecimal("min_price")
                 );
             }).list();

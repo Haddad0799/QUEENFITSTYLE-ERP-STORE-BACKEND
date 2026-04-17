@@ -9,6 +9,7 @@ public record CatalogProductSummaryDTO(
         CatalogCategoryDTO category,
         CatalogCategoryDTO subcategory,
         String mainImageUrl,
+        String displayImageUrl,
         BigDecimal minPrice
 ) {}
 

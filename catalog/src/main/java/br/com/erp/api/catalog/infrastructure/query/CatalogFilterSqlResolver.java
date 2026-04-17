@@ -56,13 +56,30 @@ public class CatalogFilterSqlResolver {
         skuConditions.add("cs.available_stock > 0");
 
         String skuWhere = String.join(" AND ", skuConditions);
+        String displayImageSelect = "cp.main_image_url AS display_image_url";
+        String displayImageJoin = "";
+
+        if (filter.hasColor()) {
+            displayImageSelect = "COALESCE(filtered_color_image.image_url, cp.main_image_url) AS display_image_url";
+            displayImageJoin = """
+                LEFT JOIN LATERAL (
+                    SELECT cci.image_url
+                    FROM catalog_color_groups ccg
+                    LEFT JOIN catalog_color_images cci ON cci.catalog_color_group_id = ccg.id
+                    WHERE ccg.catalog_product_id = cp.id
+                      AND ccg.color_name = :color
+                    ORDER BY cci."order" NULLS LAST
+                    LIMIT 1
+                ) filtered_color_image ON TRUE
+                """;
+        }
 
         String selectSql = """
             SELECT cp.name, cp.slug, cp.is_launch,
                    cp.parent_category_id, cp.parent_category_name, cp.parent_category_normalized_name,
                    cp.subcategory_id, cp.subcategory_name, cp.subcategory_normalized_name,
                    cp.category_name, cp.category_normalized_name,
-                   cp.main_image_url, cp.min_price
+                   cp.main_image_url, %s, cp.min_price
             FROM (
             SELECT cp2.id
             FROM catalog_products cp2
@@ -78,8 +95,9 @@ public class CatalogFilterSqlResolver {
             LIMIT :limit OFFSET :offset
             ) page
             JOIN catalog_products cp ON cp.id = page.id
+            %s
             ORDER BY cp.published_at DESC
-        """.formatted(productFilters, skuWhere);
+        """.formatted(displayImageSelect, productFilters, skuWhere, displayImageJoin);
 
         String countSql = """
             SELECT COUNT(*)
