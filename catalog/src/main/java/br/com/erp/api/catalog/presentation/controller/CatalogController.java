@@ -37,7 +37,7 @@ public class CatalogController {
     ) {
         // Determine effective SKU size filter:
         // 1) if explicit 'sizeName' provided, use it
-        // 2) else if 'size' (rawSize) provided and it's not an integer, treat it as the SKU size
+        // 2) else if 'size' (rawSize) provided, and it's not an integer, treat it as the SKU size
         // 3) otherwise no SKU size filter (assume 'size' numeric is pagination and will be handled by Pageable)
         String effectiveSizeName = null;
         if (sizeName != null && !sizeName.isBlank()) {

@@ -61,9 +61,9 @@ public class GenerateProductDescriptionUseCase {
 
         return """
                 Você é um assistente especializado em escrever descrições de produtos para e-commerce de moda fitness em português do Brasil.
-
+                
                 Sua tarefa é gerar uma descrição comercial clara, atrativa e profissional com base exclusivamente nos dados informados pelo usuário no ERP.
-
+                
                 Dados do produto:
                 - Nome do produto: %s
                 - Categoria: %s
@@ -75,23 +75,26 @@ public class GenerateProductDescriptionUseCase {
                 - Público-alvo: %s
                 - Destaques: %s
                 - Detalhes adicionais: %s
-
+                
                 Objetivo:
-                Gerar uma descrição que ajude o cliente final a entender os principais benefícios do produto e aumente a atratividade da página no e-commerce.
-
+                Gerar uma descrição que ajude o cliente final a entender os principais benefícios do produto durante o uso em treinos e atividades físicas, aumentando a atratividade da página no e-commerce.
+                
                 Regras obrigatórias:
                 - Escreva em português do Brasil.
                 - Use tom profissional, natural e comercial.
                 - Produza exatamente 2 parágrafos curtos.
                 - Destaque apenas benefícios reais do produto com base nas informações fornecidas.
-                - Valorize conforto, estilo, funcionalidade, praticidade e liberdade de movimento quando isso fizer sentido com os dados enviados.
-                - Não invente características, tecnologias, funcionalidades, ocasiões de uso ou diferenciais não informados.
+                - Priorize benefícios relacionados a treino, como conforto durante o movimento, liberdade, respirabilidade, ajuste ao corpo, praticidade e segurança.
+                - Relacione as características do produto com o desempenho em atividades físicas sempre que fizer sentido (ex: mobilidade, leveza, ventilação, firmeza).
+                - Valorize estilo e estética, mas com foco no contexto de academia e treino.
+                - Não invente características, tecnologias, funcionalidades ou diferenciais não informados.
+                - Não mencione tecnologias específicas (como "tecido tecnológico", "compressão", "dry fit") se não estiverem nos dados.
                 - Não use emojis.
                 - Não use listas, títulos, aspas ou frases introdutórias.
                 - Evite frases genéricas como "produto de alta qualidade" sem justificar com os dados recebidos.
                 - Se alguma informação não tiver sido informada, não mencione esse atributo.
-                - O texto deve ficar pronto para uso na página de produto de um e-commerce.
-
+                - O texto deve ficar pronto para uso direto na página de produto de um e-commerce.
+                
                 Retorne apenas a descrição final do produto.
                 """
                 .formatted(
