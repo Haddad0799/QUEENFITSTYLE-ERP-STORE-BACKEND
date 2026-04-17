@@ -4,4 +4,5 @@ import java.util.List;
 
 public interface CatalogCategoryQueryRepository {
     List<CatalogCategoryNodeView> findNavigableCategories();
+    List<String> findCategoryAndDescendantSlugs(String normalizedName);
 }

@@ -1,20 +1,33 @@
 package br.com.erp.api.catalog.application.query.filter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
-public record CatalogFilter(
+public record ResolvedCatalogFilter(
         String category,
+        List<String> categorySlugs,
         String color,
         String sizeName,
         BigDecimal minPrice,
         BigDecimal maxPrice,
         String search
 ) {
-    public boolean hasCategory() { return category != null && !category.isBlank(); }
+    public static ResolvedCatalogFilter from(CatalogFilter filter, List<String> categorySlugs) {
+        return new ResolvedCatalogFilter(
+                filter.category(),
+                List.copyOf(categorySlugs),
+                filter.color(),
+                filter.sizeName(),
+                filter.minPrice(),
+                filter.maxPrice(),
+                filter.search()
+        );
+    }
+
+    public boolean hasCategoryScope() { return categorySlugs != null && !categorySlugs.isEmpty(); }
     public boolean hasColor() { return color != null && !color.isBlank(); }
     public boolean hasSizeName() { return sizeName != null && !sizeName.isBlank(); }
     public boolean hasMinPrice() { return minPrice != null; }
     public boolean hasMaxPrice() { return maxPrice != null; }
     public boolean hasSearch() { return search != null && !search.isBlank(); }
 }
-

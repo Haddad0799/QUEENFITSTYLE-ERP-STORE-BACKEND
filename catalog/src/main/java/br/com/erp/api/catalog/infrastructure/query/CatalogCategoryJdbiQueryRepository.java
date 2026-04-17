@@ -10,6 +10,25 @@ import java.util.List;
 @Repository
 public class CatalogCategoryJdbiQueryRepository implements CatalogCategoryQueryRepository {
 
+    private static final String CATEGORY_AND_DESCENDANT_SLUGS_SQL = """
+        WITH RECURSIVE category_tree AS (
+            SELECT c.id, c.normalized_name
+            FROM categories c
+            WHERE c.normalized_name = :normalizedName
+              AND c.active = true
+
+            UNION ALL
+
+            SELECT child.id, child.normalized_name
+            FROM categories child
+            JOIN category_tree parent_tree ON child.parent_id = parent_tree.id
+            WHERE child.active = true
+        )
+        SELECT DISTINCT normalized_name
+        FROM category_tree
+        ORDER BY normalized_name
+        """;
+
     private static final String NAVIGABLE_CATEGORIES_SQL = """
         WITH sellable_products AS (
             SELECT DISTINCT
@@ -97,6 +116,16 @@ public class CatalogCategoryJdbiQueryRepository implements CatalogCategoryQueryR
                                     rs.getLong("direct_product_count")
                             );
                         })
+                        .list()
+        );
+    }
+
+    @Override
+    public List<String> findCategoryAndDescendantSlugs(String normalizedName) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery(CATEGORY_AND_DESCENDANT_SLUGS_SQL)
+                        .bind("normalizedName", normalizedName)
+                        .mapTo(String.class)
                         .list()
         );
     }

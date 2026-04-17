@@ -1,9 +1,10 @@
 package br.com.erp.api.catalog.infrastructure.query;
 
 import br.com.erp.api.catalog.application.query.CatalogQueryRepository;
-import br.com.erp.api.catalog.application.query.filter.CatalogFilter;
+import br.com.erp.api.catalog.application.query.filter.ResolvedCatalogFilter;
 import br.com.erp.api.catalog.presentation.dto.*;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -28,7 +29,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
     }
 
     @Override
-    public Page<CatalogProductSummaryDTO> findAll(CatalogFilter filter, Pageable pageable) {
+    public Page<CatalogProductSummaryDTO> findAll(ResolvedCatalogFilter filter, Pageable pageable) {
 
         CatalogPageQuery pageQuery = filterResolver.build(filter, pageable);
         // DEBUG: log SQL + params to help diagnosing unexpected empty pages
@@ -39,7 +40,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
 
         List<CatalogProductSummaryDTO> content = jdbi.withHandle(handle -> {
             var query = handle.createQuery(pageQuery.selectSql());
-            pageQuery.params().forEach(query::bind);
+            bindQueryParams(query, pageQuery, true);
 
             return query.map((rs, ctx) -> {
                 long parentCatIdRaw = rs.getLong("parent_category_id");
@@ -79,12 +80,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
 
         long total = jdbi.withHandle(handle -> {
             var query = handle.createQuery(pageQuery.countSql());
-
-            pageQuery.params().forEach((key, value) -> {
-                if (!"limit".equals(key) && !"offset".equals(key)) {
-                    query.bind(key, value);
-                }
-            });
+            bindQueryParams(query, pageQuery, false);
 
             return query.mapTo(Long.class).one();
         });
@@ -350,5 +346,14 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                     images
             ));
         });
+    }
+
+    private void bindQueryParams(Query query, CatalogPageQuery pageQuery, boolean includePaging) {
+        pageQuery.params().forEach((key, value) -> {
+            if (includePaging || (!"limit".equals(key) && !"offset".equals(key))) {
+                query.bind(key, value);
+            }
+        });
+        pageQuery.listParams().forEach(query::bindList);
     }
 }

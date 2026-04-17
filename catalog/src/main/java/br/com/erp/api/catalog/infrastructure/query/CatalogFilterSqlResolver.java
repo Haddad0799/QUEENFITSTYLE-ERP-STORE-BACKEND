@@ -1,6 +1,6 @@
 package br.com.erp.api.catalog.infrastructure.query;
 
-import br.com.erp.api.catalog.application.query.filter.CatalogFilter;
+import br.com.erp.api.catalog.application.query.filter.ResolvedCatalogFilter;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -12,25 +12,18 @@ import java.util.Map;
 @Component
 public class CatalogFilterSqlResolver {
 
-    public CatalogPageQuery build(CatalogFilter filter, Pageable pageable) {
+    public CatalogPageQuery build(ResolvedCatalogFilter filter, Pageable pageable) {
 
         Map<String, Object> params = new HashMap<>();
+        Map<String, List<?>> listParams = new HashMap<>();
 
         StringBuilder productFilters = new StringBuilder();
 
-        if (filter.hasCategory()) {
+        if (filter.hasCategoryScope()) {
             productFilters.append("""
-                     AND (
-                        cp2.parent_category_normalized_name = :category
-                        OR cp2.subcategory_normalized_name = :category
-                     )
+                    AND cp2.subcategory_normalized_name IN (<categorySlugs>)
                     """);
-            params.put("category", filter.category());
-        }
-
-        if (filter.hasSubcategory()) {
-            productFilters.append(" AND cp2.subcategory_normalized_name = :subcategory ");
-            params.put("subcategory", filter.subcategory());
+            listParams.put("categorySlugs", filter.categorySlugs());
         }
 
         if (filter.hasSearch()) {
@@ -102,6 +95,6 @@ public class CatalogFilterSqlResolver {
         params.put("limit", pageable.getPageSize());
         params.put("offset", pageable.getOffset());
 
-        return new CatalogPageQuery(selectSql, countSql, params);
+        return new CatalogPageQuery(selectSql, countSql, params, listParams);
     }
 }
