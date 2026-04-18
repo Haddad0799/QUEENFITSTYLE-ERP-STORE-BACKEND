@@ -11,7 +11,9 @@ public record CatalogProductDetailDTO(
         CatalogCategoryDTO category,
         CatalogCategoryDTO subcategory,
         String mainImageUrl,
-        BigDecimal minPrice,
+        CatalogColorDTO mainColor,
+        CatalogDefaultSelectionDTO defaultSelection,
+        BigDecimal displayPrice,
         BigDecimal maxPrice,
         List<CatalogColorGroupDTO> colors
 ) {}

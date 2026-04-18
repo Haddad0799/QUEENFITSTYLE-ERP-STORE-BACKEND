@@ -6,11 +6,9 @@ import br.com.erp.api.product.application.dto.SkuSnapshot;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -34,13 +32,6 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
 
     @Override
     public void replaceProduct(ProductSnapshot snapshot) {
-
-        BigDecimal minPrice = snapshot.skus().stream()
-                .map(SkuSnapshot::sellingPrice)
-                .filter(Objects::nonNull)
-                .min(BigDecimal::compareTo)
-                .orElse(null);
-
         jdbi.useTransaction(handle -> {
 
             // 1. DELETE (seguro dentro da transação)
@@ -57,12 +48,16 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
                 (product_id, name, description, slug, category_name, category_normalized_name,
                  subcategory_id, subcategory_name, subcategory_normalized_name,
                  parent_category_id, parent_category_name, parent_category_normalized_name,
-                 main_image_url, min_price, is_launch)
+                 main_image_url, main_color_name, main_color_hex,
+                 default_sku_code, default_selection_label, display_price,
+                 is_launch)
                 VALUES
                 (:productId, :name, :description, :slug, :categoryName, :categoryNormalizedName,
                  :subcategoryId, :subcategoryName, :subcategoryNormalizedName,
                  :parentCategoryId, :parentCategoryName, :parentCategoryNormalizedName,
-                 :mainImageUrl, :minPrice, :isLaunch)
+                 :mainImageUrl, :mainColorName, :mainColorHex,
+                 :defaultSkuCode, :defaultSelectionLabel, :displayPrice,
+                 :isLaunch)
             """)
                     .bind("productId", snapshot.productId())
                     .bind("name", snapshot.name())
@@ -77,7 +72,11 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
                     .bind("parentCategoryName", snapshot.parentCategoryName())
                     .bind("parentCategoryNormalizedName", snapshot.parentCategoryNormalizedName())
                     .bind("mainImageUrl", snapshot.mainImageUrl())
-                    .bind("minPrice", minPrice)
+                    .bind("mainColorName", snapshot.mainColor() != null ? snapshot.mainColor().name() : null)
+                    .bind("mainColorHex", snapshot.mainColor() != null ? snapshot.mainColor().hex() : null)
+                    .bind("defaultSkuCode", snapshot.defaultSelection() != null ? snapshot.defaultSelection().skuCode() : null)
+                    .bind("defaultSelectionLabel", snapshot.defaultSelection() != null ? snapshot.defaultSelection().label() : null)
+                    .bind("displayPrice", snapshot.displayPrice())
                     .bind("isLaunch", snapshot.isLaunch())
                     .executeAndReturnGeneratedKeys("id")
                     .mapTo(Long.class)

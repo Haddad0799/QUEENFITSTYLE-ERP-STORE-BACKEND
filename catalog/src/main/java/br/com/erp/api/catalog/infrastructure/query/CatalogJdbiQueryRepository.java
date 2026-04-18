@@ -67,7 +67,12 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         rs.getString("main_image_url"),
                         rs.getString("display_image_url"),
                         mainColor,
-                        rs.getBigDecimal("min_price")
+                        mapDefaultSelection(
+                                rs.getString("default_sku_code"),
+                                rs.getString("default_selection_label"),
+                                rs.getBigDecimal("display_price")
+                        ),
+                        rs.getBigDecimal("display_price")
                 );
             }).list();
         });
@@ -102,7 +107,10 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                            category_name, category_normalized_name,
                            subcategory_id, subcategory_name, subcategory_normalized_name,
                            parent_category_id, parent_category_name, parent_category_normalized_name,
-                           main_image_url, min_price
+                           main_image_url,
+                           main_color_name, main_color_hex,
+                           default_sku_code, default_selection_label,
+                           display_price
                     FROM catalog_products
                     WHERE slug = :slug
                 """)
@@ -128,7 +136,11 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         row.put("parentCategoryNormalizedName", rs.getString("parent_category_normalized_name"));
 
                         row.put("mainImageUrl", rs.getString("main_image_url"));
-                        row.put("minPrice", rs.getBigDecimal("min_price"));
+                        row.put("mainColorName", rs.getString("main_color_name"));
+                        row.put("mainColorHex", rs.getString("main_color_hex"));
+                        row.put("defaultSkuCode", rs.getString("default_sku_code"));
+                        row.put("defaultSelectionLabel", rs.getString("default_selection_label"));
+                        row.put("displayPrice", rs.getBigDecimal("display_price"));
                         return row;
                     })
                     .findOne();
@@ -272,7 +284,13 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                     category,
                     subcategory,
                     (String) p.get("mainImageUrl"),
-                    (BigDecimal) p.get("minPrice"),
+                    mapColor((String) p.get("mainColorName"), (String) p.get("mainColorHex")),
+                    mapDefaultSelection(
+                            (String) p.get("defaultSkuCode"),
+                            (String) p.get("defaultSelectionLabel"),
+                            (BigDecimal) p.get("displayPrice")
+                    ),
+                    (BigDecimal) p.get("displayPrice"),
                     maxPrice,
                     colorGroups
             ));
@@ -365,5 +383,12 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
             return null;
         }
         return new CatalogColorDTO(name, hex);
+    }
+
+    private CatalogDefaultSelectionDTO mapDefaultSelection(String skuCode, String label, BigDecimal price) {
+        if (skuCode == null || skuCode.isBlank() || price == null) {
+            return null;
+        }
+        return new CatalogDefaultSelectionDTO(skuCode, label, price);
     }
 }

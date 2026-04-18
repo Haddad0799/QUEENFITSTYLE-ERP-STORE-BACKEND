@@ -6,6 +6,7 @@ import java.util.List;
 public record SkuSnapshot(
         Long skuId,
         String code,
+        Long colorId,
         String colorName,
         String colorHex,
         String sizeName,

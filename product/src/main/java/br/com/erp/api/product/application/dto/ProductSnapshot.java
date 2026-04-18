@@ -1,5 +1,6 @@
 package br.com.erp.api.product.application.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record ProductSnapshot(
@@ -15,6 +16,9 @@ public record ProductSnapshot(
         String parentCategoryName,
         String parentCategoryNormalizedName,
         String mainImageUrl,
+        ColorSnapshot mainColor,
+        DefaultSelectionSnapshot defaultSelection,
+        BigDecimal displayPrice,
         List<SkuSnapshot> skus
 ) {}
 

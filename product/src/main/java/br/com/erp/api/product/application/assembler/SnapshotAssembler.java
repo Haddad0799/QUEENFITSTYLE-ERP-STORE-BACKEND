@@ -40,6 +40,7 @@ public class SnapshotAssembler {
     private final ProductColorImageRepositoryPort imageRepository;
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
+    private final SnapshotShowcaseResolver showcaseResolver;
 
     public SnapshotAssembler(StorageGateway storageGateway,
                              InventoryProvider inventoryProvider,
@@ -49,7 +50,8 @@ public class SnapshotAssembler {
                              CategoryProvider categoryProvider,
                              ProductColorImageRepositoryPort imageRepository,
                              ProductRepositoryPort productRepository,
-                             SkuRepositoryPort skuRepository) {
+                             SkuRepositoryPort skuRepository,
+                             SnapshotShowcaseResolver showcaseResolver) {
         this.storageGateway = storageGateway;
         this.inventoryProvider = inventoryProvider;
         this.priceProvider = priceProvider;
@@ -59,6 +61,7 @@ public class SnapshotAssembler {
         this.imageRepository = imageRepository;
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
+        this.showcaseResolver = showcaseResolver;
     }
 
     // Carga completa — usado pelo ProductPublishedEvent
@@ -113,6 +116,7 @@ public class SnapshotAssembler {
                     return new SkuSnapshot(
                             sku.getId(),
                             sku.getCode().value(),
+                            sku.getColorId(),
                             color != null ? color.name() : "",
                             color != null ? color.hexCode() : "",
                             sizeName,
@@ -126,7 +130,15 @@ public class SnapshotAssembler {
                     );
                 }).toList();
 
-        String mainImageUrl = resolveMainImageUrl(product);
+        ProductColorImage primaryImage = resolvePrimaryImage(product);
+        String mainImageUrl = primaryImage != null
+                ? storageGateway.getPublicUrl(primaryImage.getImageKey())
+                : null;
+        SnapshotShowcaseResolver.ShowcaseSnapshot showcase = showcaseResolver.resolve(
+                primaryImage,
+                colors,
+                skuSnapshots
+        );
 
         return new ProductSnapshot(
                 product.getId(),
@@ -141,12 +153,15 @@ public class SnapshotAssembler {
                 parentCategory != null ? parentCategory.name() : null,
                 parentCategory != null ? parentCategory.normalizedName() : null,
                 mainImageUrl,
+                showcase.mainColor(),
+                showcase.defaultSelection(),
+                showcase.displayPrice(),
                 skuSnapshots
         );
     }
 
 
-    private String resolveMainImageUrl(Product product) {
+    private ProductColorImage resolvePrimaryImage(Product product) {
         if (product.getPrimaryImageId() == null) return null;
 
         List<ProductColorImage> primaryImages = imageRepository
@@ -154,6 +169,6 @@ public class SnapshotAssembler {
 
         if (primaryImages.isEmpty()) return null;
 
-        return storageGateway.getPublicUrl(primaryImages.getFirst().getImageKey());
+        return primaryImages.getFirst();
     }
 }

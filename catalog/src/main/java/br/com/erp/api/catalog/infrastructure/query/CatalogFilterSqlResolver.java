@@ -58,21 +58,6 @@ public class CatalogFilterSqlResolver {
         String skuWhere = String.join(" AND ", skuConditions);
         String displayImageSelect = "cp.main_image_url AS display_image_url";
         String displayImageJoin = "";
-        String mainColorSelect = """
-            main_color.color_name AS main_color_name,
-            main_color.color_hex AS main_color_hex
-            """;
-        String mainColorJoin = """
-            LEFT JOIN LATERAL (
-                SELECT ccg.color_name, ccg.color_hex
-                FROM catalog_color_groups ccg
-                JOIN catalog_color_images cci ON cci.catalog_color_group_id = ccg.id
-                WHERE ccg.catalog_product_id = cp.id
-                  AND cci.image_url = cp.main_image_url
-                ORDER BY ccg.id, cci."order" NULLS LAST
-                LIMIT 1
-            ) main_color ON TRUE
-            """;
 
         if (filter.hasColor()) {
             displayImageSelect = "COALESCE(filtered_color_image.image_url, cp.main_image_url) AS display_image_url";
@@ -94,7 +79,10 @@ public class CatalogFilterSqlResolver {
                    cp.parent_category_id, cp.parent_category_name, cp.parent_category_normalized_name,
                    cp.subcategory_id, cp.subcategory_name, cp.subcategory_normalized_name,
                    cp.category_name, cp.category_normalized_name,
-                   cp.main_image_url, %s, %s, cp.min_price
+                   cp.main_image_url, %s,
+                   cp.main_color_name, cp.main_color_hex,
+                   cp.default_sku_code, cp.default_selection_label,
+                   cp.display_price
             FROM (
             SELECT cp2.id
             FROM catalog_products cp2
@@ -111,9 +99,8 @@ public class CatalogFilterSqlResolver {
             ) page
             JOIN catalog_products cp ON cp.id = page.id
             %s
-            %s
             ORDER BY cp.published_at DESC
-        """.formatted(displayImageSelect, mainColorSelect, productFilters, skuWhere, mainColorJoin, displayImageJoin);
+        """.formatted(displayImageSelect, productFilters, skuWhere, displayImageJoin);
 
         String countSql = """
             SELECT COUNT(*)

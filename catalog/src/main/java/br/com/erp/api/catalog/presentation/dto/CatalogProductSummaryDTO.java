@@ -11,6 +11,7 @@ public record CatalogProductSummaryDTO(
         String mainImageUrl,
         String displayImageUrl,
         CatalogColorDTO mainColor,
-        BigDecimal minPrice
+        CatalogDefaultSelectionDTO defaultSelection,
+        BigDecimal displayPrice
 ) {}
 
