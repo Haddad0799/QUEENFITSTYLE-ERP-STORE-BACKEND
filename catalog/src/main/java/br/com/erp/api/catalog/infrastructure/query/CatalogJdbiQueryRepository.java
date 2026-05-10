@@ -56,7 +56,6 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                 CatalogCategoryDTO subcategory = subCatId != null
                         ? new CatalogCategoryDTO(subCatId, rs.getString("subcategory_name"), rs.getString("subcategory_normalized_name"))
                         : null;
-                CatalogColorDTO mainColor = mapColor(rs.getString("main_color_name"), rs.getString("main_color_hex"));
 
                 return new CatalogProductSummaryDTO(
                         rs.getString("name"),
@@ -64,15 +63,12 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         rs.getBoolean("is_launch"),
                         category,
                         subcategory,
-                        rs.getString("main_image_url"),
-                        rs.getString("display_image_url"),
-                        mainColor,
-                        mapDefaultSelection(
-                                rs.getString("default_sku_code"),
-                                rs.getString("default_selection_label"),
-                                rs.getBigDecimal("display_price")
+                        mapSelection(
+                                rs.getString("selection_sku_code"),
+                                rs.getString("selection_label")
                         ),
-                        rs.getBigDecimal("display_price")
+                        rs.getBigDecimal("display_price"),
+                        rs.getString("display_image_url")
                 );
             }).list();
         });
@@ -138,9 +134,9 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         row.put("mainImageUrl", rs.getString("main_image_url"));
                         row.put("mainColorName", rs.getString("main_color_name"));
                         row.put("mainColorHex", rs.getString("main_color_hex"));
-                        row.put("defaultSkuCode", rs.getString("default_sku_code"));
-                        row.put("defaultSelectionLabel", rs.getString("default_selection_label"));
-                        row.put("displayPrice", rs.getBigDecimal("display_price"));
+                        row.put("showcaseSkuCode", rs.getString("default_sku_code"));
+                        row.put("showcaseSelectionLabel", rs.getString("default_selection_label"));
+                        row.put("showcaseDisplayPrice", rs.getBigDecimal("display_price"));
                         return row;
                     })
                     .findOne();
@@ -285,12 +281,11 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                     subcategory,
                     (String) p.get("mainImageUrl"),
                     mapColor((String) p.get("mainColorName"), (String) p.get("mainColorHex")),
-                    mapDefaultSelection(
-                            (String) p.get("defaultSkuCode"),
-                            (String) p.get("defaultSelectionLabel"),
-                            (BigDecimal) p.get("displayPrice")
+                    mapSelection(
+                            (String) p.get("showcaseSkuCode"),
+                            (String) p.get("showcaseSelectionLabel")
                     ),
-                    (BigDecimal) p.get("displayPrice"),
+                    (BigDecimal) p.get("showcaseDisplayPrice"),
                     maxPrice,
                     colorGroups
             ));
@@ -385,10 +380,10 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
         return new CatalogColorDTO(name, hex);
     }
 
-    private CatalogDefaultSelectionDTO mapDefaultSelection(String skuCode, String label, BigDecimal price) {
-        if (skuCode == null || skuCode.isBlank() || price == null) {
+    private CatalogSelectionDTO mapSelection(String skuCode, String label) {
+        if (skuCode == null || skuCode.isBlank()) {
             return null;
         }
-        return new CatalogDefaultSelectionDTO(skuCode, label, price);
+        return new CatalogSelectionDTO(skuCode, label);
     }
 }

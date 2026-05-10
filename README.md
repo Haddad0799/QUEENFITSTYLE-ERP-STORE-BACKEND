@@ -118,8 +118,13 @@ Em vez de mostrar sempre o menor preco global do produto, o snapshot agora respe
 
 - a imagem principal determina a `mainColor`
 - dentro dessa cor, o sistema escolhe o SKU vendavel mais barato
-- esse SKU vira a `defaultSelection`
+- esse SKU vira a `showcaseSelection`
 - o preco exibido passa a ser o `displayPrice` dessa selecao
+
+Na listagem publica, essa selecao persistida so e usada quando nao existem filtros de SKU ativos. Quando a busca aplica `color`, `label`, `minPrice` ou `maxPrice`, a API calcula uma `effectiveSelection` em tempo de consulta:
+
+- se existir SKU compativel, a resposta publica expõe `selection`, `displayPrice` e `displayImageUrl` dessa variacao
+- se nao existir SKU compativel, o produto nao entra no resultado
 
 Com isso, a vitrine deixa de mostrar combinacoes incoerentes como:
 

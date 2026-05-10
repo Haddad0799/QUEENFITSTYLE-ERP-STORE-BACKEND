@@ -154,7 +154,7 @@ public class SnapshotAssembler {
                 parentCategory != null ? parentCategory.normalizedName() : null,
                 mainImageUrl,
                 showcase.mainColor(),
-                showcase.defaultSelection(),
+                showcase.showcaseSelection(),
                 showcase.displayPrice(),
                 skuSnapshots
         );
