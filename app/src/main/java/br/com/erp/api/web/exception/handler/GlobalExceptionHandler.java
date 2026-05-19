@@ -1,5 +1,8 @@
 package br.com.erp.api.web.exception.handler;
 
+import br.com.erp.api.order.domain.exception.InvalidReservationException;
+import br.com.erp.api.order.domain.exception.ReservationAlreadyBoundException;
+import br.com.erp.api.order.domain.exception.SkuWithoutPriceException;
 import br.com.erp.api.product.application.exception.AiEmptyResponseException;
 import br.com.erp.api.product.application.exception.AiIntegrationException;
 import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
@@ -22,6 +25,66 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     private static final String PROBLEM_JSON = "application/problem+json";
+
+    @ExceptionHandler(InvalidReservationException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidReservation(
+            InvalidReservationException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ex.getMessage()
+        );
+        problem.setTitle("Reserva inválida");
+        problem.setType(URI.create("https://example.com/probs/invalid-reservation"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.unprocessableEntity().headers(headers).body(problem);
+    }
+
+    @ExceptionHandler(ReservationAlreadyBoundException.class)
+    public ResponseEntity<ProblemDetail> handleReservationAlreadyBound(
+            ReservationAlreadyBoundException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ex.getMessage()
+        );
+        problem.setTitle("Reserva já utilizada");
+        problem.setType(URI.create("https://example.com/probs/reservation-already-bound"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.unprocessableEntity().headers(headers).body(problem);
+    }
+
+    @ExceptionHandler(SkuWithoutPriceException.class)
+    public ResponseEntity<ProblemDetail> handleSkuWithoutPrice(
+            SkuWithoutPriceException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ex.getMessage()
+        );
+        problem.setTitle("SKU sem preço");
+        problem.setType(URI.create("https://example.com/probs/sku-without-price"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.unprocessableEntity().headers(headers).body(problem);
+    }
 
     @ExceptionHandler(DuplicateSkuCombinationException.class)
     public ResponseEntity<ProblemDetail> handleDuplicateSku(

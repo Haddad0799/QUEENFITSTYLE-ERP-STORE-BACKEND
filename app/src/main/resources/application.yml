@@ -39,6 +39,9 @@ nextjs:
     url: ${NEXTJS_REVALIDATE_URL:http://localhost:3000/api/revalidate}
     secret: ${NEXTJS_REVALIDATE_SECRET:G7kL9pQ2vX5rT8zM4yH1B6}
 
+whatsapp:
+  seller-phone: ${WHATSAPP_SELLER_PHONE:5561983770131}
+
 openai:
   api:
     url: ${OPENAI_API_URL:https://api.openai.com/v1/responses}

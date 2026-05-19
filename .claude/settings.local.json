@@ -4,7 +4,13 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\lucas\\\\Dev\\\\Projects\\\\queenfitstyle-project\" -Directory)",
       "Bash(Select-Object Name)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\lucas\\\\Dev\\\\Projects\\\\queenfitstyle-project\" -Directory | ForEach-Object { $_.Name })",
-      "PowerShell(\\(Get-ChildItem -Path \"C:\\\\Users\\\\lucas\\\\Dev\\\\Projects\\\\queenfitstyle-project\" -Directory -Exclude .idea, .mvn, .claude | ForEach-Object { $_.Name }\\) -join \"`n\")"
+      "PowerShell(\\(Get-ChildItem -Path \"C:\\\\Users\\\\lucas\\\\Dev\\\\Projects\\\\queenfitstyle-project\" -Directory -Exclude .idea, .mvn, .claude | ForEach-Object { $_.Name }\\) -join \"`n\")",
+      "Bash(grep -E \"\\\\.\\(java|sql\\)$\")",
+      "Bash(xargs wc -l)",
+      "Bash(xargs cat)",
+      "Bash(grep -E \"\\\\.java$\")",
+      "Bash(mvn compile *)",
+      "PowerShell(Test-Path *)"
     ]
   }
 }
