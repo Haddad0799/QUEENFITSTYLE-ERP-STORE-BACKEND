@@ -19,6 +19,9 @@ public class ProductRowMapper implements RowMapper<Product> {
         long primaryImageId = rs.getLong("primary_image_id");
         Long primaryImage = rs.wasNull() ? null : primaryImageId;
 
+        java.sql.Timestamp ts = rs.getTimestamp("launch_started_at");
+        java.time.Instant launchStartedAt = ts == null ? null : ts.toInstant();
+
         return Product.restore(
                 rs.getLong("id"),
                 rs.getString("name"),
@@ -27,6 +30,7 @@ public class ProductRowMapper implements RowMapper<Product> {
                 rs.getLong("category_id"),
                 status,
                 rs.getBoolean("is_launch"),
+                launchStartedAt,
                 primaryImage
         );
     }

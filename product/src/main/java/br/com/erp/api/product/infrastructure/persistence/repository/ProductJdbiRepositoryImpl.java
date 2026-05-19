@@ -6,6 +6,9 @@ import br.com.erp.api.product.infrastructure.mapper.ProductRowMapper;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -22,8 +25,8 @@ public class ProductJdbiRepositoryImpl implements ProductRepositoryPort {
     public Long save(Product product) {
         return jdbi.withHandle(handle ->
                 handle.createUpdate("""
-            INSERT INTO products (name, description, slug, category_id, status, is_launch)
-            VALUES (:name, :description, :slug, :categoryId, :status, :isLaunch)
+            INSERT INTO products (name, description, slug, category_id, status, is_launch, launch_started_at)
+            VALUES (:name, :description, :slug, :categoryId, :status, :isLaunch, :launchStartedAt)
         """)
                         .bind("name", product.getName())
                         .bind("description", product.getDescription())
@@ -31,6 +34,7 @@ public class ProductJdbiRepositoryImpl implements ProductRepositoryPort {
                         .bind("categoryId", product.getCategoryId())
                         .bind("status", product.getStatus().name())
                         .bind("isLaunch", product.isLaunch())
+                        .bind("launchStartedAt", product.getLaunchStartedAt().map(Timestamp::from).orElse(null))
                         .executeAndReturnGeneratedKeys("id")
                         .mapTo(Long.class)
                         .one()
@@ -40,24 +44,26 @@ public class ProductJdbiRepositoryImpl implements ProductRepositoryPort {
     @Override
     public void update(Product product) {
         jdbi.useHandle(handle ->
-                handle.createUpdate("""
-            UPDATE products
-            SET
-                name = :name,
-                description = :description,
-                slug = :slug,
-                category_id = :categoryId,
-                status = :status,
-                is_launch = :isLaunch
-            WHERE id = :id
-        """)
+                    handle.createUpdate("""
+                    UPDATE products
+                    SET
+                        name = :name,
+                        description = :description,
+                        slug = :slug,
+                        category_id = :categoryId,
+                        status = :status,
+                        is_launch = :isLaunch,
+                        launch_started_at = :launchStartedAt
+                    WHERE id = :id
+                """)
                         .bind("id", product.getId())
                         .bind("name", product.getName())
                         .bind("description", product.getDescription())
                         .bind("slug", product.getSlugValue())
                         .bind("categoryId", product.getCategoryId())
                         .bind("status", product.getStatus().name())
-                        .bind("isLaunch", product.isLaunch())
+                                .bind("isLaunch", product.isLaunch())
+                                .bind("launchStartedAt", product.getLaunchStartedAt().map(Timestamp::from).orElse(null))
                         .execute()
         );
     }
@@ -89,6 +95,7 @@ WHERE slug = :slug
             category_id,
             status,
             is_launch,
+            launch_started_at,
             primary_image_id
         FROM products
         WHERE id = :id
@@ -187,6 +194,7 @@ WHERE slug = :slug
                     category_id,
                     status,
                     is_launch,
+                    launch_started_at,
                     primary_image_id
                 FROM products
                 WHERE slug = :slug
@@ -203,6 +211,19 @@ WHERE slug = :slug
                 handle.createUpdate("DELETE FROM products WHERE id = :id")
                         .bind("id", id)
                         .execute()
+        );
+    }
+
+    @Override
+    public java.util.List<Long> findIdsByIsLaunchTrueAndLaunchStartedBefore(Instant cutoff) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                    SELECT id FROM products
+                    WHERE is_launch = TRUE AND launch_started_at < :cutoff
+                """)
+                        .bind("cutoff", Timestamp.from(cutoff))
+                        .mapTo(Long.class)
+                        .list()
         );
     }
 

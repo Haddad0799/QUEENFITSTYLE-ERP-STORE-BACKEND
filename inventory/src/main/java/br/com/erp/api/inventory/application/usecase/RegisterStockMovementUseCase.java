@@ -29,8 +29,11 @@ public class RegisterStockMovementUseCase {
                 .orElseThrow(() -> new IllegalArgumentException("Estoque não encontrado: " + skuId));
 
         switch (type) {
-            case INBOUND    -> stock.addStock(quantity);
+            case INBOUND -> stock.addStock(quantity);
             case ADJUSTMENT -> stock.adjust(quantity);
+            case RESERVATION -> stock.reserve(quantity);
+            case RELEASE -> stock.releaseReservation(quantity);
+            case OUTBOUND -> stock.confirmOutbound(quantity);
             default -> throw new IllegalArgumentException("Tipo não permitido manualmente: " + type);
         }
 
@@ -41,6 +44,7 @@ public class RegisterStockMovementUseCase {
             );
         }
 
+        // Persistir estado do agregado e registrar a movimentação dentro da mesma transação
         stockRepository.update(stock);
 
         movementRepository.save(new StockMovement(
