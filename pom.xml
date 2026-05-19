@@ -37,6 +37,7 @@
 		<module>pricing</module>
 		<module>storage</module>
 		<module>catalog</module>
+		<module>order</module>
     </modules>
 
 	<dependencyManagement>
