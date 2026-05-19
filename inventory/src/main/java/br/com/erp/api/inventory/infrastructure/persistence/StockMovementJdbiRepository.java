@@ -19,25 +19,39 @@ public class StockMovementJdbiRepository implements StockMovementRepositoryPort 
 
     @Override
     public void save(StockMovement movement) {
-        jdbi.useHandle(handle ->
+        jdbi.useHandle(handle -> {
+            if (movement.getReferenceUuid() == null) {
+                // insert explicit NULL for reference_uuid to avoid binding issues
                 handle.createUpdate("""
-                    INSERT INTO stock_movement (sku_id, type, quantity, reason, reference_id)
-                    VALUES (:skuId, :type, :quantity, :reason, :referenceId)
+                    INSERT INTO stock_movement (sku_id, type, quantity, reason, reference_uuid)
+                    VALUES (:skuId, :type, :quantity, :reason, null)
                     """)
-                        .bind("skuId",       movement.getSkuId())
-                        .bind("type",        movement.getType().name())
-                        .bind("quantity",    movement.getQuantity())
-                        .bind("reason",      movement.getReason())
-                        .bind("referenceId", movement.getReferenceId())
-                        .execute()
-        );
+                        .bind("skuId",    movement.getSkuId())
+                        .bind("type",      movement.getType().name())
+                        .bind("quantity",  movement.getQuantity())
+                        .bind("reason",    movement.getReason())
+                        .execute();
+            } else {
+                // bind UUID with explicit cast to uuid to ensure correct SQL type
+                handle.createUpdate("""
+                    INSERT INTO stock_movement (sku_id, type, quantity, reason, reference_uuid)
+                    VALUES (:skuId, :type, :quantity, :reason, :referenceUuid::uuid)
+                    """)
+                        .bind("skuId",    movement.getSkuId())
+                        .bind("type",      movement.getType().name())
+                        .bind("quantity",  movement.getQuantity())
+                        .bind("reason",    movement.getReason())
+                        .bindByType("referenceUuid", movement.getReferenceUuid(), java.util.UUID.class)
+                        .execute();
+            }
+        });
     }
 
     @Override
     public List<StockMovement> findBySkuId(Long skuId) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
-                    SELECT id, sku_id, type, quantity, reason, reference_id, created_at
+                    SELECT id, sku_id, type, quantity, reason, reference_uuid, created_at
                     FROM stock_movement
                     WHERE sku_id = :skuId
                     ORDER BY created_at DESC
@@ -48,7 +62,7 @@ public class StockMovementJdbiRepository implements StockMovementRepositoryPort 
                                 MovementType.valueOf(rs.getString("type")),
                                 rs.getInt("quantity"),
                                 rs.getString("reason"),
-                                rs.getObject("reference_id", Long.class)
+                                rs.getObject("reference_uuid", java.util.UUID.class)
                         ))
                         .list()
         );

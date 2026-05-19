@@ -2,23 +2,24 @@ package br.com.erp.api.inventory.domain.entity;
 
 import br.com.erp.api.inventory.domain.enumerated.MovementType;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class StockMovement {
 
     private Long id;
-    private Long skuId;
-    private MovementType type;
-    private int quantity;
-    private String reason;
-    private Long referenceId;
-    private LocalDateTime createdAt;
+    private final Long skuId;
+    private final MovementType type;
+    private final int quantity;
+    private final String reason;
+    private final UUID referenceUuid;
+    private final LocalDateTime createdAt;
 
-    public StockMovement(Long skuId, MovementType type, int quantity, String reason, Long referenceId) {
+    public StockMovement(Long skuId, MovementType type, int quantity, String reason, UUID referenceUuid) {
         this.skuId = skuId;
         this.type = type;
         this.quantity = quantity;
         this.reason = reason;
-        this.referenceId = referenceId;
+        this.referenceUuid = referenceUuid;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -27,6 +28,6 @@ public class StockMovement {
     public MovementType getType()    { return type; }
     public int getQuantity()         { return quantity; }
     public String getReason()        { return reason; }
-    public Long getReferenceId()     { return referenceId; }
+    public UUID getReferenceUuid()   { return referenceUuid; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

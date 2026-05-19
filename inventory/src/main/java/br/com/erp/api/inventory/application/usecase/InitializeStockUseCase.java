@@ -1,10 +1,8 @@
 package br.com.erp.api.inventory.application.usecase;
 
 import br.com.erp.api.inventory.domain.entity.SkuStock;
-import br.com.erp.api.inventory.domain.entity.StockMovement;
 import br.com.erp.api.inventory.domain.enumerated.MovementType;
 import br.com.erp.api.inventory.domain.port.SkuStockRepositoryPort;
-import br.com.erp.api.inventory.domain.port.StockMovementRepositoryPort;
 import br.com.erp.api.product.application.dto.StockInitialization;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -16,14 +14,14 @@ import java.util.List;
 public class InitializeStockUseCase {
 
     private final SkuStockRepositoryPort stockRepository;
-    private final StockMovementRepositoryPort movementRepository;
+    private final RegisterStockMovementUseCase registerStockMovementUseCase;
 
     public InitializeStockUseCase(
             SkuStockRepositoryPort stockRepository,
-            StockMovementRepositoryPort movementRepository
+            RegisterStockMovementUseCase registerStockMovementUseCase
     ) {
         this.stockRepository = stockRepository;
-        this.movementRepository = movementRepository;
+        this.registerStockMovementUseCase = registerStockMovementUseCase;
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -35,14 +33,15 @@ public class InitializeStockUseCase {
 
         stockRepository.saveAll(stocks);
 
+        // Registrar movimentos usando o use-case centralizado para garantir
+        // regras do domínio e persistência consistente (ajuste para valor absoluto)
         initializations.forEach(init ->
-                movementRepository.save(new StockMovement(
+                registerStockMovementUseCase.execute(
                         init.skuId(),
-                        MovementType.INBOUND,
+                        MovementType.ADJUSTMENT,
                         init.quantity(),
-                        "Estoque inicial informado no cadastro do SKU",
-                        null
-                ))
+                        "Estoque inicial informado no cadastro do SKU"
+                )
         );
     }
 }

@@ -4,13 +4,17 @@ import br.com.erp.api.product.domain.enumerated.ProductStatus;
 import br.com.erp.api.product.domain.exception.ProductAlreadyDeactivatedException;
 import br.com.erp.api.product.domain.valueobject.Slug;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public class Product {
     private Long id;
     private String name;
     private String description;
     private boolean isLaunch;
+    private Instant launchStartedAt; // novo
     private Long primaryImageId;
     private Slug slug;
     private Long categoryId;
@@ -22,6 +26,7 @@ public class Product {
         this.name = name;
         this.description = description;
         this.isLaunch = isLaunch;
+        this.launchStartedAt = isLaunch ? Instant.now() : null;
         this.categoryId = categoryId;
         this.slug = Slug.fromName(name);
         this.status = ProductStatus.DRAFT;
@@ -38,13 +43,14 @@ public class Product {
         product.slug = Slug.fromValue(slug);
         product.categoryId = categoryId;
         product.isLaunch = isLaunch;
+        product.launchStartedAt = isLaunch ? Instant.now() : null;
         product.status = ProductStatus.DRAFT;
         return product;
     }
 
     public static Product restore(long id, String name, String description,
                                   Slug slug, long categoryId, ProductStatus status,
-                                  boolean isLaunch, Long primaryImageId) {
+                                  boolean isLaunch, Instant launchStartedAt, Long primaryImageId) {
         Product product = new Product();
         product.id = id;
         product.name = name;
@@ -53,6 +59,7 @@ public class Product {
         product.categoryId = categoryId;
         product.status = status;
         product.isLaunch = isLaunch;
+        product.launchStartedAt = launchStartedAt;
         product.primaryImageId = primaryImageId;
         return product;
     }
@@ -76,6 +83,11 @@ public class Product {
 
     public void changeLaunch(boolean isLaunch) {
         this.isLaunch = isLaunch;
+        if (isLaunch) {
+            this.launchStartedAt = Instant.now();
+        } else {
+            this.launchStartedAt = null;
+        }
     }
 
     public void assertDeletable() {
@@ -170,5 +182,17 @@ public class Product {
 
     public boolean isLaunch() {
         return isLaunch;
+    }
+
+    // retorna se o lançamento ainda está dentro da janela 'efetiva'
+    public boolean isLaunchEffective(Duration window) {
+        if (!this.isLaunch) return false;
+        if (this.launchStartedAt == null) return false;
+        Instant cutoff = Instant.now().minus(window);
+        return this.launchStartedAt.isAfter(cutoff);
+    }
+
+    public Optional<Instant> getLaunchStartedAt() {
+        return Optional.ofNullable(launchStartedAt);
     }
 }

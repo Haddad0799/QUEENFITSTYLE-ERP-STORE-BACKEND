@@ -3,6 +3,8 @@ package br.com.erp.api.product.domain.port;
 import br.com.erp.api.product.domain.entity.Product;
 
 import java.util.Optional;
+import java.time.Instant;
+import java.util.List;
 
 public interface ProductRepositoryPort {
     Long save(Product product);
@@ -16,4 +18,5 @@ public interface ProductRepositoryPort {
     String findCategoryNormalizedNameByProductId(Long productId);
     Optional<Product> findBySlug(String slug);
     void deleteById(Long id);
+    List<Long> findIdsByIsLaunchTrueAndLaunchStartedBefore(Instant cutoff);
 }

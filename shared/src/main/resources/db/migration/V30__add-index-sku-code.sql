@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_skus_sku_code ON skus(sku_code);

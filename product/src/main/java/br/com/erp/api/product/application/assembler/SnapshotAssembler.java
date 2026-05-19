@@ -22,6 +22,9 @@ import br.com.erp.api.product.presentation.dto.response.SkuStock;
 import br.com.erp.api.shared.application.projection.ColorDetailProjection;
 import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+
+import java.time.Duration;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +44,7 @@ public class SnapshotAssembler {
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
     private final SnapshotShowcaseResolver showcaseResolver;
+    private final Duration launchWindow;
 
     public SnapshotAssembler(StorageGateway storageGateway,
                              InventoryProvider inventoryProvider,
@@ -51,7 +55,8 @@ public class SnapshotAssembler {
                              ProductColorImageRepositoryPort imageRepository,
                              ProductRepositoryPort productRepository,
                              SkuRepositoryPort skuRepository,
-                             SnapshotShowcaseResolver showcaseResolver) {
+                             SnapshotShowcaseResolver showcaseResolver,
+                             @Value("${product.launch.duration:PT720H}") String launchWindowIso) {
         this.storageGateway = storageGateway;
         this.inventoryProvider = inventoryProvider;
         this.priceProvider = priceProvider;
@@ -62,6 +67,7 @@ public class SnapshotAssembler {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
         this.showcaseResolver = showcaseResolver;
+        this.launchWindow = Duration.parse(launchWindowIso);
     }
 
     // Carga completa — usado pelo ProductPublishedEvent
@@ -145,7 +151,7 @@ public class SnapshotAssembler {
                 product.getName(),
                 product.getDescription(),
                 product.getSlugValue(),
-                product.isLaunch(),
+                product.isLaunchEffective(launchWindow),
                 subcategory.id(),
                 subcategory.name(),
                 subcategory.normalizedName(),
