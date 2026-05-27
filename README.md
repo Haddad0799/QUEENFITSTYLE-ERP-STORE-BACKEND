@@ -1,259 +1,170 @@
-# QueenFitStyle Backend
+<div align="center">
 
-Backend de um ecommerce de moda fitness feminina com ERP integrado, separado entre operacao interna e storefront publica.
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=amp;color=0:0d1117,50:161b22,100:1f2937&height=amp;height=180&section=amp;section=header&text=amp;text=QueenFitStyle&fontSize=amp;fontSize=52&fontColor=amp;fontColor=58a6ff&animation=amp;animation=fadeIn&fontAlignY=amp;fontAlignY=38&desc=amp;desc=ERP%20%2B%20E-commerce%20Backend&descAlignY=amp;descAlignY=60&descColor=amp;descColor=8b949e"/>
 
-O projeto foi desenhado para resolver um problema comum em ecommerce: o produto e cadastrado no ERP, mas a loja precisa de um catalogo muito mais enxuto, consistente e rapido para consulta. Aqui, essas duas visoes convivem no mesmo backend sem misturar responsabilidades.
+<p>
+  <img src="https://img.shields.io/badge/Java_21-ED8B00?style=for-the-badge&logo=amp;logo=openjdk&logoColor=amp;logoColor=white"/>
+  <img src="https://img.shields.io/badge/Spring_Boot_3.3-6DB33F?style=for-the-badge&logo=amp;logo=springboot&logoColor=amp;logoColor=white"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=amp;logo=postgresql&logoColor=amp;logoColor=white"/>
+  <img src="https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=amp;logo=docker&logoColor=amp;logoColor=white"/>
+  <img src="https://img.shields.io/badge/MinIO-C72E49?style=for-the-badge&logo=amp;logo=minio&logoColor=amp;logoColor=white"/>
+</p>
 
-## O que este projeto entrega
+</div>
 
-- API administrativa para cadastro e operacao de produtos, SKUs, categorias, imagens, preco e estoque
-- API publica para vitrine, filtros, navegacao por categorias e detalhe de produto
-- catalogo denormalizado para leitura rapida pela loja
-- publicacao orientada a eventos entre ERP e vitrine
-- upload de imagens com pre-signed URLs, sem trafegar arquivo pelo backend
-- importacao em lote via planilha com validacao detalhada e processamento por grupo
-- revalidacao automatica do frontend Next.js apos mudancas de catalogo
-- geracao assistida por IA para descricao comercial de produtos
+---
 
-## Por que esse projeto e interessante
+## 📌 O que é este projeto
 
-Este backend nao e apenas um CRUD de produtos. Ele modela um fluxo real de operacao de ecommerce:
+Backend de uma plataforma de moda fitness feminina que une **ERP interno** e **vitrine pública** em um único sistema modular.
 
-- um produto nasce no ERP
-- recebe SKUs, imagens, preco e estoque
-- passa por validacoes de consistencia
-- e publicado
-- gera um snapshot otimizado para a loja
-- dispara revalidacao de cache no frontend
+O problema que ele resolve é comum em e-commerce: o produto é cadastrado no backoffice com toda sua complexidade operacional (SKUs, variações, estoque por SKU, preço por SKU, imagens por cor), mas a loja precisa de uma visão enxuta, consistente e rápida. Aqui essas duas realidades coexistem sem misturar responsabilidades.
 
-Na pratica, isso reduz inconsistencias entre backoffice e vitrine, melhora performance de leitura e deixa o frontend focado em experiencia de compra, nao em montar regras de negocio.
+---
 
-## Arquitetura
+## 🏗️ Arquitetura
 
-O sistema segue uma abordagem de monolito modular, organizado por dominio.
+O sistema é um **monolito modular** organizado por domínio. Cada módulo tem fronteiras claras e se comunica com os demais por meio de eventos de aplicação e portas — não por chamadas diretas entre camadas.
 
-Cada modulo e estruturado em camadas:
-
-- `application`: casos de uso, servicos, queries, assemblers
-- `domain`: entidades, regras centrais, value objects, portas
-- `infrastructure`: persistencia, adaptadores, integracoes externas
-- `presentation`: controllers e DTOs HTTP
-
-Essa separacao deixa o codigo mais facil de evoluir, testar e manter, sem espalhar regra de negocio em controller ou SQL solto em qualquer lugar.
-
-Tambem ha um uso claro de portas e adaptadores:
-
-- portas para repositorios, storage, IA, catalogo e integracoes
-- adaptadores para PostgreSQL/JDBI, MinIO, OpenAI e webhook de revalidacao
-
-## Modulos do sistema
-
-### `app`
-
-Modulo de bootstrap da aplicacao Spring Boot.
-
-### `attribute`
-
-Responsavel por atributos mestres do catalogo:
-
-- categorias
-- arvores de navegacao
-- cores
-- tamanhos
-
-### `product`
-
-Nucleo do ERP de produto:
-
-- CRUD de produtos
-- criacao e manutencao de SKUs
-- definicao de imagem principal
-- controle de imagens por cor
-- importacao em lote
-- geracao de descricao com IA
-- montagem de snapshot para publicacao
-
-### `inventory`
-
-Responsavel pelo controle de estoque e movimentos.
-
-### `pricing`
-
-Responsavel pela precificacao dos SKUs.
-
-### `storage`
-
-Integracao com MinIO/S3 para upload e publicacao de imagens.
-
-### `catalog`
-
-Read model da loja:
-
-- persiste um snapshot desnormalizado
-- entrega listagem, filtros e detalhe de produto
-- separa a visao publica da modelagem operacional do ERP
-
-### `shared`
-
-Codigo compartilhado e migracoes de banco com Flyway.
-
-## Fluxo principal de publicacao
-
-1. O produto e criado no ERP.
-2. Os SKUs sao cadastrados com cor, tamanho, dimensoes, preco e estoque.
-3. As imagens sao enviadas por pre-signed URL e vinculadas por cor.
-4. O sistema avalia a completude dos SKUs e o status do produto.
-5. Ao publicar, o `SnapshotAssembler` monta um retrato completo do produto.
-6. Um evento de publicacao atualiza o modulo de catalogo.
-7. O catalogo substitui o snapshot antigo de forma idempotente.
-8. O backend chama a revalidacao do Next.js por tags.
-
-Esse fluxo garante separacao entre operacao e vitrine, sem deixar o frontend dependente de joins complexos ou logica espalhada.
-
-## Regra de vitrine orientada pela imagem principal
-
-Um diferencial importante da implementacao atual e a logica de vitrine baseada na imagem principal do produto.
-
-Em vez de mostrar sempre o menor preco global do produto, o snapshot agora respeita a cor representada pela `mainImageUrl`:
-
-- a imagem principal determina a `mainColor`
-- dentro dessa cor, o sistema escolhe o SKU vendavel mais barato
-- esse SKU vira a `showcaseSelection`
-- o preco exibido passa a ser o `displayPrice` dessa selecao
-
-Na listagem publica, essa selecao persistida so e usada quando nao existem filtros de SKU ativos. Quando a busca aplica `color`, `label`, `minPrice` ou `maxPrice`, a API calcula uma `effectiveSelection` em tempo de consulta:
-
-- se existir SKU compativel, a resposta publica expõe `selection`, `displayPrice` e `displayImageUrl` dessa variacao
-- se nao existir SKU compativel, o produto nao entra no resultado
-
-Com isso, a vitrine deixa de mostrar combinacoes incoerentes como:
-
-- imagem principal de uma cor
-- preco pertencente a outra cor
-
-Esse tipo de detalhe parece pequeno, mas tem impacto direto em UX, consistencia comercial e confianca do catalogo.
-
-## Regras de negocio relevantes
-
-- produto possui ciclo de vida: `DRAFT`, `READY_FOR_SALE`, `PUBLISHED`, `INACTIVE`, `ARCHIVED`
-- SKU possui ciclo de vida: `INCOMPLETE`, `READY`, `PUBLISHED`, `BLOCKED`, `DISCONTINUED`
-- SKU so avanca quando possui informacoes suficientes e imagem associada
-- alteracoes em imagem, estoque e preco podem recalcular status e snapshot
-- catalogo publico nao consulta a modelagem operacional diretamente; consome o snapshot publicado
-
-## Funcionalidades implementadas
-
-### ERP / administracao
-
-- cadastro, edicao, listagem e exclusao de produtos
-- publicacao manual de produto
-- importacao em lote via arquivo Excel
-- listagem e gerenciamento de SKUs por produto
-- atualizacao de dimensoes
-- atualizacao de preco
-- registro de movimentacoes de estoque
-- exclusao em lote de SKUs
-- upload de imagens por cor
-- confirmacao de upload sem trafegar binario pelo backend
-- remocao e reordenacao de imagens
-- definicao da imagem principal do produto
-- geracao de descricao comercial com IA
-- CRUD de categorias com ativacao, desativacao e arvore
-- consulta de cores e tamanhos
-
-### Storefront / loja
-
-- listagem paginada de produtos
-- filtro por categoria, cor, tamanho, faixa de preco e busca textual
-- endpoint de filtros disponiveis
-- endpoint de categorias navegaveis
-- detalhe de produto com grupos de cor, imagens e SKUs
-- detalhe de SKU por slug do produto + codigo do SKU
-
-## API em alto nivel
-
-### ERP
-
-- `GET /erp/products`
-- `POST /erp/products`
-- `PATCH /erp/products/{id}`
-- `POST /erp/products/{id}/publish`
-- `POST /erp/products/import`
-- `GET /erp/products/{productId}/skus`
-- `POST /erp/products/{productId}/skus`
-- `POST /erp/products/{productId}/skus/{skuId}/stock/movements`
-- `PUT /erp/products/{productId}/skus/{skuId}/price`
-- `POST /erp/products/{productId}/colors/{colorId}/images/upload-urls`
-- `POST /erp/products/{productId}/colors/{colorId}/images`
-- `PATCH /erp/products/{productId}/primary-image`
-- `GET /erp/categories`
-- `GET /erp/categories/tree`
-
-### Store
-
-- `GET /store/products`
-- `GET /store/products/{slug}`
-- `GET /store/products/{slug}/skus/{skuCode}`
-- `GET /store/catalog/filters`
-- `GET /store/catalog/categories`
-- `GET /store/categories`
-
-## Diferenciais tecnicos
-
-- separacao clara entre write model do ERP e read model do catalogo
-- monolito modular com fronteiras de dominio bem definidas
-- uso de eventos de aplicacao para sincronizacao entre modulos
-- snapshot de catalogo pensado para performance de leitura
-- persistencia com JDBI e SQL explicito, sem esconder regra critica
-- migracoes com Flyway versionadas junto ao codigo
-- upload direto em storage via URLs assinadas
-- revalidacao por tags no Next.js apos publicacao e despublicacao
-- suporte a OpenAPI/Swagger e Actuator
-- testes automatizados com JUnit e suporte a H2/Testcontainers
-
-## Stack
-
-- Java 21
-- Spring Boot 3.3
-- Spring Web
-- Spring Data Commons
-- PostgreSQL
-- JDBI
-- Flyway
-- MinIO
-- OpenAPI / Swagger
-- Spring Boot Actuator
-- Docker Compose
-- JUnit 5
-- H2
-- Testcontainers
-
-## Estrutura do repositorio
-
-```text
+```
 queenfitstyle-project/
-|- app/
-|- attribute/
-|- catalog/
-|- inventory/
-|- pricing/
-|- product/
-|- shared/
-|- storage/
-|- docker-compose.yml
-|- pom.xml
+├── app/          # Bootstrap, WebConfig, GlobalExceptionHandler
+├── attribute/    # Categorias (árvore hierárquica), cores e tamanhos
+├── product/      # Núcleo ERP: produtos, SKUs, imagens, importação, IA
+├── inventory/    # Estoque, reservas e movimentações por SKU
+├── pricing/      # Precificação individual por SKU
+├── catalog/      # Read model da loja — snapshot desnormalizado
+├── storage/      # Integração MinIO/S3 com pre-signed URLs
+└── shared/       # Código comum, eventos e migrações Flyway
 ```
 
-## Como rodar localmente
+Cada módulo segue a mesma estrutura interna:
 
-### Pre-requisitos
+```
+modulo/
+├── application/    # Casos de uso, queries, assemblers, ports
+├── domain/         # Entidades, value objects, exceções de domínio
+├── infrastructure/ # Persistência (JDBI), adaptadores, listeners
+└── presentation/   # Controllers REST e DTOs
+```
+
+---
+
+## 🔄 Fluxo de Publicação
+
+```
+[1] Produto criado no ERP
+        ↓
+[2] SKUs cadastrados (cor + tamanho + dimensões)
+        ↓
+[3] Preço e estoque inicializados por SKU
+        ↓
+[4] Imagens enviadas via pre-signed URL → vinculadas por cor
+        ↓
+[5] EvaluateSkuCompletenessUseCase avalia cada SKU
+    EvaluateProductStatusUseCase avalia o produto
+        ↓
+[6] PublishProductUseCase → SnapshotAssembler monta retrato completo
+        ↓
+[7] ProductPublishedEvent → CatalogSyncService atualiza read model
+        ↓
+[8] NextJsRevalidationAdapter dispara revalidação por tags no frontend
+```
+
+Esse fluxo garante que o catálogo público nunca sirva dados inconsistentes e que o frontend não precise montar regras de negócio — ele só consome o snapshot pronto.
+
+---
+
+## 🖼️ Lógica de Vitrine Baseada na Imagem Principal
+
+Um diferencial da implementação é que o preço exibido na listagem respeita a cor representada pela `mainImageUrl`:
+
+1. `mainImageUrl` → determina a `mainColor`
+2. Dentro dessa cor → SKU vendável mais barato → `showcaseSelection`
+3. `showcaseSelection.price` → `displayPrice` exibido na listagem
+
+Com **filtros ativos** (cor, tamanho, faixa de preço), a API calcula uma `effectiveSelection` em tempo real:
+
+- Se existe SKU compatível → expõe `selection`, `displayPrice` e `displayImageUrl` dessa variação
+- Se não existe SKU compatível → produto não entra no resultado
+
+Isso elimina inconsistências como: imagem de uma cor com preço de outra.
+
+---
+
+## 📡 Endpoints
+
+<details>
+<summary><strong>ERP — Backoffice</strong></summary>
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/erp/products` | Listagem paginada com filtros |
+| `POST` | `/erp/products` | Criar produto |
+| `PATCH` | `/erp/products/{id}` | Editar produto |
+| `POST` | `/erp/products/{id}/publish` | Publicar produto |
+| `POST` | `/erp/products/import` | Importação em lote via Excel |
+| `GET` | `/erp/products/{id}/skus` | Listar SKUs do produto |
+| `POST` | `/erp/products/{id}/skus` | Adicionar SKU |
+| `PUT` | `/erp/products/{id}/skus/{skuId}/price` | Atualizar preço do SKU |
+| `POST` | `/erp/products/{id}/skus/{skuId}/stock/movements` | Registrar movimentação |
+| `POST` | `/erp/products/{id}/colors/{colorId}/images/upload-urls` | Solicitar pre-signed URLs |
+| `POST` | `/erp/products/{id}/colors/{colorId}/images` | Confirmar upload de imagens |
+| `PATCH` | `/erp/products/{id}/primary-image` | Definir imagem principal |
+| `GET` | `/erp/categories` | Listar categorias |
+| `GET` | `/erp/categories/tree` | Árvore hierárquica de categorias |
+
+</details>
+
+<details>
+<summary><strong>Store — Vitrine Pública</strong></summary>
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/store/products` | Listagem paginada com filtros |
+| `GET` | `/store/products/{slug}` | Detalhe do produto |
+| `GET` | `/store/products/{slug}/skus/{skuCode}` | Detalhe do SKU |
+| `GET` | `/store/catalog/filters` | Filtros disponíveis para a busca atual |
+| `GET` | `/store/catalog/categories` | Categorias navegáveis |
+| `GET` | `/store/categories` | Categorias da loja |
+
+</details>
+
+---
+
+## 🧩 Decisões Técnicas
+
+| Decisão | Motivação |
+|---------|-----------|
+| **Monolito modular** | Fronteiras de domínio claras sem a complexidade operacional de microsserviços |
+| **Write model ≠ Read model** | Catálogo é um snapshot publicado — loja não consulta o ERP diretamente |
+| **JDBI com SQL explícito** | Controle total sobre queries críticas; comportamento previsível sem ORM |
+| **Pre-signed URLs para imagens** | Arquivo nunca trafega pelo backend — escala sem custo de I/O |
+| **Eventos de aplicação** | Desacoplamento entre publicação de produto e atualização do catálogo |
+| **Revalidação por tags (Next.js)** | Frontend invalida cache seletivamente após mudanças no catálogo |
+| **Flyway para migrações** | 33 versões versionadas junto ao código, rastreáveis e reversíveis |
+| **Testcontainers** | Testes de integração com banco real, sem mocks frágeis |
+
+---
+
+## ⚙️ Ciclos de Vida
+
+**Produto:** `DRAFT` → `READY_FOR_SALE` → `PUBLISHED` → `INACTIVE` → `ARCHIVED`
+
+**SKU:** `INCOMPLETE` → `READY` → `PUBLISHED` → `BLOCKED` → `DISCONTINUED`
+
+Um SKU só avança quando possui cor, tamanho, dimensões, preço, estoque e imagem associada. Alterações em qualquer um desses dados podem recalcular o status do SKU e do produto.
+
+---
+
+## 🚀 Como Rodar Localmente
+
+### Pré-requisitos
 
 - Java 21
 - Docker e Docker Compose
 
 ### 1. Criar o arquivo `.env`
-
-Exemplo minimo:
 
 ```env
 POSTGRES_DB=queenfitstyle
@@ -277,81 +188,73 @@ OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
 ```
 
-### 2. Subir dependencias
+### 2. Subir as dependências
 
 ```bash
 docker compose up -d
 ```
 
-Isso sobe:
+Sobe: PostgreSQL · PgAdmin · MinIO
 
-- PostgreSQL
-- PgAdmin
-- MinIO
-
-### 3. Rodar a aplicacao
-
-No Windows:
+### 3. Rodar a aplicação
 
 ```bash
+# Linux/macOS
+./mvnw spring-boot:run
+
+# Windows
 .\mvnw.cmd spring-boot:run
 ```
 
-No Linux/macOS:
-
-```bash
-./mvnw spring-boot:run
-```
-
-### 4. Executar testes
-
-No Windows:
-
-```bash
-.\mvnw.cmd test
-```
-
-No Linux/macOS:
+### 4. Executar os testes
 
 ```bash
 ./mvnw test
 ```
 
-## URLs uteis em ambiente local
+### URLs locais
 
-- API: `http://localhost:8080`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- OpenAPI: `http://localhost:8080/v3/api-docs`
-- Actuator Health: `http://localhost:8080/actuator/health`
-- MinIO Console: `http://localhost:9001`
-
-## Integracoes
-
-### Frontend ERP
-
-<https://github.com/Haddad0799/QUEENFITSTYLE-ERP-UI>
-
-### Frontend Store
-
-<https://github.com/Haddad0799/QUEENFITSTYLE-STORE-UI>
-
-## O que faz esse projeto ser forte em portfolio
-
-- resolve um problema de negocio real de ecommerce, nao apenas um exemplo academico
-- demonstra modelagem de dominio com regras de consistencia
-- mostra separacao entre operacao interna e experiencia publica de loja
-- usa integracoes reais: banco, storage, IA e frontend externo
-- implementa catalogo orientado a leitura, algo muito presente em cenarios de escala
-- cobre fluxo completo de produto: cadastro, enrichment, publicacao, vitrine e revalidacao
-
-## Proximos passos naturais
-
-- autenticacao e autorizacao por perfis
-- fila para eventos de catalogo em maior escala
-- observabilidade com tracing
-- testes de integracao mais amplos para catalogo e publicacao
-- automacao de CI/CD
+| Serviço | URL |
+|---------|-----|
+| API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| OpenAPI JSON | http://localhost:8080/v3/api-docs |
+| Actuator Health | http://localhost:8080/actuator/health |
+| MinIO Console | http://localhost:9001 |
 
 ---
 
-Se voce quer vender este projeto, a melhor leitura e esta: nao e so um backend Spring Boot. E uma base solida para operar um ecommerce com ERP acoplado, separando o que e cadastro interno do que realmente precisa chegar na vitrine com performance, consistencia e clareza comercial.
+## 🔗 Repositórios Relacionados
+
+| Repositório | Descrição |
+|-------------|-----------|
+| [QUEENFITSTYLE-ERP-UI](https://github.com/Haddad0799/QUEENFITSTYLE-ERP-UI) | Frontend do backoffice (ERP) |
+| [QUEENFITSTYLE-STORE-UI](https://github.com/Haddad0799/QUEENFITSTYLE-STORE-UI) | Frontend da loja (vitrine pública) |
+
+---
+
+## 🛠️ Stack Completa
+
+| Categoria | Tecnologias |
+|-----------|-------------|
+| Linguagem | Java 21 |
+| Framework | Spring Boot 3.3, Spring Web, Spring Data Commons |
+| Persistência | PostgreSQL, JDBI, Flyway |
+| Mensageria / Eventos | Spring Application Events |
+| Storage | MinIO (compatível S3) |
+| IA | OpenAI API (geração de descrição) |
+| Infra | Docker Compose |
+| Testes | JUnit 5, H2, Testcontainers |
+| Documentação | OpenAPI / Swagger, Spring Boot Actuator |
+
+---
+
+<div align="center">
+
+**Desenvolvido por [Lucas Haddad](https://github.com/Haddad0799)**
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&logo=amp;logo=linkedin&logoColor=amp;logoColor=white)](https://www.linkedin.com/in/lucas-haddad-backend-developer/)
+
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=amp;color=0:1f2937,50:161b22,100:0d1117&height=amp;height=100&section=amp;section=footer"/>
+
+</div>
