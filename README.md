@@ -1,13 +1,13 @@
 <div align="center">
 
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=amp;color=0:0d1117,50:161b22,100:1f2937&height=amp;height=180&section=amp;section=header&text=amp;text=QueenFitStyle&fontSize=amp;fontSize=52&fontColor=amp;fontColor=58a6ff&animation=amp;animation=fadeIn&fontAlignY=amp;fontAlignY=38&desc=amp;desc=ERP%20%2B%20E-commerce%20Backend&descAlignY=amp;descAlignY=60&descColor=amp;descColor=8b949e"/>
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&amp;color=0:0d1117,50:161b22,100:1f2937&amp;height=180&amp;section=header&amp;text=QueenFitStyle&amp;fontSize=52&amp;fontColor=58a6ff&amp;animation=fadeIn&amp;fontAlignY=38&amp;desc=ERP%20%2B%20E-commerce%20Backend&amp;descAlignY=60&amp;descColor=8b949e"/>
 
 <p>
-  <img src="https://img.shields.io/badge/Java_21-ED8B00?style=for-the-badge&logo=amp;logo=openjdk&logoColor=amp;logoColor=white"/>
-  <img src="https://img.shields.io/badge/Spring_Boot_3.3-6DB33F?style=for-the-badge&logo=amp;logo=springboot&logoColor=amp;logoColor=white"/>
-  <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=amp;logo=postgresql&logoColor=amp;logoColor=white"/>
-  <img src="https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=amp;logo=docker&logoColor=amp;logoColor=white"/>
-  <img src="https://img.shields.io/badge/MinIO-C72E49?style=for-the-badge&logo=amp;logo=minio&logoColor=amp;logoColor=white"/>
+  <img src="https://img.shields.io/badge/Java_21-ED8B00?style=for-the-badge&amp;logo=openjdk&amp;logoColor=white"/>
+  <img src="https://img.shields.io/badge/Spring_Boot_3.3-6DB33F?style=for-the-badge&amp;logo=springboot&amp;logoColor=white"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&amp;logo=postgresql&amp;logoColor=white"/>
+  <img src="https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&amp;logo=docker&amp;logoColor=white"/>
+  <img src="https://img.shields.io/badge/MinIO-C72E49?style=for-the-badge&amp;logo=minio&amp;logoColor=white"/>
 </p>
 
 </div>
@@ -124,7 +124,7 @@ Isso elimina inconsistências como: imagem de uma cor com preço de outra.
 | `GET` | `/store/products` | Listagem paginada com filtros |
 | `GET` | `/store/products/{slug}` | Detalhe do produto |
 | `GET` | `/store/products/{slug}/skus/{skuCode}` | Detalhe do SKU |
-| `GET` | `/store/catalog/filters` | Filtros disponíveis para a busca atual |
+| `GET` | `/store/catalog/filters` | Filtros disponíveis |
 | `GET` | `/store/catalog/categories` | Categorias navegáveis |
 | `GET` | `/store/categories` | Categorias da loja |
 
@@ -137,11 +137,11 @@ Isso elimina inconsistências como: imagem de uma cor com preço de outra.
 | Decisão | Motivação |
 |---------|-----------|
 | **Monolito modular** | Fronteiras de domínio claras sem a complexidade operacional de microsserviços |
-| **Write model ≠ Read model** | Catálogo é um snapshot publicado — loja não consulta o ERP diretamente |
+| **Write model separado do Read model** | Catálogo é um snapshot publicado — loja não consulta o ERP diretamente |
 | **JDBI com SQL explícito** | Controle total sobre queries críticas; comportamento previsível sem ORM |
 | **Pre-signed URLs para imagens** | Arquivo nunca trafega pelo backend — escala sem custo de I/O |
 | **Eventos de aplicação** | Desacoplamento entre publicação de produto e atualização do catálogo |
-| **Revalidação por tags (Next.js)** | Frontend invalida cache seletivamente após mudanças no catálogo |
+| **Revalidação por tags no Next.js** | Frontend invalida cache seletivamente após mudanças no catálogo |
 | **Flyway para migrações** | 33 versões versionadas junto ao código, rastreáveis e reversíveis |
 | **Testcontainers** | Testes de integração com banco real, sem mocks frágeis |
 
@@ -240,9 +240,8 @@ Sobe: PostgreSQL · PgAdmin · MinIO
 | Linguagem | Java 21 |
 | Framework | Spring Boot 3.3, Spring Web, Spring Data Commons |
 | Persistência | PostgreSQL, JDBI, Flyway |
-| Mensageria / Eventos | Spring Application Events |
 | Storage | MinIO (compatível S3) |
-| IA | OpenAI API (geração de descrição) |
+| IA | OpenAI API (geração de descrição comercial) |
 | Infra | Docker Compose |
 | Testes | JUnit 5, H2, Testcontainers |
 | Documentação | OpenAPI / Swagger, Spring Boot Actuator |
@@ -253,8 +252,8 @@ Sobe: PostgreSQL · PgAdmin · MinIO
 
 **Desenvolvido por [Lucas Haddad](https://github.com/Haddad0799)**
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&logo=amp;logo=linkedin&logoColor=amp;logoColor=white)](https://www.linkedin.com/in/lucas-haddad-backend-developer/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&amp;logo=linkedin&amp;logoColor=white)](https://www.linkedin.com/in/lucas-haddad-backend-developer/)
 
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=amp;color=0:1f2937,50:161b22,100:0d1117&height=amp;height=100&section=amp;section=footer"/>
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&amp;color=0:1f2937,50:161b22,100:0d1117&amp;height=100&amp;section=footer"/>
 
 </div>
