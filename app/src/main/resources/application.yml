@@ -47,3 +47,12 @@ openai:
     url: ${OPENAI_API_URL:https://api.openai.com/v1/responses}
     key: ${OPENAI_API_KEY:}
   model: ${OPENAI_MODEL:gpt-4.1-mini}
+
+jwt:
+  # Troque JWT_SECRET por uma chave base64 de 32+ bytes em produção
+  secret: ${JWT_SECRET:cXVlZW5maXRzdHlsZS1zZWNyZXQta2V5LTMyYnl0ZXM=}
+  expiration-ms: ${JWT_EXPIRATION_MS:28800000}  # 8 horas
+
+admin:
+  email: ${ADMIN_EMAIL:admin@queenfitstyle.com}
+  password: ${ADMIN_PASSWORD:changeme}

@@ -69,7 +69,10 @@ public class Order {
     }
 
     public void expire() {
-        if (status != OrderStatus.WAITING_SELLER_CONFIRMATION) return;
+        if (status == OrderStatus.EXPIRED) return;
+        if (status != OrderStatus.WAITING_SELLER_CONFIRMATION) {
+            throw new IllegalStateException("Pedido não pode expirar no status: " + status);
+        }
         status    = OrderStatus.EXPIRED;
         updatedAt = LocalDateTime.now();
     }
