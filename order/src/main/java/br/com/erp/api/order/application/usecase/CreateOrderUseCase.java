@@ -7,11 +7,14 @@ import br.com.erp.api.order.application.service.WhatsAppUrlService;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
+import br.com.erp.api.order.domain.entity.OrderTimelineEvent;
+import br.com.erp.api.order.domain.enumerated.OrderEventType;
 import br.com.erp.api.order.domain.exception.InvalidReservationException;
 import br.com.erp.api.order.domain.exception.ReservationAlreadyBoundException;
 import br.com.erp.api.order.domain.exception.SkuWithoutPriceException;
 import br.com.erp.api.order.domain.port.CustomerRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderRepositoryPort;
+import br.com.erp.api.order.domain.port.OrderTimelineRepositoryPort;
 import br.com.erp.api.order.presentation.dto.request.CreateOrderRequest;
 import br.com.erp.api.order.presentation.dto.response.CreateOrderResponse;
 import org.springframework.stereotype.Service;
@@ -32,17 +35,20 @@ public class CreateOrderUseCase {
     private final SkuPricingPort pricingPort;
     private final CustomerRepositoryPort customerRepository;
     private final OrderRepositoryPort orderRepository;
+    private final OrderTimelineRepositoryPort timelineRepository;
     private final WhatsAppUrlService whatsAppUrlService;
 
     public CreateOrderUseCase(ReservationValidationPort reservationValidationPort,
                               SkuPricingPort pricingPort,
                               CustomerRepositoryPort customerRepository,
                               OrderRepositoryPort orderRepository,
+                              OrderTimelineRepositoryPort timelineRepository,
                               WhatsAppUrlService whatsAppUrlService) {
         this.reservationValidationPort = reservationValidationPort;
         this.pricingPort               = pricingPort;
         this.customerRepository        = customerRepository;
         this.orderRepository           = orderRepository;
+        this.timelineRepository        = timelineRepository;
         this.whatsAppUrlService        = whatsAppUrlService;
     }
 
@@ -105,6 +111,14 @@ public class CreateOrderUseCase {
 
         order.attachWhatsappMessage(message);
         orderRepository.updateWhatsappMessage(order.getId(), message);
+
+        timelineRepository.append(OrderTimelineEvent.create(
+                order.getId(),
+                OrderEventType.ORDER_CREATED,
+                "Pedido criado via checkout",
+                "{\"itemsCount\":%d,\"total\":\"%s\"}".formatted(items.size(), total.toPlainString()),
+                "customer"
+        ));
 
         return new CreateOrderResponse(order.getId(), order.getStatus(), url);
     }

@@ -15,3 +15,11 @@ logging:
     root: INFO
     br.com.erp: WARN
 
+jwt:
+  secret: cXVlZW5maXRzdHlsZS1zZWNyZXQta2V5LTMyYnl0ZXM=
+  expiration-ms: 3600000
+
+admin:
+  email: admin@test.com
+  password: test1234
+

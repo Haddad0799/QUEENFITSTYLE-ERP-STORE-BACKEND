@@ -10,15 +10,25 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Job @Scheduled que varre pedidos vencidos em WAITING_SELLER_CONFIRMATION e os expira.
+ * A expiração propriamente dita é delegada ao {@link ExpireOrderUseCase} para garantir
+ * que cada pedido tenha suas reservas liberadas e timeline registrada — mesma garantia
+ * usada pelo endpoint administrativo de expiração manual.
+ */
 @Service
 public class ExpireOrdersUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(ExpireOrdersUseCase.class);
+    private static final String SYSTEM_ACTOR = "system";
 
     private final OrderRepositoryPort orderRepository;
+    private final ExpireOrderUseCase expireOrderUseCase;
 
-    public ExpireOrdersUseCase(OrderRepositoryPort orderRepository) {
-        this.orderRepository = orderRepository;
+    public ExpireOrdersUseCase(OrderRepositoryPort orderRepository,
+                               ExpireOrderUseCase expireOrderUseCase) {
+        this.orderRepository    = orderRepository;
+        this.expireOrderUseCase = expireOrderUseCase;
     }
 
     @Scheduled(fixedDelay = 3_600_000)
@@ -28,9 +38,11 @@ public class ExpireOrdersUseCase {
 
         log.info("Expirando {} pedidos pendentes sem resposta", expired.size());
         for (Order order : expired) {
-            order.expire();
-            orderRepository.updateStatus(order.getId(), order.getStatus());
-            log.debug("Pedido #{} expirado", order.getId());
+            try {
+                expireOrderUseCase.expireOrder(order, SYSTEM_ACTOR);
+            } catch (RuntimeException ex) {
+                log.error("Falha ao expirar pedido #{}: {}", order.getId(), ex.getMessage(), ex);
+            }
         }
     }
 }

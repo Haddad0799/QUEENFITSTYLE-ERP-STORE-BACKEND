@@ -1,5 +1,7 @@
 package br.com.erp.api.web.exception.handler;
 
+import br.com.erp.api.auth.domain.exception.EmailAlreadyInUseException;
+import br.com.erp.api.auth.domain.exception.InvalidCredentialsException;
 import br.com.erp.api.order.domain.exception.InvalidReservationException;
 import br.com.erp.api.order.domain.exception.ReservationAlreadyBoundException;
 import br.com.erp.api.order.domain.exception.SkuWithoutPriceException;
@@ -25,6 +27,46 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     private static final String PROBLEM_JSON = "application/problem+json";
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidCredentials(
+            InvalidCredentialsException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED,
+                ex.getMessage()
+        );
+        problem.setTitle("Credenciais inválidas");
+        problem.setType(URI.create("https://example.com/probs/invalid-credentials"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).headers(headers).body(problem);
+    }
+
+    @ExceptionHandler(EmailAlreadyInUseException.class)
+    public ResponseEntity<ProblemDetail> handleEmailAlreadyInUse(
+            EmailAlreadyInUseException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                ex.getMessage()
+        );
+        problem.setTitle("Email já cadastrado");
+        problem.setType(URI.create("https://example.com/probs/email-already-in-use"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).headers(headers).body(problem);
+    }
 
     @ExceptionHandler(InvalidReservationException.class)
     public ResponseEntity<ProblemDetail> handleInvalidReservation(

@@ -10,7 +10,16 @@
       "Bash(xargs cat)",
       "Bash(grep -E \"\\\\.java$\")",
       "Bash(mvn compile *)",
-      "PowerShell(Test-Path *)"
+      "PowerShell(Test-Path *)",
+      "Bash(git status *)",
+      "Bash(./mvnw -q -pl order -am compile -DskipTests)",
+      "PowerShell(.\\\\mvnw.cmd -q -pl order -am compile -DskipTests 2>&1 | Select-Object -Last 80)",
+      "PowerShell(.\\\\mvnw.cmd -pl order -am compile -DskipTests 2>&1 | Select-Object -Last 100)",
+      "PowerShell(.\\\\mvnw.cmd -pl order -am clean compile -DskipTests 2>&1 | Select-Object -Last 60)",
+      "PowerShell(.\\\\mvnw.cmd compile -DskipTests 2>&1 | Select-Object -Last 25)",
+      "Bash(./mvnw clean *)",
+      "Bash(grep -v \"^\\\\[ERROR\\\\] $\")",
+      "Bash(./mvnw test *)"
     ]
   }
 }
