@@ -59,7 +59,8 @@ public class ExpireOrderUseCase {
             return order;
         }
 
-        if (order.getStatus() != OrderStatus.WAITING_SELLER_CONFIRMATION) {
+        if (order.getStatus() != OrderStatus.WAITING_SELLER_CONFIRMATION
+         && order.getStatus() != OrderStatus.PENDING_PAYMENT) {
             throw new InvalidOrderStateTransitionException(order.getId(), order.getStatus(), "expire");
         }
 

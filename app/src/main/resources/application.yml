@@ -45,6 +45,10 @@ openai:
   api:
     url: ${OPENAI_API_URL}
     key: ${OPENAI_API_KEY}
+    connect-timeout-ms: ${OPENAI_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${OPENAI_READ_TIMEOUT_MS:30000}
+    max-retries: ${OPENAI_MAX_RETRIES:2}
+    retry-backoff-ms: ${OPENAI_RETRY_BACKOFF_MS:500}
   model: ${OPENAI_MODEL}
 
 jwt:

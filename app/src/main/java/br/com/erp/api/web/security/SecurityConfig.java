@@ -46,8 +46,14 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
 
-                        // Cancelamento de pedido pelo e-commerce — service ou admin
+                        // Cancelamento de pedido — service ou admin
                         .requestMatchers(HttpMethod.POST, "/erp/orders/*/cancel")
+                        .hasAnyRole("ADMIN", "SERVICE")
+
+                        // Leitura de pedido e timeline — service ou admin (polling do ecommerce)
+                        .requestMatchers(HttpMethod.GET, "/erp/orders/*")
+                        .hasAnyRole("ADMIN", "SERVICE")
+                        .requestMatchers(HttpMethod.GET, "/erp/orders/*/timeline")
                         .hasAnyRole("ADMIN", "SERVICE")
 
                         // Reserva — service ou admin
@@ -65,6 +71,7 @@ public class SecurityConfig {
                         // Ajustar estoque — somente admin
                         .requestMatchers(HttpMethod.POST, "/erp/skus/*/stock/adjust")
                         .hasRole("ADMIN")
+
                         // Demais endpoints do ERP — somente admin
                         .requestMatchers("/erp/**").hasRole("ADMIN")
 
