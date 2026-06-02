@@ -19,40 +19,42 @@ logging:
     root: INFO
     br.com.erp: DEBUG
 
-# Actuator base path and server settings can be overridden via env in production
 management.server.port: 8080
 
-# springdoc settings (optional)
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
 minio:
-  url: http://localhost:9000
-  access-key: ${MINIO_ROOT_USER:admin}
-  secret-key: ${MINIO_ROOT_PASSWORD:admin123}
-  bucket: queenfitstyle
+  url: ${MINIO_URL}
+  access-key: ${MINIO_ROOT_USER}
+  secret-key: ${MINIO_ROOT_PASSWORD}
+  bucket: ${MINIO_BUCKET}
 
 nextjs:
   revalidate:
-    url: ${NEXTJS_REVALIDATE_URL:http://localhost:3000/api/revalidate}
-    secret: ${NEXTJS_REVALIDATE_SECRET:G7kL9pQ2vX5rT8zM4yH1B6}
+    url: ${NEXTJS_REVALIDATE_URL}
+    secret: ${NEXTJS_REVALIDATE_SECRET}
 
 whatsapp:
-  seller-phone: ${WHATSAPP_SELLER_PHONE:5561983770131}
+  seller-phone: ${WHATSAPP_SELLER_PHONE}
 
 openai:
   api:
-    url: ${OPENAI_API_URL:https://api.openai.com/v1/responses}
-    key: ${OPENAI_API_KEY:}
-  model: ${OPENAI_MODEL:gpt-4.1-mini}
+    url: ${OPENAI_API_URL}
+    key: ${OPENAI_API_KEY}
+  model: ${OPENAI_MODEL}
 
 jwt:
-  # Troque JWT_SECRET por uma chave base64 de 32+ bytes em produção
-  secret: ${JWT_SECRET:cXVlZW5maXRzdHlsZS1zZWNyZXQta2V5LTMyYnl0ZXM=}
-  expiration-ms: ${JWT_EXPIRATION_MS:28800000}  # 8 horas
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXPIRATION_MS}
 
 admin:
-  email: ${ADMIN_EMAIL:admin@queenfitstyle.com}
-  password: ${ADMIN_PASSWORD:changeme}
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}
+
+service:
+  client-id: ${SERVICE_CLIENT_ID}
+  client-secret: ${SERVICE_CLIENT_SECRET}

@@ -19,7 +19,9 @@
       "PowerShell(.\\\\mvnw.cmd compile -DskipTests 2>&1 | Select-Object -Last 25)",
       "Bash(./mvnw clean *)",
       "Bash(grep -v \"^\\\\[ERROR\\\\] $\")",
-      "Bash(./mvnw test *)"
+      "Bash(./mvnw test *)",
+      "Bash(./mvnw compile *)",
+      "Bash(./mvnw -q -pl auth,app -am compile)"
     ]
   }
 }

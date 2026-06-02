@@ -37,24 +37,46 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/catalog/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/store/orders").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/erp/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, e) ->
-                        writeProblemDetail(response, HttpStatus.UNAUTHORIZED, "Não autenticado"))
-                .accessDeniedHandler((request, response, e) ->
-                        writeProblemDetail(response, HttpStatus.FORBIDDEN, "Acesso negado"))
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/store/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/store/orders").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
+
+                        // Cancelamento de pedido pelo e-commerce — service ou admin
+                        .requestMatchers(HttpMethod.POST, "/erp/orders/*/cancel")
+                        .hasAnyRole("ADMIN", "SERVICE")
+
+                        // Reserva — service ou admin
+                        .requestMatchers(HttpMethod.POST, "/erp/skus/*/stock/reserve")
+                        .hasAnyRole("ADMIN", "SERVICE")
+                        // Confirmar reserva — service ou admin
+                        .requestMatchers(HttpMethod.POST, "/erp/skus/reservations/*/confirm")
+                        .hasAnyRole("ADMIN", "SERVICE")
+                        // Liberar reserva — service ou admin
+                        .requestMatchers(HttpMethod.POST, "/erp/skus/reservations/*/release")
+                        .hasAnyRole("ADMIN", "SERVICE")
+                        // Consultar estoque — service ou admin
+                        .requestMatchers(HttpMethod.GET, "/erp/skus/*/stock")
+                        .hasAnyRole("ADMIN", "SERVICE")
+                        // Ajustar estoque — somente admin
+                        .requestMatchers(HttpMethod.POST, "/erp/skus/*/stock/adjust")
+                        .hasRole("ADMIN")
+                        // Demais endpoints do ERP — somente admin
+                        .requestMatchers("/erp/**").hasRole("ADMIN")
+
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, e) ->
+                                writeProblemDetail(response, HttpStatus.UNAUTHORIZED, "Não autenticado"))
+                        .accessDeniedHandler((request, response, e) ->
+                                writeProblemDetail(response, HttpStatus.FORBIDDEN, "Acesso negado"))
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
