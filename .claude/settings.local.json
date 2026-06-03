@@ -22,7 +22,9 @@
       "Bash(./mvnw test *)",
       "Read(//mnt/c/Users/lucas/Dev/Projects/**)",
       "Bash(./mvnw -q -pl order -am compile)",
-      "PowerShell(.\\\\mvnw.cmd -q -pl order -am compile 2>&1 | Select-Object -Last 45)"
+      "PowerShell(.\\\\mvnw.cmd -q -pl order -am compile 2>&1 | Select-Object -Last 45)",
+      "Bash(./mvnw -q -pl auth,app -am compile)",
+      "Bash(./mvnw -pl auth,app -am compile)"
     ]
   }
 }

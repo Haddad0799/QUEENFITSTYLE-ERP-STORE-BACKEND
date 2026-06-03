@@ -1,6 +1,7 @@
 package br.com.erp.api.order.domain.entity;
 
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
+import br.com.erp.api.order.domain.exception.InvalidOrderStateTransitionException;
 import br.com.erp.api.order.domain.valueobject.DeliveryAddress;
 
 import java.math.BigDecimal;
@@ -42,6 +43,14 @@ public class Order {
         return new Order(customerId, totalAmount, notes, expiresAt, items, deliveryAddress);
     }
 
+    public static Order createForPayment(Long customerId, BigDecimal totalAmount, String notes,
+                                         LocalDateTime expiresAt, List<OrderItem> items,
+                                         DeliveryAddress deliveryAddress) {
+        Order order = new Order(customerId, totalAmount, notes, expiresAt, items, deliveryAddress);
+        order.status = OrderStatus.PENDING_PAYMENT;
+        return order;
+    }
+
     public static Order restore(Long id, Long customerId, OrderStatus status,
                                 BigDecimal totalAmount, String notes, String whatsappMessage,
                                 LocalDateTime expiresAt, LocalDateTime confirmedAt,
@@ -75,11 +84,27 @@ public class Order {
 
     public void expire() {
         if (status == OrderStatus.EXPIRED) return;
-        if (status != OrderStatus.WAITING_SELLER_CONFIRMATION) {
-            throw new IllegalStateException("Pedido não pode expirar no status: " + status);
+        if (status != OrderStatus.WAITING_SELLER_CONFIRMATION
+         && status != OrderStatus.PENDING_PAYMENT) {
+            throw new InvalidOrderStateTransitionException(id, status, "expire");
         }
         status    = OrderStatus.EXPIRED;
         updatedAt = LocalDateTime.now();
+    }
+
+    public void approvePayment() {
+        if (status != OrderStatus.PENDING_PAYMENT)
+            throw new InvalidOrderStateTransitionException(id, status, "approvePayment");
+        status    = OrderStatus.WAITING_SELLER_CONFIRMATION;
+        updatedAt = LocalDateTime.now();
+    }
+
+    public void failPayment() {
+        if (status != OrderStatus.PENDING_PAYMENT)
+            throw new InvalidOrderStateTransitionException(id, status, "failPayment");
+        status      = OrderStatus.CANCELLED;
+        cancelledAt = LocalDateTime.now();
+        updatedAt   = LocalDateTime.now();
     }
 
     public void attachWhatsappMessage(String message) {

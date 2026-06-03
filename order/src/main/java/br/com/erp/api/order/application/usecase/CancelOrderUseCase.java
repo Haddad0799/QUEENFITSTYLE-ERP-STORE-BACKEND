@@ -59,10 +59,12 @@ public class CancelOrderUseCase {
 
         // Reservas só devem ser liberadas se ainda estiverem ativas no inventory:
         //   - WAITING_SELLER_CONFIRMATION → reservas em RESERVED, precisam liberar agora
+        //   - PENDING_PAYMENT             → reservas em RESERVED (pagamento ainda não aprovado), precisam liberar agora
         //   - EXPIRED                    → reservas já foram liberadas na expiração; pular para evitar evento duplicado
         //   - CONFIRMED+ (PREPARING/SHIPPED) → reservas já foram CONFIRMED (estoque consumido).
         //                                     Devolução de estoque é fluxo separado (refund), fora do escopo do cancelamento administrativo.
-        if (order.getStatus() == OrderStatus.WAITING_SELLER_CONFIRMATION) {
+        if (order.getStatus() == OrderStatus.WAITING_SELLER_CONFIRMATION
+         || order.getStatus() == OrderStatus.PENDING_PAYMENT) {
             releaseReservations(order, actor);
         }
 
