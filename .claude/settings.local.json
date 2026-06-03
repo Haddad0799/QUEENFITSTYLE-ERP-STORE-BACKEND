@@ -19,7 +19,10 @@
       "PowerShell(.\\\\mvnw.cmd compile -DskipTests 2>&1 | Select-Object -Last 25)",
       "Bash(./mvnw clean *)",
       "Bash(grep -v \"^\\\\[ERROR\\\\] $\")",
-      "Bash(./mvnw test *)"
+      "Bash(./mvnw test *)",
+      "Read(//mnt/c/Users/lucas/Dev/Projects/**)",
+      "Bash(./mvnw -q -pl order -am compile)",
+      "PowerShell(.\\\\mvnw.cmd -q -pl order -am compile 2>&1 | Select-Object -Last 45)"
     ]
   }
 }

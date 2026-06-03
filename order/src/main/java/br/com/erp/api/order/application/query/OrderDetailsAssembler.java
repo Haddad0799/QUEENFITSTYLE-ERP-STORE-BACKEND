@@ -4,7 +4,9 @@ import br.com.erp.api.order.application.port.out.ImageUrlResolverPort;
 import br.com.erp.api.order.application.query.projection.OrderItemRow;
 import br.com.erp.api.order.application.query.projection.OrderReservationRow;
 import br.com.erp.api.order.domain.entity.Order;
+import br.com.erp.api.order.domain.valueobject.DeliveryAddress;
 import br.com.erp.api.order.presentation.dto.response.OrderCustomerDTO;
+import br.com.erp.api.order.presentation.dto.response.OrderDeliveryAddressDTO;
 import br.com.erp.api.order.presentation.dto.response.OrderDetailsDTO;
 import br.com.erp.api.order.presentation.dto.response.OrderItemDTO;
 import br.com.erp.api.order.presentation.dto.response.OrderReservationDTO;
@@ -60,10 +62,26 @@ public class OrderDetailsAssembler {
                 order.getConfirmedAt(),
                 order.getCancelledAt(),
                 customer,
+                toDeliveryAddressDTO(order.getDeliveryAddress()),
                 items,
                 reservations,
                 summary,
                 timeline
+        );
+    }
+
+    private OrderDeliveryAddressDTO toDeliveryAddressDTO(DeliveryAddress address) {
+        if (address == null) {
+            return null;
+        }
+        return new OrderDeliveryAddressDTO(
+                address.getCep(),
+                address.getStreet(),
+                address.getNumber(),
+                address.getComplement(),
+                address.getNeighborhood(),
+                address.getCity(),
+                address.getState()
         );
     }
 

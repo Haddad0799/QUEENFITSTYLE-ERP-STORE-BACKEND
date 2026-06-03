@@ -12,6 +12,7 @@ public record OrderSummaryDTO(
         String customerPhone,
         BigDecimal totalAmount,
         int itemsCount,
+        OrderDeliveryAddressDTO deliveryAddress,
         LocalDateTime createdAt,
         LocalDateTime confirmedAt,
         LocalDateTime cancelledAt,

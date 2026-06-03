@@ -15,5 +15,9 @@ public record CreateOrderRequest(
         @NotEmpty(message = "Pelo menos uma reserva é necessária")
         List<@NotBlank String> reservations,
 
+        @Valid
+        @NotNull(message = "Endereço de entrega é obrigatório")
+        DeliveryAddressRequest deliveryAddress,
+
         String notes
 ) {}

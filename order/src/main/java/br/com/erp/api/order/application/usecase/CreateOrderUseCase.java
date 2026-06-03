@@ -15,7 +15,9 @@ import br.com.erp.api.order.domain.exception.SkuWithoutPriceException;
 import br.com.erp.api.order.domain.port.CustomerRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderTimelineRepositoryPort;
+import br.com.erp.api.order.domain.valueobject.DeliveryAddress;
 import br.com.erp.api.order.presentation.dto.request.CreateOrderRequest;
+import br.com.erp.api.order.presentation.dto.request.DeliveryAddressRequest;
 import br.com.erp.api.order.presentation.dto.response.CreateOrderResponse;
 import org.springframework.stereotype.Service;
 
@@ -94,18 +96,22 @@ public class CreateOrderUseCase {
                 )
         );
 
-        // 6. Persiste pedido + itens em uma única transação JDBI
+        // 6. Endereço de entrega — valida CEP da faixa local (Pirenópolis-GO) no domínio
+        DeliveryAddress deliveryAddress = toDeliveryAddress(request.deliveryAddress());
+
+        // 7. Persiste pedido + itens em uma única transação JDBI
         Order order = orderRepository.saveWithItems(
                 Order.create(
                         customer.getId(),
                         total,
                         request.notes(),
                         LocalDateTime.now().plusHours(ORDER_EXPIRATION_HOURS),
-                        items
+                        items,
+                        deliveryAddress
                 )
         );
 
-        // 7. Gera mensagem e URL do WhatsApp (requer ID do pedido já persistido)
+        // 8. Gera mensagem e URL do WhatsApp (requer ID do pedido já persistido)
         String message = whatsAppUrlService.buildMessageText(order, customer);
         String url     = whatsAppUrlService.buildUrl(order, customer);
 
@@ -145,5 +151,16 @@ public class CreateOrderUseCase {
         BigDecimal price = prices.get(skuId);
         if (price == null) throw new SkuWithoutPriceException(skuId);
         return price;
+    }
+
+    private DeliveryAddress toDeliveryAddress(DeliveryAddressRequest request) {
+        // city/state são fixos no domínio (Pirenópolis-GO) — não vêm do cliente
+        return DeliveryAddress.create(
+                request.cep(),
+                request.street(),
+                request.number(),
+                request.complement(),
+                request.neighborhood()
+        );
     }
 }

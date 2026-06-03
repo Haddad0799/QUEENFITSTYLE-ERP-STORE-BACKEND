@@ -4,6 +4,7 @@ import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
 import br.com.erp.api.order.domain.port.OrderRepositoryPort;
+import br.com.erp.api.order.domain.valueobject.DeliveryAddress;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Repository;
 
@@ -27,13 +28,21 @@ public class OrderJdbiRepository implements OrderRepositoryPort {
         // inTransaction garante atomicidade: order + items inseridos ou nada
         return jdbi.inTransaction(handle -> {
 
+            DeliveryAddress address = order.getDeliveryAddress();
+
             Long orderId = handle.createQuery("""
                     INSERT INTO orders (
                         customer_id, status, total_amount, notes,
-                        expires_at, created_at, updated_at
+                        expires_at, created_at, updated_at,
+                        delivery_cep, delivery_street, delivery_number,
+                        delivery_complement, delivery_neighborhood,
+                        delivery_city, delivery_state
                     ) VALUES (
                         :customerId, :status, :totalAmount, :notes,
-                        :expiresAt, now(), now()
+                        :expiresAt, now(), now(),
+                        :deliveryCep, :deliveryStreet, :deliveryNumber,
+                        :deliveryComplement, :deliveryNeighborhood,
+                        :deliveryCity, :deliveryState
                     ) RETURNING id
                     """)
                     .bind("customerId",  order.getCustomerId())
@@ -41,6 +50,13 @@ public class OrderJdbiRepository implements OrderRepositoryPort {
                     .bind("totalAmount", order.getTotalAmount())
                     .bind("notes",       order.getNotes())
                     .bind("expiresAt",   order.getExpiresAt())
+                    .bind("deliveryCep",          address != null ? address.getCep() : null)
+                    .bind("deliveryStreet",       address != null ? address.getStreet() : null)
+                    .bind("deliveryNumber",       address != null ? address.getNumber() : null)
+                    .bind("deliveryComplement",   address != null ? address.getComplement() : null)
+                    .bind("deliveryNeighborhood", address != null ? address.getNeighborhood() : null)
+                    .bind("deliveryCity",         address != null ? address.getCity() : null)
+                    .bind("deliveryState",        address != null ? address.getState() : null)
                     .mapTo(Long.class)
                     .one();
 
@@ -80,7 +96,8 @@ public class OrderJdbiRepository implements OrderRepositoryPort {
                     null, null,
                     order.getCreatedAt(),
                     order.getUpdatedAt(),
-                    order.getItems()
+                    order.getItems(),
+                    order.getDeliveryAddress()
             );
         });
     }
@@ -119,7 +136,10 @@ public class OrderJdbiRepository implements OrderRepositoryPort {
                 handle.createQuery("""
                         SELECT id, customer_id, status, total_amount, notes,
                                whatsapp_message, expires_at, confirmed_at,
-                               cancelled_at, created_at, updated_at
+                               cancelled_at, created_at, updated_at,
+                               delivery_cep, delivery_street, delivery_number,
+                               delivery_complement, delivery_neighborhood,
+                               delivery_city, delivery_state
                         FROM orders
                         WHERE id = :id
                         """)
@@ -136,7 +156,8 @@ public class OrderJdbiRepository implements OrderRepositoryPort {
                                 toLocalDateTime(rs.getTimestamp("cancelled_at")),
                                 toLocalDateTime(rs.getTimestamp("created_at")),
                                 toLocalDateTime(rs.getTimestamp("updated_at")),
-                                findItemsByOrderId(id)
+                                findItemsByOrderId(id),
+                                toDeliveryAddress(rs)
                         ))
                         .findOne()
         );
@@ -166,7 +187,8 @@ public class OrderJdbiRepository implements OrderRepositoryPort {
                                 toLocalDateTime(rs.getTimestamp("cancelled_at")),
                                 toLocalDateTime(rs.getTimestamp("created_at")),
                                 toLocalDateTime(rs.getTimestamp("updated_at")),
-                                List.of()
+                                List.of(),
+                                null
                         ))
                         .list()
         );
@@ -201,5 +223,21 @@ public class OrderJdbiRepository implements OrderRepositoryPort {
 
     private LocalDateTime toLocalDateTime(Timestamp ts) {
         return ts != null ? ts.toLocalDateTime() : null;
+    }
+
+    private DeliveryAddress toDeliveryAddress(java.sql.ResultSet rs) throws java.sql.SQLException {
+        String cep = rs.getString("delivery_cep");
+        if (cep == null) {
+            return null;
+        }
+        return DeliveryAddress.restore(
+                cep,
+                rs.getString("delivery_street"),
+                rs.getString("delivery_number"),
+                rs.getString("delivery_complement"),
+                rs.getString("delivery_neighborhood"),
+                rs.getString("delivery_city"),
+                rs.getString("delivery_state")
+        );
     }
 }

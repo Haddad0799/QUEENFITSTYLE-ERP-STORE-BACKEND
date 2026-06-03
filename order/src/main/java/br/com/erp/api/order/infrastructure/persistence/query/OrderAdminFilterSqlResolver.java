@@ -78,6 +78,13 @@ public class OrderAdminFilterSqlResolver {
                 o.expires_at      AS expires_at,
                 cu.name           AS customer_name,
                 cu.phone          AS customer_phone,
+                o.delivery_cep          AS delivery_cep,
+                o.delivery_street       AS delivery_street,
+                o.delivery_number       AS delivery_number,
+                o.delivery_complement   AS delivery_complement,
+                o.delivery_neighborhood AS delivery_neighborhood,
+                o.delivery_city         AS delivery_city,
+                o.delivery_state        AS delivery_state,
                 (SELECT COUNT(*) FROM order_items oi2 WHERE oi2.order_id = o.id) AS items_count
                 """;
 

@@ -9,6 +9,7 @@ import br.com.erp.api.order.domain.enumerated.OrderStatus;
 import br.com.erp.api.order.infrastructure.persistence.query.OrderAdminFilterSqlResolver;
 import br.com.erp.api.order.infrastructure.persistence.query.OrderAdminPageQuery;
 import br.com.erp.api.order.presentation.dto.response.OrderCustomerDTO;
+import br.com.erp.api.order.presentation.dto.response.OrderDeliveryAddressDTO;
 import br.com.erp.api.order.presentation.dto.response.OrderSummaryDTO;
 import br.com.erp.api.order.presentation.dto.response.OrderTimelineDTO;
 import org.jdbi.v3.core.Jdbi;
@@ -50,6 +51,7 @@ public class OrderAdminJdbiQueryRepository implements OrderAdminQueryRepository 
                                 rs.getString("customer_phone"),
                                 rs.getBigDecimal("total_amount"),
                                 rs.getInt("items_count"),
+                                toDeliveryAddressDTO(rs),
                                 toLocalDateTime(rs.getTimestamp("created_at")),
                                 toLocalDateTime(rs.getTimestamp("confirmed_at")),
                                 toLocalDateTime(rs.getTimestamp("cancelled_at")),
@@ -203,6 +205,22 @@ public class OrderAdminJdbiQueryRepository implements OrderAdminQueryRepository 
                             );
                         })
                         .list()
+        );
+    }
+
+    private OrderDeliveryAddressDTO toDeliveryAddressDTO(java.sql.ResultSet rs) throws java.sql.SQLException {
+        String cep = rs.getString("delivery_cep");
+        if (cep == null) {
+            return null;
+        }
+        return new OrderDeliveryAddressDTO(
+                cep,
+                rs.getString("delivery_street"),
+                rs.getString("delivery_number"),
+                rs.getString("delivery_complement"),
+                rs.getString("delivery_neighborhood"),
+                rs.getString("delivery_city"),
+                rs.getString("delivery_state")
         );
     }
 

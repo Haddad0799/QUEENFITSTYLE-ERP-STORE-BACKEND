@@ -18,6 +18,7 @@ public record OrderDetailsDTO(
         LocalDateTime confirmedAt,
         LocalDateTime cancelledAt,
         OrderCustomerDTO customer,
+        OrderDeliveryAddressDTO deliveryAddress,
         List<OrderItemDTO> items,
         List<OrderReservationDTO> reservations,
         OrderReservationSummaryDTO reservationSummary,

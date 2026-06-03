@@ -1,6 +1,7 @@
 package br.com.erp.api.order.domain.entity;
 
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
+import br.com.erp.api.order.domain.valueobject.DeliveryAddress;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -20,30 +21,34 @@ public class Order {
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private final List<OrderItem> items;
+    private final DeliveryAddress deliveryAddress;
 
     private Order(Long customerId, BigDecimal totalAmount, String notes,
-                  LocalDateTime expiresAt, List<OrderItem> items) {
-        this.customerId  = customerId;
-        this.status      = OrderStatus.WAITING_SELLER_CONFIRMATION;
-        this.totalAmount = totalAmount;
-        this.notes       = notes;
-        this.expiresAt   = expiresAt;
-        this.items       = items;
-        this.createdAt   = LocalDateTime.now();
-        this.updatedAt   = LocalDateTime.now();
+                  LocalDateTime expiresAt, List<OrderItem> items, DeliveryAddress deliveryAddress) {
+        this.customerId      = customerId;
+        this.status          = OrderStatus.WAITING_SELLER_CONFIRMATION;
+        this.totalAmount     = totalAmount;
+        this.notes           = notes;
+        this.expiresAt       = expiresAt;
+        this.items           = items;
+        this.deliveryAddress = deliveryAddress;
+        this.createdAt       = LocalDateTime.now();
+        this.updatedAt       = LocalDateTime.now();
     }
 
     public static Order create(Long customerId, BigDecimal totalAmount, String notes,
-                               LocalDateTime expiresAt, List<OrderItem> items) {
-        return new Order(customerId, totalAmount, notes, expiresAt, items);
+                               LocalDateTime expiresAt, List<OrderItem> items,
+                               DeliveryAddress deliveryAddress) {
+        return new Order(customerId, totalAmount, notes, expiresAt, items, deliveryAddress);
     }
 
     public static Order restore(Long id, Long customerId, OrderStatus status,
                                 BigDecimal totalAmount, String notes, String whatsappMessage,
                                 LocalDateTime expiresAt, LocalDateTime confirmedAt,
                                 LocalDateTime cancelledAt, LocalDateTime createdAt,
-                                LocalDateTime updatedAt, List<OrderItem> items) {
-        Order order = new Order(customerId, totalAmount, notes, expiresAt, items);
+                                LocalDateTime updatedAt, List<OrderItem> items,
+                                DeliveryAddress deliveryAddress) {
+        Order order = new Order(customerId, totalAmount, notes, expiresAt, items, deliveryAddress);
         order.id              = id;
         order.status          = status;
         order.whatsappMessage = whatsappMessage;
@@ -97,4 +102,5 @@ public class Order {
     public LocalDateTime getCreatedAt()   { return createdAt; }
     public LocalDateTime getUpdatedAt()   { return updatedAt; }
     public List<OrderItem> getItems()     { return items; }
+    public DeliveryAddress getDeliveryAddress() { return deliveryAddress; }
 }
