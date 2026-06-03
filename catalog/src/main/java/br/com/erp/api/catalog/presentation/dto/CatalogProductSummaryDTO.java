@@ -8,10 +8,8 @@ public record CatalogProductSummaryDTO(
         boolean isLaunch,
         CatalogCategoryDTO category,
         CatalogCategoryDTO subcategory,
-        String mainImageUrl,
-        String displayImageUrl,
-        CatalogColorDTO mainColor,
-        CatalogDefaultSelectionDTO defaultSelection,
-        BigDecimal displayPrice
+        CatalogSelectionDTO selection,
+        BigDecimal displayPrice,
+        String displayImageUrl
 ) {}
 

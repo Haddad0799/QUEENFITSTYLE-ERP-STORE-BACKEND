@@ -1,7 +1,7 @@
 package br.com.erp.api.product.application.assembler;
 
 import br.com.erp.api.product.application.dto.ColorSnapshot;
-import br.com.erp.api.product.application.dto.DefaultSelectionSnapshot;
+import br.com.erp.api.product.application.dto.ShowcaseSelectionSnapshot;
 import br.com.erp.api.product.application.dto.SkuSnapshot;
 import br.com.erp.api.product.domain.entity.ProductColorImage;
 import br.com.erp.api.shared.application.projection.ColorDetailProjection;
@@ -37,14 +37,14 @@ public class SnapshotShowcaseResolver {
             mainColor = selection.map(this::toColorSnapshot).orElse(null);
         }
 
-        DefaultSelectionSnapshot defaultSelection = selection
-                .map(this::toDefaultSelection)
+        ShowcaseSelectionSnapshot showcaseSelection = selection
+                .map(this::toShowcaseSelection)
                 .orElse(null);
 
         return new ShowcaseSnapshot(
                 mainColor,
-                defaultSelection,
-                defaultSelection != null ? defaultSelection.price() : null
+                showcaseSelection,
+                showcaseSelection != null ? showcaseSelection.price() : null
         );
     }
 
@@ -90,8 +90,8 @@ public class SnapshotShowcaseResolver {
         return new ColorSnapshot(sku.colorId(), sku.colorName(), sku.colorHex());
     }
 
-    private DefaultSelectionSnapshot toDefaultSelection(SkuSnapshot sku) {
-        return new DefaultSelectionSnapshot(
+    private ShowcaseSelectionSnapshot toShowcaseSelection(SkuSnapshot sku) {
+        return new ShowcaseSelectionSnapshot(
                 sku.code(),
                 sku.sizeName(),
                 sku.sellingPrice()
@@ -100,7 +100,7 @@ public class SnapshotShowcaseResolver {
 
     public record ShowcaseSnapshot(
             ColorSnapshot mainColor,
-            DefaultSelectionSnapshot defaultSelection,
+            ShowcaseSelectionSnapshot showcaseSelection,
             BigDecimal displayPrice
     ) {}
 }

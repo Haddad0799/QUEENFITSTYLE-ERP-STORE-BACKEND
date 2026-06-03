@@ -17,7 +17,7 @@ public record ProductSnapshot(
         String parentCategoryNormalizedName,
         String mainImageUrl,
         ColorSnapshot mainColor,
-        DefaultSelectionSnapshot defaultSelection,
+        ShowcaseSelectionSnapshot showcaseSelection,
         BigDecimal displayPrice,
         List<SkuSnapshot> skus
 ) {}

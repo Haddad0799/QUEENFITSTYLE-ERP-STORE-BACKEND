@@ -31,9 +31,9 @@ class SnapshotShowcaseResolverTest {
 
         assertThat(result.mainColor()).isNotNull();
         assertThat(result.mainColor().name()).isEqualTo("Preto");
-        assertThat(result.defaultSelection()).isNotNull();
-        assertThat(result.defaultSelection().skuCode()).isEqualTo("SKU-PRETO-M");
-        assertThat(result.defaultSelection().label()).isEqualTo("M");
+        assertThat(result.showcaseSelection()).isNotNull();
+        assertThat(result.showcaseSelection().skuCode()).isEqualTo("SKU-PRETO-M");
+        assertThat(result.showcaseSelection().label()).isEqualTo("M");
         assertThat(result.displayPrice()).isEqualByComparingTo("99.90");
     }
 
@@ -52,7 +52,7 @@ class SnapshotShowcaseResolverTest {
 
         assertThat(result.mainColor()).isNotNull();
         assertThat(result.mainColor().name()).isEqualTo("Preto");
-        assertThat(result.defaultSelection()).isNull();
+        assertThat(result.showcaseSelection()).isNull();
         assertThat(result.displayPrice()).isNull();
     }
 
@@ -69,8 +69,8 @@ class SnapshotShowcaseResolverTest {
 
         assertThat(result.mainColor()).isNotNull();
         assertThat(result.mainColor().name()).isEqualTo("Branco");
-        assertThat(result.defaultSelection()).isNotNull();
-        assertThat(result.defaultSelection().skuCode()).isEqualTo("SKU-BRANCO-P");
+        assertThat(result.showcaseSelection()).isNotNull();
+        assertThat(result.showcaseSelection().skuCode()).isEqualTo("SKU-BRANCO-P");
         assertThat(result.displayPrice()).isEqualByComparingTo("79.90");
     }
 

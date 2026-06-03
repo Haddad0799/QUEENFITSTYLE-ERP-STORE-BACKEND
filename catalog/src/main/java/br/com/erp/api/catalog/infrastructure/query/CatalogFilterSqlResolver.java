@@ -31,58 +31,41 @@ public class CatalogFilterSqlResolver {
             params.put("search", "%" + filter.search() + "%");
         }
 
-        List<String> skuConditions = new ArrayList<>();
+        List<String> skuMatchConditions = new ArrayList<>();
 
         if (filter.hasColor()) {
-            skuConditions.add("ccg.color_name = :color");
+            skuMatchConditions.add("ccg.color_name = :color");
             params.put("color", filter.color());
         }
 
         if (filter.hasLabel()) {
-            skuConditions.add("cs.size_name = :label");
+            skuMatchConditions.add("cs.size_name = :label");
             params.put("label", filter.label());
         }
 
         if (filter.hasMinPrice()) {
-            skuConditions.add("cs.selling_price >= :minPrice");
+            skuMatchConditions.add("cs.selling_price >= :minPrice");
             params.put("minPrice", filter.minPrice());
         }
 
         if (filter.hasMaxPrice()) {
-            skuConditions.add("cs.selling_price <= :maxPrice");
+            skuMatchConditions.add("cs.selling_price <= :maxPrice");
             params.put("maxPrice", filter.maxPrice());
         }
 
-        skuConditions.add("cs.available_stock > 0");
+        skuMatchConditions.add("cs.available_stock > 0");
 
-        String skuWhere = String.join(" AND ", skuConditions);
-        String displayImageSelect = "cp.main_image_url AS display_image_url";
-        String displayImageJoin = "";
-
-        if (filter.hasColor()) {
-            displayImageSelect = "COALESCE(filtered_color_image.image_url, cp.main_image_url) AS display_image_url";
-            displayImageJoin = """
-                LEFT JOIN LATERAL (
-                    SELECT cci.image_url
-                    FROM catalog_color_groups ccg
-                    LEFT JOIN catalog_color_images cci ON cci.catalog_color_group_id = ccg.id
-                    WHERE ccg.catalog_product_id = cp.id
-                      AND ccg.color_name = :color
-                    ORDER BY cci."order" NULLS LAST
-                    LIMIT 1
-                ) filtered_color_image ON TRUE
-                """;
-        }
+        String skuMatchWhere = String.join(" AND ", skuMatchConditions);
+        SelectionQuerySpec selectionQuerySpec = filter.hasSelectionFilters()
+                ? buildEffectiveSelectionSpec(skuMatchWhere)
+                : buildShowcaseSelectionSpec();
 
         String selectSql = """
             SELECT cp.name, cp.slug, cp.is_launch,
                    cp.parent_category_id, cp.parent_category_name, cp.parent_category_normalized_name,
                    cp.subcategory_id, cp.subcategory_name, cp.subcategory_normalized_name,
                    cp.category_name, cp.category_normalized_name,
-                   cp.main_image_url, %s,
-                   cp.main_color_name, cp.main_color_hex,
-                   cp.default_sku_code, cp.default_selection_label,
-                   cp.display_price
+                   %s
             FROM (
             SELECT cp2.id
             FROM catalog_products cp2
@@ -100,7 +83,7 @@ public class CatalogFilterSqlResolver {
             JOIN catalog_products cp ON cp.id = page.id
             %s
             ORDER BY cp.published_at DESC
-        """.formatted(displayImageSelect, productFilters, skuWhere, displayImageJoin);
+        """.formatted(selectionQuerySpec.selectClause(), productFilters, skuMatchWhere, selectionQuerySpec.joinClause());
 
         String countSql = """
             SELECT COUNT(*)
@@ -113,11 +96,78 @@ public class CatalogFilterSqlResolver {
                 WHERE cs.catalog_product_id = cp2.id
                 AND %s
             )
-        """.formatted(productFilters, skuWhere);
+        """.formatted(productFilters, skuMatchWhere);
 
         params.put("limit", pageable.getPageSize());
         params.put("offset", pageable.getOffset());
 
         return new CatalogPageQuery(selectSql, countSql, params, listParams);
     }
+
+    private SelectionQuerySpec buildShowcaseSelectionSpec() {
+        return new SelectionQuerySpec(
+                """
+                cp.default_sku_code AS selection_sku_code,
+                cp.default_selection_label AS selection_label,
+                cp.display_price,
+                cp.main_image_url AS display_image_url
+                """,
+                ""
+        );
+    }
+
+    private SelectionQuerySpec buildEffectiveSelectionSpec(String skuMatchWhere) {
+        return new SelectionQuerySpec(
+                """
+                effective_selection.sku_code AS selection_sku_code,
+                effective_selection.selection_label AS selection_label,
+                effective_selection.selling_price AS display_price,
+                COALESCE(effective_selection_image.image_url, cp.main_image_url) AS display_image_url
+                """,
+                """
+                JOIN (
+                    SELECT ranked_selection.catalog_product_id,
+                           ranked_selection.catalog_color_group_id,
+                           ranked_selection.sku_code,
+                           ranked_selection.selection_label,
+                           ranked_selection.selling_price
+                    FROM (
+                        SELECT cs.catalog_product_id,
+                               cs.catalog_color_group_id,
+                               cs.code AS sku_code,
+                               cs.size_name AS selection_label,
+                               cs.selling_price,
+                               ROW_NUMBER() OVER (
+                                   PARTITION BY cs.catalog_product_id
+                                   ORDER BY cs.selling_price, cs.size_name, cs.code
+                               ) AS row_num
+                        FROM catalog_skus cs
+                        JOIN catalog_color_groups ccg ON ccg.id = cs.catalog_color_group_id
+                        WHERE %s
+                    ) ranked_selection
+                    WHERE ranked_selection.row_num = 1
+                ) effective_selection ON effective_selection.catalog_product_id = cp.id
+                LEFT JOIN (
+                    SELECT ranked_image.catalog_color_group_id,
+                           ranked_image.image_url
+                    FROM (
+                        SELECT cci.catalog_color_group_id,
+                               cci.image_url,
+                               ROW_NUMBER() OVER (
+                                   PARTITION BY cci.catalog_color_group_id
+                                   ORDER BY cci."order", cci.id
+                               ) AS row_num
+                        FROM catalog_color_images cci
+                    ) ranked_image
+                    WHERE ranked_image.row_num = 1
+                ) effective_selection_image
+                    ON effective_selection_image.catalog_color_group_id = effective_selection.catalog_color_group_id
+                """.formatted(skuMatchWhere)
+        );
+    }
+
+    private record SelectionQuerySpec(
+            String selectClause,
+            String joinClause
+    ) {}
 }

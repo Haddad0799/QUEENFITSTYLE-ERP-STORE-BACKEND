@@ -16,5 +16,6 @@ public record CatalogFilter(
     public boolean hasMinPrice() { return minPrice != null; }
     public boolean hasMaxPrice() { return maxPrice != null; }
     public boolean hasSearch() { return search != null && !search.isBlank(); }
+    public boolean hasSelectionFilters() { return hasColor() || hasLabel() || hasMinPrice() || hasMaxPrice(); }
 }
 
