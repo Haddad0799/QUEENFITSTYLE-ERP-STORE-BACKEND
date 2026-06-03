@@ -23,7 +23,8 @@
       "Bash(./mvnw compile *)",
       "Bash(./mvnw -q -pl auth,app -am compile)",
       "Bash(./mvnw -q -pl product -am compile)",
-      "Bash(./mvnw -q -o compile -pl order -am)"
+      "Bash(./mvnw -q -o compile -pl order -am)",
+      "Bash(xargs grep -l \"enum\\\\|Status\")"
     ]
   }
 }
