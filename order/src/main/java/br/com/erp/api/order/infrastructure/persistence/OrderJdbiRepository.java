@@ -171,7 +171,7 @@ public class OrderJdbiRepository implements OrderRepositoryPort {
                                whatsapp_message, expires_at, confirmed_at,
                                cancelled_at, created_at, updated_at
                         FROM orders
-                        WHERE status IN ('WAITING_SELLER_CONFIRMATION', 'PENDING_PAYMENT')
+                        WHERE status = 'PENDING_PAYMENT'
                           AND expires_at < :before
                         """)
                         .bind("before", expiredBefore)

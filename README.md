@@ -126,7 +126,6 @@ Isso elimina inconsistências como: imagem de uma cor com preço de outra.
 | `GET` | `/store/products/{slug}/skus/{skuCode}` | Detalhe do SKU |
 | `GET` | `/store/catalog/filters` | Filtros disponíveis |
 | `GET` | `/store/catalog/categories` | Categorias navegáveis |
-| `GET` | `/store/categories` | Categorias da loja |
 
 </details>
 

@@ -5,13 +5,14 @@ import br.com.erp.api.order.domain.exception.InvalidDeliveryAddressException;
 /**
  * Endereço de entrega do pedido. A loja entrega exclusivamente em
  * Pirenópolis - GO, por isso {@code city} e {@code state} são fixos no
- * domínio e o CEP precisa pertencer à faixa local (prefixo "72980").
+ * domínio e o CEP precisa pertencer à faixa local (72980-000 a 72989-999).
  */
 public final class DeliveryAddress {
 
-    public static final String CITY        = "Pirenópolis";
-    public static final String STATE       = "GO";
-    private static final String CEP_PREFIX = "72980";
+    public static final String CITY     = "Pirenópolis";
+    public static final String STATE    = "GO";
+    private static final int CEP_MIN    = 72_980_000;
+    private static final int CEP_MAX    = 72_989_999;
 
     private final String cep;
     private final String street;
@@ -38,12 +39,28 @@ public final class DeliveryAddress {
      */
     public static DeliveryAddress create(String cep, String street, String number,
                                          String complement, String neighborhood) {
-        if (cep == null || !cep.startsWith(CEP_PREFIX)) {
+        if (!isCepInLocalRange(cep)) {
             throw new InvalidDeliveryAddressException(
-                    "CEP inválido: a loja entrega apenas em %s - %s (CEP deve começar com %s)"
-                            .formatted(CITY, STATE, CEP_PREFIX));
+                    "CEP inválido: a loja entrega apenas em %s - %s (CEP deve estar entre 72980-000 e 72989-999)"
+                            .formatted(CITY, STATE));
         }
         return new DeliveryAddress(cep, street, number, complement, neighborhood, CITY, STATE);
+    }
+
+    /**
+     * Valida se o CEP pertence à faixa local de entrega (72980-000 a 72989-999),
+     * ignorando formatação (hífen/espaços) e exigindo exatamente 8 dígitos.
+     */
+    private static boolean isCepInLocalRange(String cep) {
+        if (cep == null) {
+            return false;
+        }
+        String digits = cep.replaceAll("\\D", "");
+        if (digits.length() != 8) {
+            return false;
+        }
+        int value = Integer.parseInt(digits);
+        return value >= CEP_MIN && value <= CEP_MAX;
     }
 
     /**

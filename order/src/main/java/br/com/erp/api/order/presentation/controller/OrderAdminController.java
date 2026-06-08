@@ -5,6 +5,8 @@ import br.com.erp.api.order.application.query.filter.OrderAdminFilter;
 import br.com.erp.api.order.application.usecase.CancelOrderUseCase;
 import br.com.erp.api.order.application.usecase.ConfirmOrderUseCase;
 import br.com.erp.api.order.application.usecase.ExpireOrderUseCase;
+import br.com.erp.api.order.application.usecase.MarkOrderDeliveredUseCase;
+import br.com.erp.api.order.application.usecase.MarkOrderReturnedUseCase;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
 import br.com.erp.api.order.presentation.dto.request.CancelOrderRequest;
@@ -38,19 +40,25 @@ public class OrderAdminController {
     private static final String DEFAULT_ACTOR   = "admin";
     private static final String SYSTEM_ACTOR    = "system";
 
-    private final OrderAdminQueryService queryService;
-    private final ConfirmOrderUseCase    confirmOrderUseCase;
-    private final CancelOrderUseCase     cancelOrderUseCase;
-    private final ExpireOrderUseCase     expireOrderUseCase;
+    private final OrderAdminQueryService    queryService;
+    private final ConfirmOrderUseCase       confirmOrderUseCase;
+    private final CancelOrderUseCase        cancelOrderUseCase;
+    private final ExpireOrderUseCase        expireOrderUseCase;
+    private final MarkOrderDeliveredUseCase markOrderDeliveredUseCase;
+    private final MarkOrderReturnedUseCase  markOrderReturnedUseCase;
 
     public OrderAdminController(OrderAdminQueryService queryService,
                                 ConfirmOrderUseCase confirmOrderUseCase,
                                 CancelOrderUseCase cancelOrderUseCase,
-                                ExpireOrderUseCase expireOrderUseCase) {
-        this.queryService        = queryService;
-        this.confirmOrderUseCase = confirmOrderUseCase;
-        this.cancelOrderUseCase  = cancelOrderUseCase;
-        this.expireOrderUseCase  = expireOrderUseCase;
+                                ExpireOrderUseCase expireOrderUseCase,
+                                MarkOrderDeliveredUseCase markOrderDeliveredUseCase,
+                                MarkOrderReturnedUseCase markOrderReturnedUseCase) {
+        this.queryService              = queryService;
+        this.confirmOrderUseCase       = confirmOrderUseCase;
+        this.cancelOrderUseCase        = cancelOrderUseCase;
+        this.expireOrderUseCase        = expireOrderUseCase;
+        this.markOrderDeliveredUseCase = markOrderDeliveredUseCase;
+        this.markOrderReturnedUseCase  = markOrderReturnedUseCase;
     }
 
     @GetMapping
@@ -66,7 +74,7 @@ public class OrderAdminController {
     ) {
         Pageable pageable = PageRequest.of(
                 Math.max(page, 0),
-                Math.min(Math.max(size, 1), MAX_PAGE_SIZE)
+                Math.clamp(size, 1, MAX_PAGE_SIZE)
         );
 
         OrderAdminFilter filter = new OrderAdminFilter(
@@ -114,6 +122,26 @@ public class OrderAdminController {
     ) {
         Order order = expireOrderUseCase.execute(orderId,
                 actor != null && !actor.isBlank() ? actor : SYSTEM_ACTOR);
+        return ResponseEntity.ok(OrderActionResponse.from(order));
+    }
+
+    @PostMapping("/{orderId}/deliver")
+    public ResponseEntity<OrderActionResponse> deliver(
+            @PathVariable Long orderId,
+            @RequestHeader(name = "X-Actor", required = false) String actor
+    ) {
+        Order order = markOrderDeliveredUseCase.execute(orderId, resolveActor(actor));
+        return ResponseEntity.ok(OrderActionResponse.from(order));
+    }
+
+    @PostMapping("/{orderId}/return")
+    public ResponseEntity<OrderActionResponse> returnOrder(
+            @PathVariable Long orderId,
+            @Valid @RequestBody(required = false) CancelOrderRequest request,
+            @RequestHeader(name = "X-Actor", required = false) String actor
+    ) {
+        String reason = request != null ? request.reason() : null;
+        Order order = markOrderReturnedUseCase.execute(orderId, reason, resolveActor(actor));
         return ResponseEntity.ok(OrderActionResponse.from(order));
     }
 

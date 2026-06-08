@@ -20,9 +20,17 @@ public interface InventoryRepositoryPort {
     boolean confirmReservation(UUID reservationId);
 
     /**
-     * Libera / cancela uma reserva. Retorna true se liberada.
+     * Libera / cancela uma reserva ainda RESERVED (devolve o reservado, não mexe no físico).
+     * Retorna true se liberada.
      */
     boolean releaseReservation(UUID reservationId);
+
+    /**
+     * Devolve ao estoque uma reserva já CONFIRMED (estoque físico já consumido).
+     * Marca a reserva como RETURNED e incrementa novamente a quantidade física.
+     * Retorna true se devolvida; false se a reserva não estava CONFIRMED (idempotência).
+     */
+    boolean returnReservation(UUID reservationId);
 
     /**
      * Retorna o skuId associado a uma reserva (se existir).

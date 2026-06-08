@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Job @Scheduled que varre pedidos vencidos em WAITING_SELLER_CONFIRMATION e os expira.
+ * Job @Scheduled que varre pedidos vencidos em PENDING_PAYMENT e os expira.
  * A expiração propriamente dita é delegada ao {@link ExpireOrderUseCase} para garantir
  * que cada pedido tenha suas reservas liberadas e timeline registrada — mesma garantia
  * usada pelo endpoint administrativo de expiração manual.

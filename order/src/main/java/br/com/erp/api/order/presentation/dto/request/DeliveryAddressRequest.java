@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Pattern;
  */
 public record DeliveryAddressRequest(
         @NotBlank(message = "CEP é obrigatório")
-        @Pattern(regexp = "^72980.*", message = "Entregamos apenas em Pirenópolis - GO (CEP deve começar com 72980)")
+        @Pattern(regexp = "^7298\\d-?\\d{3}$", message = "Entregamos apenas em Pirenópolis - GO (CEP deve estar entre 72980-000 e 72989-999)")
         String cep,
 
         @NotBlank(message = "Logradouro é obrigatório")

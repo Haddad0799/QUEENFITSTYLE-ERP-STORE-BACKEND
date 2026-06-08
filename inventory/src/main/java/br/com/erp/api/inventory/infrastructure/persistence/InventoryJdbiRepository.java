@@ -211,6 +211,54 @@ public class InventoryJdbiRepository implements InventoryRepositoryPort {
     }
 
     @Override
+    public boolean returnReservation(UUID reservationId) {
+        return jdbi.withHandle(handle -> {
+            Integer rows = handle.createQuery("""
+                WITH res AS (
+                    UPDATE stock_reservations
+                    SET status = 'RETURNED'
+                    WHERE reservation_id = :reservationId
+                      AND status = 'CONFIRMED'
+                    RETURNING sku_id, quantity
+                ),
+                upd AS (
+                    UPDATE sku_stock s
+                    SET quantity = s.quantity + res.quantity,
+                        updated_at = now()
+                    FROM res
+                    WHERE s.sku_id = res.sku_id
+                    RETURNING s.sku_id, res.quantity
+                ),
+                movement AS (
+                    INSERT INTO stock_movement (
+                        sku_id,
+                        type,
+                        quantity,
+                        reason,
+                        reference_uuid,
+                        created_at
+                    )
+                    SELECT
+                        sku_id,
+                        'INBOUND',
+                        quantity,
+                        CONCAT('return reservation reservationId=', :reservationId),
+                        :reservationId::uuid,
+                        now()
+                    FROM upd
+                    RETURNING sku_id
+                )
+                SELECT COUNT(*) FROM movement
+                """)
+                    .bind("reservationId", reservationId)
+                    .mapTo(Integer.class)
+                    .one();
+
+            return rows != null && rows > 0;
+        });
+    }
+
+    @Override
     public java.util.Optional<Long> findSkuIdByReservationId(UUID reservationId) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""

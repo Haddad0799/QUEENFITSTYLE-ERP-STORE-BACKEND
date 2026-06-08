@@ -18,8 +18,15 @@ public interface ReservationLifecyclePort {
     boolean confirm(UUID reservationId);
 
     /**
-     * Libera a reserva: devolve estoque e marca como CANCELLED.
+     * Libera a reserva ainda RESERVED: devolve o reservado e marca como CANCELLED.
      * @return true se a reserva foi liberada agora; false se já estava liberada (idempotência).
      */
     boolean release(UUID reservationId);
+
+    /**
+     * Devolve ao estoque uma reserva já CONFIRMED (estoque físico já consumido): repõe a
+     * quantidade e marca como RETURNED. Usado no fluxo de devolução de pedido pago/entregue.
+     * @return true se devolvida agora; false se não estava confirmada (idempotência).
+     */
+    boolean returnStock(UUID reservationId);
 }

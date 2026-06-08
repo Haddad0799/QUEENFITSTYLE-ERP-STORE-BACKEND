@@ -27,7 +27,7 @@ public class Order {
     private Order(Long customerId, BigDecimal totalAmount, String notes,
                   LocalDateTime expiresAt, List<OrderItem> items, DeliveryAddress deliveryAddress) {
         this.customerId      = customerId;
-        this.status          = OrderStatus.WAITING_SELLER_CONFIRMATION;
+        this.status          = OrderStatus.PENDING_PAYMENT;
         this.totalAmount     = totalAmount;
         this.notes           = notes;
         this.expiresAt       = expiresAt;
@@ -41,14 +41,6 @@ public class Order {
                                LocalDateTime expiresAt, List<OrderItem> items,
                                DeliveryAddress deliveryAddress) {
         return new Order(customerId, totalAmount, notes, expiresAt, items, deliveryAddress);
-    }
-
-    public static Order createForPayment(Long customerId, BigDecimal totalAmount, String notes,
-                                         LocalDateTime expiresAt, List<OrderItem> items,
-                                         DeliveryAddress deliveryAddress) {
-        Order order = new Order(customerId, totalAmount, notes, expiresAt, items, deliveryAddress);
-        order.status = OrderStatus.PENDING_PAYMENT;
-        return order;
     }
 
     public static Order restore(Long id, Long customerId, OrderStatus status,
@@ -66,17 +58,36 @@ public class Order {
         return order;
     }
 
-    public void confirm() {
-        if (status != OrderStatus.WAITING_SELLER_CONFIRMATION)
-            throw new IllegalStateException("Pedido não pode ser confirmado no status: " + status);
-        status      = OrderStatus.CONFIRMED;
+    /** Pagamento confirmado manualmente: a reserva passa a ser consumida (consome estoque). */
+    public void markPaid() {
+        if (status != OrderStatus.PENDING_PAYMENT)
+            throw new InvalidOrderStateTransitionException(id, status, "markPaid");
+        status      = OrderStatus.PAID;
         confirmedAt = LocalDateTime.now();
         updatedAt   = LocalDateTime.now();
     }
 
+    /** Entrega manual do pedido já pago. Não altera estoque. */
+    public void markDelivered() {
+        if (status != OrderStatus.PAID)
+            throw new InvalidOrderStateTransitionException(id, status, "markDelivered");
+        status    = OrderStatus.DELIVERED;
+        updatedAt = LocalDateTime.now();
+    }
+
+    /** Devolução de pedido já pago/entregue: o estoque consumido é reposto. */
+    public void markReturned() {
+        if (status != OrderStatus.PAID && status != OrderStatus.DELIVERED)
+            throw new InvalidOrderStateTransitionException(id, status, "markReturned");
+        status    = OrderStatus.RETURNED;
+        updatedAt = LocalDateTime.now();
+    }
+
+    /** Cancelamento por falta de pagamento: só é possível enquanto aguarda pagamento. */
     public void cancel() {
-        if (status == OrderStatus.CANCELLED || status == OrderStatus.DELIVERED)
-            throw new IllegalStateException("Pedido não pode ser cancelado no status: " + status);
+        if (status == OrderStatus.CANCELLED) return;
+        if (status != OrderStatus.PENDING_PAYMENT)
+            throw new InvalidOrderStateTransitionException(id, status, "cancel");
         status      = OrderStatus.CANCELLED;
         cancelledAt = LocalDateTime.now();
         updatedAt   = LocalDateTime.now();
@@ -84,27 +95,11 @@ public class Order {
 
     public void expire() {
         if (status == OrderStatus.EXPIRED) return;
-        if (status != OrderStatus.WAITING_SELLER_CONFIRMATION
-         && status != OrderStatus.PENDING_PAYMENT) {
+        if (status != OrderStatus.PENDING_PAYMENT) {
             throw new InvalidOrderStateTransitionException(id, status, "expire");
         }
         status    = OrderStatus.EXPIRED;
         updatedAt = LocalDateTime.now();
-    }
-
-    public void approvePayment() {
-        if (status != OrderStatus.PENDING_PAYMENT)
-            throw new InvalidOrderStateTransitionException(id, status, "approvePayment");
-        status    = OrderStatus.WAITING_SELLER_CONFIRMATION;
-        updatedAt = LocalDateTime.now();
-    }
-
-    public void failPayment() {
-        if (status != OrderStatus.PENDING_PAYMENT)
-            throw new InvalidOrderStateTransitionException(id, status, "failPayment");
-        status      = OrderStatus.CANCELLED;
-        cancelledAt = LocalDateTime.now();
-        updatedAt   = LocalDateTime.now();
     }
 
     public void attachWhatsappMessage(String message) {

@@ -2,6 +2,7 @@ package br.com.erp.api.order.infrastructure.adapter;
 
 import br.com.erp.api.inventory.application.usecase.ConfirmReservationUseCase;
 import br.com.erp.api.inventory.application.usecase.ReleaseReservationUseCase;
+import br.com.erp.api.inventory.application.usecase.ReturnReservationUseCase;
 import br.com.erp.api.inventory.domain.exception.ReservationNotFoundException;
 import br.com.erp.api.order.application.port.out.ReservationLifecyclePort;
 import org.springframework.stereotype.Component;
@@ -20,11 +21,14 @@ public class ReservationLifecycleAdapter implements ReservationLifecyclePort {
 
     private final ConfirmReservationUseCase confirmReservationUseCase;
     private final ReleaseReservationUseCase releaseReservationUseCase;
+    private final ReturnReservationUseCase returnReservationUseCase;
 
     public ReservationLifecycleAdapter(ConfirmReservationUseCase confirmReservationUseCase,
-                                       ReleaseReservationUseCase releaseReservationUseCase) {
+                                       ReleaseReservationUseCase releaseReservationUseCase,
+                                       ReturnReservationUseCase returnReservationUseCase) {
         this.confirmReservationUseCase = confirmReservationUseCase;
         this.releaseReservationUseCase = releaseReservationUseCase;
+        this.returnReservationUseCase  = returnReservationUseCase;
     }
 
     @Override
@@ -41,6 +45,16 @@ public class ReservationLifecycleAdapter implements ReservationLifecyclePort {
     public boolean release(UUID reservationId) {
         try {
             releaseReservationUseCase.release(reservationId);
+            return true;
+        } catch (ReservationNotFoundException ex) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean returnStock(UUID reservationId) {
+        try {
+            returnReservationUseCase.returnStock(reservationId);
             return true;
         } catch (ReservationNotFoundException ex) {
             return false;

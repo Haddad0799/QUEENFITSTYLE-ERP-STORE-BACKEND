@@ -18,15 +18,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 /**
- * Confirma um pedido aguardando confirmação do vendedor.
+ * Confirma o pagamento de um pedido aguardando pagamento.
  *
- * Operação idempotente: se o pedido já estiver CONFIRMED, retorna o pedido sem efeitos colaterais.
- * Caso contrário, confirma todas as reservas vinculadas, atualiza status e grava timeline.
+ * Operação idempotente: se o pedido já estiver PAID, retorna o pedido sem efeitos colaterais.
+ * Caso contrário, confirma todas as reservas vinculadas (consome estoque), atualiza status e grava timeline.
  *
  * Garantias:
  *   - reservas são SEMPRE confirmadas antes do status mudar (se falhar, transação aborta)
- *   - status só transita de WAITING_SELLER_CONFIRMATION → CONFIRMED
- *   - timeline registra evento RESERVATIONS_CONFIRMED + CONFIRMED
+ *   - status só transita de PENDING_PAYMENT → PAID
+ *   - timeline registra evento RESERVATIONS_CONFIRMED + PAID
  */
 @Service
 public class ConfirmOrderUseCase {
@@ -50,30 +50,30 @@ public class ConfirmOrderUseCase {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
 
-        // idempotência: re-chamar confirm em pedido já confirmado é no-op
-        if (order.getStatus() == OrderStatus.CONFIRMED) {
-            log.info("Pedido #{} já estava CONFIRMED — operação ignorada (idempotência)", orderId);
+        // idempotência: re-chamar em pedido já pago é no-op
+        if (order.getStatus() == OrderStatus.PAID) {
+            log.info("Pedido #{} já estava PAID — operação ignorada (idempotência)", orderId);
             return order;
         }
 
-        if (order.getStatus() != OrderStatus.WAITING_SELLER_CONFIRMATION) {
-            throw new InvalidOrderStateTransitionException(orderId, order.getStatus(), "confirm");
+        if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
+            throw new InvalidOrderStateTransitionException(orderId, order.getStatus(), "markPaid");
         }
 
         confirmReservations(order, actor);
 
-        order.confirm();
+        order.markPaid();
         orderRepository.updateStatus(order.getId(), order.getStatus());
 
         timelineRepository.append(OrderTimelineEvent.create(
                 order.getId(),
-                OrderEventType.CONFIRMED,
-                "Pedido confirmado pela vendedora",
+                OrderEventType.PAID,
+                "Pagamento confirmado pela vendedora",
                 null,
                 actor
         ));
 
-        log.info("Pedido #{} confirmado por '{}'", orderId, actor);
+        log.info("Pedido #{} marcado como pago por '{}'", orderId, actor);
         return order;
     }
 

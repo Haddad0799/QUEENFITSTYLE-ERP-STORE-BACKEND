@@ -18,79 +18,75 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 /**
- * Expira pedidos em PENDING_PAYMENT (>24h sem pagamento) e libera as reservas.
+ * Marca um pedido pago/entregue como devolvido, repondo o estoque já consumido.
  *
- * Usado por:
- *   - {@code ExpireOrdersUseCase} (job @Scheduled), passando cada pedido encontrado
- *   - endpoint POST /erp/orders/{id}/expire (forçar expiração manual)
+ * Diferente do cancelamento (que libera reservas ainda RESERVED), aqui as reservas estão
+ * CONFIRMED — o estoque físico já foi baixado — então a devolução usa {@code returnStock},
+ * que reincrementa a quantidade.
  *
- * Idempotência: pedido já EXPIRED é no-op.
+ * Idempotente: pedido já RETURNED é no-op. Só transita de PAID/DELIVERED → RETURNED.
  */
 @Service
-public class ExpireOrderUseCase {
+public class MarkOrderReturnedUseCase {
 
-    private static final Logger log = LoggerFactory.getLogger(ExpireOrderUseCase.class);
-    private static final String SYSTEM_ACTOR = "system";
+    private static final Logger log = LoggerFactory.getLogger(MarkOrderReturnedUseCase.class);
 
     private final OrderRepositoryPort orderRepository;
     private final ReservationLifecyclePort reservationLifecycle;
     private final OrderTimelineRepositoryPort timelineRepository;
 
-    public ExpireOrderUseCase(OrderRepositoryPort orderRepository,
-                              ReservationLifecyclePort reservationLifecycle,
-                              OrderTimelineRepositoryPort timelineRepository) {
+    public MarkOrderReturnedUseCase(OrderRepositoryPort orderRepository,
+                                    ReservationLifecyclePort reservationLifecycle,
+                                    OrderTimelineRepositoryPort timelineRepository) {
         this.orderRepository      = orderRepository;
         this.reservationLifecycle = reservationLifecycle;
         this.timelineRepository   = timelineRepository;
     }
 
     @Transactional
-    public Order execute(Long orderId, String actor) {
+    public Order execute(Long orderId, String reason, String actor) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
 
-        return expireOrder(order, actor);
-    }
-
-    @Transactional
-    public Order expireOrder(Order order, String actor) {
-        if (order.getStatus() == OrderStatus.EXPIRED) {
-            log.info("Pedido #{} já estava EXPIRED — operação ignorada (idempotência)", order.getId());
+        if (order.getStatus() == OrderStatus.RETURNED) {
+            log.info("Pedido #{} já estava RETURNED — operação ignorada (idempotência)", orderId);
             return order;
         }
 
-        if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
-            throw new InvalidOrderStateTransitionException(order.getId(), order.getStatus(), "expire");
+        if (order.getStatus() != OrderStatus.PAID && order.getStatus() != OrderStatus.DELIVERED) {
+            throw new InvalidOrderStateTransitionException(orderId, order.getStatus(), "markReturned");
         }
 
-        releaseReservations(order, actor != null ? actor : SYSTEM_ACTOR);
+        returnReservations(order, actor);
 
-        order.expire();
+        order.markReturned();
         orderRepository.updateStatus(order.getId(), order.getStatus());
 
         timelineRepository.append(OrderTimelineEvent.create(
                 order.getId(),
-                OrderEventType.EXPIRED,
-                "Pedido expirou sem confirmação",
+                OrderEventType.RETURNED,
+                reason != null && !reason.isBlank()
+                        ? "Pedido devolvido: " + reason
+                        : "Pedido devolvido",
                 null,
-                actor != null ? actor : SYSTEM_ACTOR
+                actor
         ));
 
-        log.info("Pedido #{} expirado por '{}'", order.getId(), actor);
+        log.info("Pedido #{} devolvido por '{}'", orderId, actor);
         return order;
     }
 
-    private void releaseReservations(Order order, String actor) {
+    private void returnReservations(Order order, String actor) {
         for (OrderItem item : order.getItems()) {
             UUID reservationId = item.getReservationId();
-            boolean released = reservationLifecycle.release(reservationId);
-            log.debug("Reserva {} para pedido #{} → liberada={}", reservationId, order.getId(), released);
+            boolean returned = reservationLifecycle.returnStock(reservationId);
+            log.debug("Reserva {} para pedido #{} → devolvida={}", reservationId, order.getId(), returned);
         }
 
         timelineRepository.append(OrderTimelineEvent.create(
                 order.getId(),
-                OrderEventType.RESERVATIONS_RELEASED,
-                "Reservas liberadas — pedido expirado",
+                OrderEventType.RESERVATIONS_RETURNED,
+                "Reservas devolvidas — estoque reposto",
                 buildReservationsPayload(order),
                 actor
         ));

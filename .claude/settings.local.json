@@ -24,7 +24,11 @@
       "Bash(./mvnw -q -pl order -am compile)",
       "PowerShell(.\\\\mvnw.cmd -q -pl order -am compile 2>&1 | Select-Object -Last 45)",
       "Bash(./mvnw -q -pl auth,app -am compile)",
-      "Bash(./mvnw -pl auth,app -am compile)"
+      "Bash(./mvnw -pl auth,app -am compile)",
+      "Bash(git grep *)",
+      "mcp__ide__getDiagnostics",
+      "Bash(git *)",
+      "Bash(./mvnw -q -o compile -pl attribute)"
     ]
   }
 }
