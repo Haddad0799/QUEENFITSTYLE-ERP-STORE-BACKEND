@@ -22,6 +22,7 @@ public class MinioConfig {
         return MinioClient.builder()
                 .endpoint(url)
                 .credentials(accessKey, secretKey)
+                .region("auto")
                 .build();
     }
 }

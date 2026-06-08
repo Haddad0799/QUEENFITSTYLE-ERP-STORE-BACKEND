@@ -29,7 +29,12 @@
       "mcp__ide__getDiagnostics",
       "Bash(git *)",
       "Bash(./mvnw -q -o compile -pl attribute)",
-      "PowerShell(Get-ChildItem -Force | Where-Object { $_.Name -match 'docker|railway|nixpack|procfile|\\\\.toml|\\\\.json|\\\\.dockerignore' } | Select-Object Name)"
+      "PowerShell(Get-ChildItem -Force | Where-Object { $_.Name -match 'docker|railway|nixpack|procfile|\\\\.toml|\\\\.json|\\\\.dockerignore' } | Select-Object Name)",
+      "PowerShell(git branch --show-current; \"--- tracked?\"; git ls-files Dockerfile; \"--- status\"; git status --short; \"--- master vs agent\"; git log --oneline -1 master; git log --oneline -1 agent)",
+      "PowerShell(\"--- HEAD has Dockerfile?\"; git cat-file -e HEAD:Dockerfile; if \\($?\\) { \"yes - in HEAD\" } else { \"NO\" }; \"--- local vs origin\"; git rev-parse --short HEAD; git rev-parse --short origin/master 2>&1; \"--- ahead/behind\"; git status -sb | Select-Object -First 1; \"--- which commit added Dockerfile\"; git log --oneline -1 -- Dockerfile)",
+      "PowerShell(git *)",
+      "PowerShell(git push *)",
+      "PowerShell(git remote *)"
     ]
   }
 }
