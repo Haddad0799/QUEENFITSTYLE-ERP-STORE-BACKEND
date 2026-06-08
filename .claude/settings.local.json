@@ -28,7 +28,8 @@
       "Bash(git grep *)",
       "mcp__ide__getDiagnostics",
       "Bash(git *)",
-      "Bash(./mvnw -q -o compile -pl attribute)"
+      "Bash(./mvnw -q -o compile -pl attribute)",
+      "PowerShell(Get-ChildItem -Force | Where-Object { $_.Name -match 'docker|railway|nixpack|procfile|\\\\.toml|\\\\.json|\\\\.dockerignore' } | Select-Object Name)"
     ]
   }
 }
