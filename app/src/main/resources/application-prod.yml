@@ -9,3 +9,8 @@ minio:
   access-key: ${R2_ACCESS_KEY}
   secret-key: ${R2_SECRET_KEY}
   bucket: ${R2_BUCKET}
+
+# URL pública do R2 (bucket público r2.dev ou domínio custom da Cloudflare),
+# usada pelo R2StorageAdapter para montar a URL pública das imagens.
+r2:
+  public-url: ${R2_PUBLIC_URL}

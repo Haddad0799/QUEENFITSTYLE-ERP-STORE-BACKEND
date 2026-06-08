@@ -2,9 +2,9 @@ package br.com.erp.api.storage.infrastructure.adapter;
 
 import br.com.erp.api.storage.domain.port.StoragePort;
 import io.minio.*;
+import io.minio.http.Method;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
-import io.minio.http.Method;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -15,19 +15,32 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * Adapter de storage para Cloudflare R2 (ativo apenas no profile {@code prod}).
+ *
+ * <p>O R2 é compatível com a API S3, então reaproveita o mesmo {@link MinioClient}
+ * (apontado para o endpoint do R2 via {@code minio.*} no application-prod.yml).
+ * As diferenças em relação ao {@link MinioStorageAdapter}:
+ * <ul>
+ *   <li>Não chama {@code setBucketPolicy} — o R2 não implementa {@code PutBucketPolicy};
+ *       o acesso público é configurado no painel da Cloudflare (bucket público / domínio custom).</li>
+ *   <li>{@link #getPublicUrl} usa a URL pública do R2 ({@code r2.public-url}), e não o
+ *       endpoint da API S3 (que não serve objetos publicamente).</li>
+ * </ul>
+ */
 @Component
-@Profile("!prod")
-public class MinioStorageAdapter implements StoragePort {
+@Profile("prod")
+public class R2StorageAdapter implements StoragePort {
 
     private final MinioClient minioClient;
 
     @Value("${minio.bucket}")
     private String bucket;
 
-    @Value("${minio.url}")
-    private String minioUrl;
+    @Value("${r2.public-url}")
+    private String publicUrl;
 
-    public MinioStorageAdapter(MinioClient minioClient) {
+    public R2StorageAdapter(MinioClient minioClient) {
         this.minioClient = minioClient;
     }
 
@@ -43,25 +56,7 @@ public class MinioStorageAdapter implements StoragePort {
                         MakeBucketArgs.builder().bucket(bucket).build()
                 );
             }
-
-            String policy = String.format("""
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [{
-                        "Effect": "Allow",
-                        "Principal": {"AWS": ["*"]},
-                        "Action": ["s3:GetObject"],
-                        "Resource": ["arn:aws:s3:::%s/*"]
-                    }]
-                }
-                """, bucket);
-
-            minioClient.setBucketPolicy(
-                   SetBucketPolicyArgs.builder()
-                            .bucket(bucket)
-                            .config(policy)
-                            .build()
-            );
+            // R2 não suporta PutBucketPolicy: acesso público é configurado no painel da Cloudflare.
         } catch (Exception e) {
             throw new RuntimeException("Erro ao inicializar bucket: " + e.getMessage(), e);
         }
@@ -71,7 +66,7 @@ public class MinioStorageAdapter implements StoragePort {
     public String generatePresignedUploadUrl(String imageKey) {
         try {
             return minioClient.getPresignedObjectUrl(
-                    io.minio.GetPresignedObjectUrlArgs.builder()
+                    GetPresignedObjectUrlArgs.builder()
                             .bucket(bucket)
                             .object(imageKey)
                             .method(Method.PUT)
@@ -85,11 +80,14 @@ public class MinioStorageAdapter implements StoragePort {
 
     @Override
     public String getPublicUrl(String imageKey) {
-        return String.format("%s/%s/%s", minioUrl, bucket, imageKey);
+        String base = publicUrl.endsWith("/")
+                ? publicUrl.substring(0, publicUrl.length() - 1)
+                : publicUrl;
+        return String.format("%s/%s", base, imageKey);
     }
 
     @Override
-    public void deleteImages(java.util.List<String> imageKeys) {
+    public void deleteImages(List<String> imageKeys) {
         if (imageKeys == null || imageKeys.isEmpty()) return;
 
         List<DeleteObject> objects = imageKeys.stream()
@@ -110,7 +108,7 @@ public class MinioStorageAdapter implements StoragePort {
                 DeleteError error = result.get();
                 failedKeys.add(error.objectName());
             } catch (Exception e) {
-                throw new RuntimeException("Erro ao verificar resultado de exclusão do Minio", e);
+                throw new RuntimeException("Erro ao verificar resultado de exclusão do R2", e);
             }
         }
 
