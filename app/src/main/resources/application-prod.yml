@@ -3,3 +3,9 @@ spring:
     url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
     username: ${PGUSER}
     password: ${PGPASSWORD}
+
+minio:
+  url: ${R2_ENDPOINT}
+  access-key: ${R2_ACCESS_KEY}
+  secret-key: ${R2_SECRET_KEY}
+  bucket: ${R2_BUCKET}
