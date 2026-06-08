@@ -124,4 +124,13 @@
 		</pluginManagement>
 	</build>
 
+	<profiles>
+		<!-- No-op profile to satisfy builders that pass -Pproduction (e.g. Railpack).
+		     A produção é controlada pelo Spring profile `prod` (SPRING_PROFILES_ACTIVE=prod),
+		     não por este perfil Maven. -->
+		<profile>
+			<id>production</id>
+		</profile>
+	</profiles>
+
 </project>
