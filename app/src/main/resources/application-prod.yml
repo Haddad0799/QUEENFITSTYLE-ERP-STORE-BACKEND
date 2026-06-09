@@ -3,6 +3,17 @@ spring:
     url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
     username: ${PGUSER}
     password: ${PGPASSWORD}
+  mail:
+    host: smtp.gmail.com
+    port: 465
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: false
 
 minio:
   url: ${R2_ENDPOINT}
@@ -10,7 +21,5 @@ minio:
   secret-key: ${R2_SECRET_KEY}
   bucket: ${R2_BUCKET}
 
-# URL pública do R2 (bucket público r2.dev ou domínio custom da Cloudflare),
-# usada pelo R2StorageAdapter para montar a URL pública das imagens.
 r2:
   public-url: ${R2_PUBLIC_URL}
