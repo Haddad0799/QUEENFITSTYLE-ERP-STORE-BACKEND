@@ -4,5 +4,6 @@ public record OrderCustomerDTO(
         Long customerId,
         String name,
         String phone,
-        String city
+        String city,
+        String email
 ) {}

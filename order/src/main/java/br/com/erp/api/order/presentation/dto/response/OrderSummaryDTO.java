@@ -10,6 +10,7 @@ public record OrderSummaryDTO(
         OrderStatus status,
         String customerName,
         String customerPhone,
+        String customerEmail,
         BigDecimal totalAmount,
         int itemsCount,
         OrderDeliveryAddressDTO deliveryAddress,

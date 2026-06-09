@@ -78,6 +78,7 @@ public class OrderAdminFilterSqlResolver {
                 o.expires_at      AS expires_at,
                 cu.name           AS customer_name,
                 cu.phone          AS customer_phone,
+                cu.email          AS customer_email,
                 o.delivery_cep          AS delivery_cep,
                 o.delivery_street       AS delivery_street,
                 o.delivery_number       AS delivery_number,

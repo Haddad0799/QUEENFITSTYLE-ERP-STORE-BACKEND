@@ -49,6 +49,7 @@ public class OrderAdminJdbiQueryRepository implements OrderAdminQueryRepository 
                                 OrderStatus.valueOf(rs.getString("status")),
                                 rs.getString("customer_name"),
                                 rs.getString("customer_phone"),
+                                rs.getString("customer_email"),
                                 rs.getBigDecimal("total_amount"),
                                 rs.getInt("items_count"),
                                 toDeliveryAddressDTO(rs),
@@ -74,7 +75,7 @@ public class OrderAdminJdbiQueryRepository implements OrderAdminQueryRepository 
     public Optional<OrderCustomerDTO> findCustomerByOrderId(Long orderId) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
-                        SELECT cu.id, cu.name, cu.phone, cu.city
+                        SELECT cu.id, cu.name, cu.phone, cu.city, cu.email
                         FROM orders o
                         JOIN customers cu ON cu.id = o.customer_id
                         WHERE o.id = :orderId
@@ -84,7 +85,8 @@ public class OrderAdminJdbiQueryRepository implements OrderAdminQueryRepository 
                                 rs.getLong("id"),
                                 rs.getString("name"),
                                 rs.getString("phone"),
-                                rs.getString("city")
+                                rs.getString("city"),
+                                rs.getString("email")
                         ))
                         .findOne()
         );
