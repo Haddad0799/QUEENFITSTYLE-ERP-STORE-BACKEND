@@ -34,7 +34,10 @@
       "PowerShell(\"--- HEAD has Dockerfile?\"; git cat-file -e HEAD:Dockerfile; if \\($?\\) { \"yes - in HEAD\" } else { \"NO\" }; \"--- local vs origin\"; git rev-parse --short HEAD; git rev-parse --short origin/master 2>&1; \"--- ahead/behind\"; git status -sb | Select-Object -First 1; \"--- which commit added Dockerfile\"; git log --oneline -1 -- Dockerfile)",
       "PowerShell(git *)",
       "PowerShell(git push *)",
-      "PowerShell(git remote *)"
+      "PowerShell(git remote *)",
+      "Bash(./mvnw -q -DskipTests -pl order -am compile)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(./mvnw -q -DskipTests -pl app -am compile)"
     ]
   }
 }

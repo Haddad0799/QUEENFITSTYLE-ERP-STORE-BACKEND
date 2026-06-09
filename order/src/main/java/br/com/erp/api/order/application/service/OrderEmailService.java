@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.text.NumberFormat;
 import java.time.Year;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class OrderEmailService {
@@ -22,69 +23,58 @@ public class OrderEmailService {
     private static final String EMAIL_TEMPLATE = """
             <!DOCTYPE html>
             <html lang="pt-BR">
-            <head><meta charset="UTF-8"/></head>
+            <head>
+              <meta charset="UTF-8"/>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+            </head>
             <body style="margin:0;padding:0;background:#fafafa;font-family:Arial,sans-serif;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background:#fafafa;padding:32px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                     style="background:#fafafa;padding:16px 0;">
                 <tr><td align="center">
-                  <table width="600" cellpadding="0" cellspacing="0"
-                         style="background:#ffffff;border:1px solid #e8e0d8;border-radius:8px;overflow:hidden;">
+                  <table align="center" cellpadding="0" cellspacing="0" role="presentation"
+                         style="width:100%;max-width:480px;background:#ffffff;
+                                border:1px solid #e8e0d8;border-radius:8px;overflow:hidden;">
 
                     <!-- Header -->
                     <tr>
-                      <td style="background:#A0673A;padding:28px 40px;text-align:center;">
-                        <span style="color:#ffffff;font-size:22px;font-weight:bold;
-                                     letter-spacing:0.3em;">QUEENFITSTYLE</span>
+                      <td style="background:#A0673A;padding:20px 24px;text-align:center;">
+                        <span style="color:#ffffff;font-size:18px;font-weight:bold;
+                                     letter-spacing:0.2em;">QUEENFITSTYLE</span>
                       </td>
                     </tr>
 
                     <!-- Body -->
                     <tr>
-                      <td style="padding:36px 40px;">
-                        <p style="margin:0 0 8px;font-size:16px;color:#1a1a1a;">
+                      <td style="padding:20px 24px;">
+                        <p style="margin:0 0 8px;font-size:15px;color:#1a1a1a;">
                           Olá, <strong>{customerName}</strong>!
                         </p>
-                        <p style="margin:0 0 28px;font-size:14px;color:#555;">
+                        <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.5;">
                           Seu pedido foi confirmado. Abaixo está o resumo:
                         </p>
 
                         <!-- Order number badge -->
                         <div style="background:#fdf6f1;border:1px solid #e8d5c4;border-radius:6px;
-                                    padding:12px 20px;margin-bottom:28px;display:inline-block;">
-                          <span style="font-size:13px;color:#A0673A;font-weight:bold;">
+                                    padding:10px 16px;margin-bottom:20px;">
+                          <span style="font-size:14px;color:#A0673A;font-weight:bold;">
                             Pedido #{orderId}
                           </span>
                         </div>
 
-                        <!-- Items table -->
-                        <table width="100%" cellpadding="0" cellspacing="0"
-                               style="border-collapse:collapse;margin-bottom:24px;">
-                          <thead>
-                            <tr style="border-bottom:2px solid #e8e0d8;">
-                              <th style="text-align:left;font-size:12px;color:#888;
-                                         padding:8px 0;font-weight:600;">PRODUTO</th>
-                              <th style="text-align:center;font-size:12px;color:#888;
-                                         padding:8px 0;font-weight:600;">QTD</th>
-                              <th style="text-align:right;font-size:12px;color:#888;
-                                         padding:8px 0;font-weight:600;">SUBTOTAL</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {itemRows}
-                          </tbody>
-                        </table>
+                        <!-- Item cards -->
+                        {itemRows}
 
                         <!-- Total -->
-                        <table width="100%" cellpadding="0" cellspacing="0"
-                               style="border-top:2px solid #e8e0d8;margin-bottom:32px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
                           <tr>
-                            <td style="padding:14px 0;font-size:15px;
-                                       font-weight:bold;color:#1a1a1a;">Total</td>
-                            <td style="padding:14px 0;font-size:15px;font-weight:bold;
-                                       color:#A0673A;text-align:right;">{totalAmount}</td>
+                            <td style="padding:16px 0 0;border-top:2px solid #e8e0d8;
+                                       text-align:right;font-size:15px;font-weight:bold;color:#1a1a1a;">
+                              Total: <span style="color:#A0673A;">{totalAmount}</span>
+                            </td>
                           </tr>
                         </table>
 
-                        <p style="margin:0;font-size:13px;color:#777;line-height:1.6;">
+                        <p style="margin:20px 0 0;font-size:14px;color:#777;line-height:1.5;">
                           Dúvidas? Fale conosco pelo
                           <a href="{whatsappUrl}" style="color:#A0673A;">WhatsApp</a>.
                         </p>
@@ -93,9 +83,9 @@ public class OrderEmailService {
 
                     <!-- Footer -->
                     <tr>
-                      <td style="background:#f5f0eb;padding:20px 40px;text-align:center;
+                      <td style="background:#f5f0eb;padding:14px 24px;text-align:center;
                                  border-top:1px solid #e8e0d8;">
-                        <p style="margin:0;font-size:11px;color:#999;">
+                        <p style="margin:0;font-size:12px;color:#999;">
                           © {year} QueenFitStyle. Todos os direitos reservados.
                         </p>
                       </td>
@@ -108,19 +98,43 @@ public class OrderEmailService {
             </html>
             """;
 
+    /**
+     * Card de item: table de duas células (imagem à esquerda, dados à direita) — único
+     * padrão de colunas lado a lado confiável entre clientes de e-mail. O {imageCell} é
+     * montado em Java para suportar itens sem imagem com um placeholder neutro.
+     */
     private static final String ITEM_ROW_TEMPLATE = """
-            <tr style="border-bottom:1px solid #f0ebe4;">
-              <td style="padding:10px 0;font-size:13px;color:#1a1a1a;">
-                {productName}<br/>
-                <span style="font-size:11px;color:#999;">{variant}</span>
-              </td>
-              <td style="padding:10px 0;font-size:13px;color:#555;text-align:center;">
-                x{quantity}
-              </td>
-              <td style="padding:10px 0;font-size:13px;color:#1a1a1a;text-align:right;">
-                {subtotal}
-              </td>
-            </tr>
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                   style="border-collapse:separate;margin:0 0 12px;background:#fdf6f1;
+                          border:1px solid #f0ebe4;border-radius:6px;">
+              <tr>
+                {imageCell}
+                <td valign="top" style="padding:12px;">
+                  <div style="font-size:15px;color:#1a1a1a;font-weight:bold;line-height:1.3;">
+                    {productName}
+                  </div>
+                  <div style="font-size:14px;color:#999;margin-top:4px;">{variant}</div>
+                  <div style="font-size:14px;color:#555;margin-top:8px;">
+                    x{quantity} &middot; <strong style="color:#A0673A;">{subtotal}</strong>
+                  </div>
+                </td>
+              </tr>
+            </table>
+            """;
+
+    private static final String IMAGE_CELL_TEMPLATE = """
+            <td width="76" valign="top" style="padding:12px 0 12px 12px;">
+              <img src="{imageUrl}" width="64" height="64" alt="{alt}"
+                   style="display:block;width:64px;height:64px;border-radius:4px;
+                          border:1px solid #e8e0d8;object-fit:cover;"/>
+            </td>
+            """;
+
+    private static final String IMAGE_PLACEHOLDER_CELL = """
+            <td width="76" valign="top" style="padding:12px 0 12px 12px;">
+              <div style="width:64px;height:64px;border-radius:4px;
+                          border:1px solid #e8e0d8;background:#f0e6dc;"></div>
+            </td>
             """;
 
     private final JavaMailSender mailSender;
@@ -135,7 +149,13 @@ public class OrderEmailService {
         this.from              = from;
     }
 
-    public void sendConfirmation(Order order, Customer customer) throws MessagingException {
+    /**
+     * @param imageUrlsByItemId URLs públicas das imagens dos produtos, indexadas por
+     *                          {@link OrderItem#getId()}. Itens ausentes do mapa (ou com
+     *                          valor nulo) recaem em um placeholder visual.
+     */
+    public void sendConfirmation(Order order, Customer customer,
+                                 Map<Long, String> imageUrlsByItemId) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 
@@ -144,33 +164,44 @@ public class OrderEmailService {
         }
         helper.setTo(customer.getEmail());
         helper.setSubject("Pedido #%d confirmado — QueenFitStyle".formatted(order.getId()));
-        helper.setText(buildHtmlBody(order, customer), true);
+        helper.setText(buildHtmlBody(order, customer, imageUrlsByItemId), true);
 
         mailSender.send(message);
     }
 
-    private String buildHtmlBody(Order order, Customer customer) {
+    private String buildHtmlBody(Order order, Customer customer, Map<Long, String> imageUrlsByItemId) {
         NumberFormat currency = NumberFormat.getCurrencyInstance(PT_BR);
 
         return EMAIL_TEMPLATE
                 .replace("{customerName}", escape(customer.getName()))
                 .replace("{orderId}", String.valueOf(order.getId()))
-                .replace("{itemRows}", buildItemRows(order, currency))
+                .replace("{itemRows}", buildItemRows(order, currency, imageUrlsByItemId))
                 .replace("{totalAmount}", currency.format(order.getTotalAmount()))
                 .replace("{whatsappUrl}", whatsAppUrlService.buildUrl(order, customer))
                 .replace("{year}", String.valueOf(Year.now().getValue()));
     }
 
-    private String buildItemRows(Order order, NumberFormat currency) {
+    private String buildItemRows(Order order, NumberFormat currency, Map<Long, String> imageUrlsByItemId) {
         StringBuilder rows = new StringBuilder();
         for (OrderItem item : order.getItems()) {
+            String imageUrl = imageUrlsByItemId == null ? null : imageUrlsByItemId.get(item.getId());
             rows.append(ITEM_ROW_TEMPLATE
+                    .replace("{imageCell}", buildImageCell(imageUrl, item.getProductName()))
                     .replace("{productName}", escape(item.getProductName()))
                     .replace("{variant}", escape(variantLabel(item)))
                     .replace("{quantity}", String.valueOf(item.getQuantity()))
                     .replace("{subtotal}", currency.format(item.getSubtotal())));
         }
         return rows.toString();
+    }
+
+    private String buildImageCell(String imageUrl, String productName) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return IMAGE_PLACEHOLDER_CELL;
+        }
+        return IMAGE_CELL_TEMPLATE
+                .replace("{imageUrl}", escapeAttr(imageUrl))
+                .replace("{alt}", escapeAttr(productName));
     }
 
     private String variantLabel(OrderItem item) {
@@ -186,5 +217,9 @@ public class OrderEmailService {
         return value.replace("&", "&amp;")
                 .replace("<", "&lt;")
                 .replace(">", "&gt;");
+    }
+
+    private String escapeAttr(String value) {
+        return escape(value).replace("\"", "&quot;");
     }
 }
