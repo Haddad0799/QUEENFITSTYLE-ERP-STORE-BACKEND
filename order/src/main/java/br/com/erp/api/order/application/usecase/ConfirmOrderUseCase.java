@@ -1,6 +1,8 @@
 package br.com.erp.api.order.application.usecase;
 
 import br.com.erp.api.order.application.port.out.ReservationLifecyclePort;
+import br.com.erp.api.order.application.service.OrderEmailService;
+import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
 import br.com.erp.api.order.domain.entity.OrderTimelineEvent;
@@ -8,6 +10,7 @@ import br.com.erp.api.order.domain.enumerated.OrderEventType;
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
 import br.com.erp.api.order.domain.exception.InvalidOrderStateTransitionException;
 import br.com.erp.api.order.domain.exception.OrderNotFoundException;
+import br.com.erp.api.order.domain.port.CustomerRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderTimelineRepositoryPort;
 import org.slf4j.Logger;
@@ -36,13 +39,19 @@ public class ConfirmOrderUseCase {
     private final OrderRepositoryPort orderRepository;
     private final ReservationLifecyclePort reservationLifecycle;
     private final OrderTimelineRepositoryPort timelineRepository;
+    private final CustomerRepositoryPort customerRepository;
+    private final OrderEmailService orderEmailService;
 
     public ConfirmOrderUseCase(OrderRepositoryPort orderRepository,
                                ReservationLifecyclePort reservationLifecycle,
-                               OrderTimelineRepositoryPort timelineRepository) {
+                               OrderTimelineRepositoryPort timelineRepository,
+                               CustomerRepositoryPort customerRepository,
+                               OrderEmailService orderEmailService) {
         this.orderRepository      = orderRepository;
         this.reservationLifecycle = reservationLifecycle;
         this.timelineRepository   = timelineRepository;
+        this.customerRepository   = customerRepository;
+        this.orderEmailService    = orderEmailService;
     }
 
     @Transactional
@@ -74,7 +83,26 @@ public class ConfirmOrderUseCase {
         ));
 
         log.info("Pedido #{} marcado como pago por '{}'", orderId, actor);
+
+        sendConfirmationEmail(order);
+
         return order;
+    }
+
+    /**
+     * Dispara o e-mail de confirmação para o cliente. Falha no envio é logada como aviso
+     * e NÃO propaga: a confirmação do pagamento (estoque + status) já está consolidada.
+     */
+    private void sendConfirmationEmail(Order order) {
+        try {
+            Customer customer = customerRepository.findById(order.getCustomerId())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Cliente #" + order.getCustomerId() + " não encontrado para o pedido #" + order.getId()));
+            orderEmailService.sendConfirmation(order, customer);
+            log.info("E-mail de confirmação do pedido #{} enviado para {}", order.getId(), customer.getEmail());
+        } catch (Exception e) {
+            log.warn("Falha ao enviar e-mail de confirmação do pedido #{}: {}", order.getId(), e.getMessage(), e);
+        }
     }
 
     private void confirmReservations(Order order, String actor) {

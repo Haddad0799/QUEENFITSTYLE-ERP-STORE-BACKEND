@@ -92,7 +92,8 @@ public class CreateOrderUseCase {
                 new Customer(
                         request.customer().name(),
                         request.customer().phone(),
-                        request.customer().city()
+                        request.customer().city(),
+                        request.customer().email()
                 )
         );
 
