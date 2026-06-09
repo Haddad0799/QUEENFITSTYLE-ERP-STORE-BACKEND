@@ -65,7 +65,8 @@ public class OrderEmailListener {
             orderEmailService.sendConfirmation(order, customer, resolveImageUrls(order.getId()));
             log.info("E-mail de confirmação do pedido #{} enviado para {}", order.getId(), customer.getEmail());
         } catch (Exception e) {
-            log.warn("Falha ao enviar e-mail de confirmação do pedido #{}: {}", order.getId(), e.getMessage(), e);
+            log.error("FALHA EMAIL pedido #{} — {}", order.getId(), e.getMessage());
+            log.error("Stacktrace completo:", e);
         }
     }
 
