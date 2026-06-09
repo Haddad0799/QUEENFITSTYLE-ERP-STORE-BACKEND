@@ -39,6 +39,7 @@
 		<module>storage</module>
 		<module>catalog</module>
 		<module>order</module>
+		<module>notification</module>
 		<module>auth</module>
     </modules>
 

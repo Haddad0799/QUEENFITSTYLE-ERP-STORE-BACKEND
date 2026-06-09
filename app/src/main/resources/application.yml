@@ -58,6 +58,9 @@ nextjs:
 whatsapp:
   seller-phone: ${WHATSAPP_SELLER_PHONE}
 
+notification:
+  provider: javamail
+
 openai:
   api:
     url: ${OPENAI_API_URL}

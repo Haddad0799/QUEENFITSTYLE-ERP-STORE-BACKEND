@@ -1,10 +1,10 @@
-package br.com.erp.api.order.infrastructure.listener;
+package br.com.erp.api.notification.listener;
 
+import br.com.erp.api.notification.application.port.OrderConfirmationNotifier;
 import br.com.erp.api.order.application.event.OrderConfirmedEvent;
 import br.com.erp.api.order.application.port.out.ImageUrlResolverPort;
 import br.com.erp.api.order.application.query.OrderAdminQueryRepository;
 import br.com.erp.api.order.application.query.projection.OrderItemRow;
-import br.com.erp.api.order.application.service.OrderEmailService;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.port.CustomerRepositoryPort;
@@ -23,30 +23,30 @@ import java.util.Map;
 import static org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT;
 
 /**
- * Dispara o e-mail de confirmação de forma assíncrona após o commit do pagamento.
+ * Dispara a notificação de confirmação de forma assíncrona após o commit do pagamento.
  *
  * Resolve as imagens dos produtos pela mesma via de leitura usada pela API admin
  * ({@link OrderAdminQueryRepository#findItemsByOrderId} + {@link ImageUrlResolverPort}),
  * já que o domínio {@code OrderItem} não carrega image_key.
  *
- * Falha no envio é logada como aviso e NÃO propaga: a confirmação do pagamento
+ * Falha no envio é logada como erro e NÃO propaga: a confirmação do pagamento
  * (estoque + status) já está consolidada no banco quando este listener executa.
  */
 @Component
-public class OrderEmailListener {
+public class OrderNotificationListener {
 
-    private static final Logger log = LoggerFactory.getLogger(OrderEmailListener.class);
+    private static final Logger log = LoggerFactory.getLogger(OrderNotificationListener.class);
 
-    private final OrderEmailService orderEmailService;
+    private final OrderConfirmationNotifier notifier;
     private final CustomerRepositoryPort customerRepository;
     private final OrderAdminQueryRepository orderQueryRepository;
     private final ImageUrlResolverPort imageUrlResolver;
 
-    public OrderEmailListener(OrderEmailService orderEmailService,
-                              CustomerRepositoryPort customerRepository,
-                              OrderAdminQueryRepository orderQueryRepository,
-                              ImageUrlResolverPort imageUrlResolver) {
-        this.orderEmailService    = orderEmailService;
+    public OrderNotificationListener(OrderConfirmationNotifier notifier,
+                                     CustomerRepositoryPort customerRepository,
+                                     OrderAdminQueryRepository orderQueryRepository,
+                                     ImageUrlResolverPort imageUrlResolver) {
+        this.notifier             = notifier;
         this.customerRepository   = customerRepository;
         this.orderQueryRepository = orderQueryRepository;
         this.imageUrlResolver     = imageUrlResolver;
@@ -56,14 +56,13 @@ public class OrderEmailListener {
     @TransactionalEventListener(phase = AFTER_COMMIT)
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void onOrderConfirmed(OrderConfirmedEvent event) {
-        log.info("[DIAG] OrderEmailListener disparado para pedido #{}", event.order().getId());
         Order order = event.order();
         try {
             Customer customer = customerRepository.findById(order.getCustomerId())
                     .orElseThrow(() -> new IllegalStateException(
                             "Cliente #" + order.getCustomerId() + " não encontrado para o pedido #" + order.getId()));
-            orderEmailService.sendConfirmation(order, customer, resolveImageUrls(order.getId()));
-            log.info("E-mail de confirmação do pedido #{} enviado para {}", order.getId(), customer.getEmail());
+            notifier.notify(order, customer, resolveImageUrls(order.getId()));
+            log.info("Notificação de confirmação do pedido #{} enviada para {}", order.getId(), customer.getEmail());
         } catch (Exception e) {
             log.error("FALHA EMAIL pedido #{} — {}", order.getId(), e.getMessage());
             log.error("Stacktrace completo:", e);

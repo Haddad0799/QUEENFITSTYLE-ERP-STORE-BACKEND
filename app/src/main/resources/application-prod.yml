@@ -23,3 +23,10 @@ minio:
 
 r2:
   public-url: ${R2_PUBLIC_URL}
+
+notification:
+  provider: resend
+
+resend:
+  api-key: ${RESEND_API_KEY}
+  from: onboarding@resend.dev

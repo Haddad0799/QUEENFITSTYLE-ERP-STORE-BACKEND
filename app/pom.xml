@@ -65,6 +65,12 @@
 
             <dependency>
                 <groupId>br.com.erp</groupId>
+                <artifactId>notification</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>br.com.erp</groupId>
                 <artifactId>auth</artifactId>
                 <version>${project.version}</version>
             </dependency>

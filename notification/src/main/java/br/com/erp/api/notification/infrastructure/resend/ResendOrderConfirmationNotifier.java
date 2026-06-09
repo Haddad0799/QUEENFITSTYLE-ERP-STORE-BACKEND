@@ -1,13 +1,15 @@
-package br.com.erp.api.order.application.service;
+package br.com.erp.api.notification.infrastructure.resend;
 
+import br.com.erp.api.notification.application.port.OrderConfirmationNotifier;
+import br.com.erp.api.order.application.service.WhatsAppUrlService;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.resend.Resend;
+import com.resend.services.emails.model.CreateEmailOptions;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.text.NumberFormat;
@@ -16,7 +18,9 @@ import java.util.Locale;
 import java.util.Map;
 
 @Service
-public class OrderEmailService {
+@Primary
+@ConditionalOnProperty(name = "notification.provider", havingValue = "resend")
+public class ResendOrderConfirmationNotifier implements OrderConfirmationNotifier {
 
     private static final Locale PT_BR = new Locale("pt", "BR");
 
@@ -137,36 +141,28 @@ public class OrderEmailService {
             </td>
             """;
 
-    private final JavaMailSender mailSender;
     private final WhatsAppUrlService whatsAppUrlService;
+    private final String apiKey;
     private final String from;
 
-    public OrderEmailService(JavaMailSender mailSender,
-                             WhatsAppUrlService whatsAppUrlService,
-                             @Value("${spring.mail.username:}") String from) {
-        this.mailSender        = mailSender;
+    public ResendOrderConfirmationNotifier(WhatsAppUrlService whatsAppUrlService,
+                                           @Value("${resend.api-key}") String apiKey,
+                                           @Value("${resend.from:onboarding@resend.dev}") String from) {
         this.whatsAppUrlService = whatsAppUrlService;
+        this.apiKey            = apiKey;
         this.from              = from;
     }
 
-    /**
-     * @param imageUrlsByItemId URLs públicas das imagens dos produtos, indexadas por
-     *                          {@link OrderItem#getId()}. Itens ausentes do mapa (ou com
-     *                          valor nulo) recaem em um placeholder visual.
-     */
-    public void sendConfirmation(Order order, Customer customer,
-                                 Map<Long, String> imageUrlsByItemId) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
-
-        if (from != null && !from.isBlank()) {
-            helper.setFrom(from);
-        }
-        helper.setTo(customer.getEmail());
-        helper.setSubject("Pedido #%d confirmado — QueenFitStyle".formatted(order.getId()));
-        helper.setText(buildHtmlBody(order, customer, imageUrlsByItemId), true);
-
-        mailSender.send(message);
+    @Override
+    public void notify(Order order, Customer customer, Map<Long, String> imageUrls) throws Exception {
+        Resend resend = new Resend(apiKey);
+        CreateEmailOptions request = CreateEmailOptions.builder()
+                .from(from)
+                .to(customer.getEmail())
+                .subject("Pedido #" + order.getId() + " confirmado — QueenFitStyle")
+                .html(buildHtmlBody(order, customer, imageUrls))
+                .build();
+        resend.emails().send(request);
     }
 
     private String buildHtmlBody(Order order, Customer customer, Map<Long, String> imageUrlsByItemId) {
