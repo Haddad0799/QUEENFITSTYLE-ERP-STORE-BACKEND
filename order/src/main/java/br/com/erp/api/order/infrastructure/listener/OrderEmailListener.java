@@ -56,6 +56,7 @@ public class OrderEmailListener {
     @TransactionalEventListener(phase = AFTER_COMMIT)
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void onOrderConfirmed(OrderConfirmedEvent event) {
+        log.info("[DIAG] OrderEmailListener disparado para pedido #{}", event.order().getId());
         Order order = event.order();
         try {
             Customer customer = customerRepository.findById(order.getCustomerId())

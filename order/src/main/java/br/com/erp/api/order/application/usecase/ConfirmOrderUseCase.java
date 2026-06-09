@@ -82,6 +82,7 @@ public class ConfirmOrderUseCase {
 
         // efeitos colaterais (e-mail de confirmação) são tratados por listeners após o commit
         eventPublisher.publishEvent(new OrderConfirmedEvent(order));
+        log.info("[DIAG] OrderConfirmedEvent publicado para pedido #{}", orderId);
 
         return order;
     }
