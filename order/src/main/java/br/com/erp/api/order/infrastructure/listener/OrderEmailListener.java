@@ -10,7 +10,6 @@ import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.port.CustomerRepositoryPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -50,7 +49,6 @@ public class OrderEmailListener {
         this.imageUrlResolver     = imageUrlResolver;
     }
 
-    @Async
     @TransactionalEventListener(phase = AFTER_COMMIT)
     public void onOrderConfirmed(OrderConfirmedEvent event) {
         Order order = event.order();
