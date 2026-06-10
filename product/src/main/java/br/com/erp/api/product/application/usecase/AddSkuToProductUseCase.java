@@ -114,8 +114,7 @@ public class AddSkuToProductUseCase {
                     Dimensions dimensions = Dimensions.of(
                             data.width(),
                             data.height(),
-                            data.length(),
-                            data.weight()
+                            data.length()
                     );
 
                     return new Sku(

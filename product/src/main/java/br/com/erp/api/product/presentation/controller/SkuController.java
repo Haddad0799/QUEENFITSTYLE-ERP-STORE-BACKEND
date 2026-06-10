@@ -64,7 +64,6 @@ public class SkuController {
                                 s.width(),
                                 s.height(),
                                 s.length(),
-                                s.weight(),
                                 s.stockQuantity(),
                                 s.costPrice(),
                                 s.sellingPrice()
@@ -111,8 +110,7 @@ public class SkuController {
                 skuId,
                 dto.width(),
                 dto.height(),
-                dto.length(),
-                dto.weight()
+                dto.length()
         ));
         return ResponseEntity.noContent().build();
     }

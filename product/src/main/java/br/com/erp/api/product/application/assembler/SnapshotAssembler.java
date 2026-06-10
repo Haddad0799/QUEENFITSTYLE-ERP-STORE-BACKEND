@@ -131,7 +131,6 @@ public class SnapshotAssembler {
                             sku.getDimensions().width(),
                             sku.getDimensions().height(),
                             sku.getDimensions().length(),
-                            sku.getDimensions().weight(),
                             imageUrls
                     );
                 }).toList();

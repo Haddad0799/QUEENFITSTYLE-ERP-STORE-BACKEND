@@ -133,11 +133,11 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
                         INSERT INTO catalog_skus
                         (catalog_product_id, catalog_color_group_id, sku_id, code,
                          size_name, selling_price, available_stock,
-                         width, height, length, weight)
+                         width, height, length)
                         VALUES
                         (:catalogProductId, :colorGroupId, :skuId, :code,
                          :sizeName, :sellingPrice, :availableStock,
-                         :width, :height, :length, :weight)
+                         :width, :height, :length)
                     """)
                             .bind("catalogProductId", catalogProductId)
                             .bind("colorGroupId", colorGroupId)
@@ -149,7 +149,6 @@ public class CatalogJdbiRepository implements CatalogRepositoryPort {
                             .bind("width", sku.width())
                             .bind("height", sku.height())
                             .bind("length", sku.length())
-                            .bind("weight", sku.weight())
                             .execute();
                 }
             }

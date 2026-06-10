@@ -193,7 +193,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
             List<Map<String, Object>> skuRows = handle.createQuery("""
                     SELECT cs.id, cs.code, cs.size_name, cs.selling_price,
                            cs.available_stock, cs.catalog_color_group_id,
-                           cs.width, cs.height, cs.length, cs.weight
+                           cs.width, cs.height, cs.length
                     FROM catalog_skus cs
                     WHERE cs.catalog_product_id = :catalogProductId
                     ORDER BY cs.catalog_color_group_id, cs.size_name
@@ -210,7 +210,6 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         row.put("width", rs.getBigDecimal("width"));
                         row.put("height", rs.getBigDecimal("height"));
                         row.put("length", rs.getBigDecimal("length"));
-                        row.put("weight", rs.getBigDecimal("weight"));
                         return row;
                     })
                     .list();
@@ -240,8 +239,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                                             stock > 0,
                                             (BigDecimal) r.get("width"),
                                             (BigDecimal) r.get("height"),
-                                            (BigDecimal) r.get("length"),
-                                            (BigDecimal) r.get("weight")
+                                            (BigDecimal) r.get("length")
                                     );
                                 })
                                 .toList();
@@ -300,7 +298,7 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
             var skuOpt = handle.createQuery("""
                     SELECT cp.name AS product_name, cp.slug AS product_slug,
                            cs.code, cs.size_name, cs.selling_price, cs.available_stock,
-                           cs.width, cs.height, cs.length, cs.weight,
+                           cs.width, cs.height, cs.length,
                            cs.id AS catalog_sku_id,
                            ccg.color_name, ccg.color_hex, ccg.id AS color_group_id
                     FROM catalog_skus cs
@@ -323,7 +321,6 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                         row.put("width", rs.getBigDecimal("width"));
                         row.put("height", rs.getBigDecimal("height"));
                         row.put("length", rs.getBigDecimal("length"));
-                        row.put("weight", rs.getBigDecimal("weight"));
                         row.put("colorGroupId", rs.getLong("color_group_id"));
                         return row;
                     })
@@ -358,7 +355,6 @@ public class CatalogJdbiQueryRepository implements CatalogQueryRepository {
                     (BigDecimal) s.get("width"),
                     (BigDecimal) s.get("height"),
                     (BigDecimal) s.get("length"),
-                    (BigDecimal) s.get("weight"),
                     images
             ));
         });

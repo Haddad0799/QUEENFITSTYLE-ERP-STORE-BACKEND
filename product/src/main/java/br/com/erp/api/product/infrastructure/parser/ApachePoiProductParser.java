@@ -54,10 +54,9 @@ public class ApachePoiProductParser implements ProductImportParserPort {
                             getDecimal(row, 6),  // width
                             getDecimal(row, 7),  // height
                             getDecimal(row, 8),  // length
-                            getDecimal(row, 9),  // weight
-                            getDecimal(row, 10), // costPrice
-                            getDecimal(row, 11), // sellingPrice
-                            getInteger(row, 12)  // stockQuantity
+                            getDecimal(row, 9),  // costPrice
+                            getDecimal(row, 10), // sellingPrice
+                            getInteger(row, 11)  // stockQuantity
                     );
                     list.add(data);
                 } catch (Exception e) {
@@ -66,7 +65,7 @@ public class ApachePoiProductParser implements ProductImportParserPort {
                     // Cria uma entrada com dados parciais para que o rowNumber seja rastreável
                     list.add(new ProductImportData(
                             rowNumber, null, null, null, null, null, null,
-                            null, null, null, null, null, null, null
+                            null, null, null, null, null, null
                     ));
                 }
             }
@@ -80,7 +79,7 @@ public class ApachePoiProductParser implements ProductImportParserPort {
 
     private boolean isRowEmpty(Row row) {
         if (row == null) return true;
-        for (int i = 0; i < 13; i++) {
+        for (int i = 0; i < 12; i++) {
             Cell cell = row.getCell(i);
             if (cell != null && cell.getCellType() != CellType.BLANK) {
                 String value = cell.toString().trim();

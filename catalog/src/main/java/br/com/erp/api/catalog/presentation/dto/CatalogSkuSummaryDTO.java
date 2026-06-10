@@ -10,7 +10,6 @@ public record CatalogSkuSummaryDTO(
         boolean inStock,
         BigDecimal width,
         BigDecimal height,
-        BigDecimal length,
-        BigDecimal weight
+        BigDecimal length
 ) {}
 

@@ -15,9 +15,5 @@ public record UpdateSkuDimensionsDTO(
 
         @DecimalMin(value = "0.1", message = "Comprimento deve ser maior que zero")
         @Digits(integer = 6, fraction = 2, message = "Comprimento inválido")
-        BigDecimal length,
-
-        @DecimalMin(value = "0.001", message = "Peso deve ser maior que zero")
-        @Digits(integer = 4, fraction = 3, message = "Peso inválido")
-        BigDecimal weight
+        BigDecimal length
 ) {}

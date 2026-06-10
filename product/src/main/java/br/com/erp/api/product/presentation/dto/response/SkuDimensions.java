@@ -5,6 +5,5 @@ import java.math.BigDecimal;
 public record SkuDimensions(
         BigDecimal width,
         BigDecimal height,
-        BigDecimal length,
-        BigDecimal weight
+        BigDecimal length
 ) {}

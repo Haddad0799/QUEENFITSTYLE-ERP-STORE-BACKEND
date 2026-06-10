@@ -34,8 +34,7 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                 Dimensions.of(
                         rs.getBigDecimal("width"),
                         rs.getBigDecimal("height"),
-                        rs.getBigDecimal("length"),
-                        rs.getBigDecimal("weight")
+                        rs.getBigDecimal("length")
                 ),
                 SkuStatus.valueOf(rs.getString("status"))
         );
@@ -43,7 +42,7 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
 
     private static final String SKU_SELECT = """
             SELECT id, product_id, sku_code, color_id, size_id,
-                   width, height, length, weight, status
+                   width, height, length, status
             FROM skus
             """;
 
@@ -58,10 +57,10 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
             var batch = handle.prepareBatch("""
             INSERT INTO skus (
                 product_id, sku_code, color_id, size_id,
-                width, height, length, weight, status
+                width, height, length, status
             ) VALUES (
                 :productId, :code, :colorId, :sizeId,
-                :width, :height, :length, :weight, :status
+                :width, :height, :length, :status
             )
             ON CONFLICT (product_id, color_id, size_id) DO NOTHING
         """);
@@ -74,7 +73,6 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                         .bind("width", sku.getDimensions().width())
                         .bind("height", sku.getDimensions().height())
                         .bind("length", sku.getDimensions().length())
-                        .bind("weight", sku.getDimensions().weight())
                         .bind("status", sku.getStatus())
                         .add();
             }
@@ -129,10 +127,10 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
             var batch = handle.prepareBatch("""
                 INSERT INTO skus (
                     product_id, sku_code, color_id, size_id,
-                    width, height, length, weight, status
+                    width, height, length, status
                 ) VALUES (
                     :productId, :code, :colorId, :sizeId,
-                    :width, :height, :length, :weight, :status
+                    :width, :height, :length, :status
                 )
                 ON CONFLICT (product_id, color_id, size_id) DO NOTHING
             """);
@@ -145,7 +143,6 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                         .bind("width", sku.getDimensions().width())
                         .bind("height", sku.getDimensions().height())
                         .bind("length", sku.getDimensions().length())
-                        .bind("weight", sku.getDimensions().weight())
                         .bind("status", sku.getStatus())
                         .add();
             }
@@ -321,13 +318,12 @@ public class SkuJdbiRepositoryImpl implements SkuRepositoryPort {
                 handle.createUpdate("""
                     UPDATE skus
                     SET width = :width, height = :height,
-                        length = :length, weight = :weight
+                        length = :length
                     WHERE id = :id
                 """)
                         .bind("width", sku.getDimensions().width())
                         .bind("height", sku.getDimensions().height())
                         .bind("length", sku.getDimensions().length())
-                        .bind("weight", sku.getDimensions().weight())
                         .bind("id", sku.getId())
                         .execute()
         );

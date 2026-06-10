@@ -13,7 +13,6 @@ public record ProductImportData(
         BigDecimal width,
         BigDecimal height,
         BigDecimal length,
-        BigDecimal weight,
         BigDecimal costPrice,
         BigDecimal sellingPrice,
         Integer stockQuantity

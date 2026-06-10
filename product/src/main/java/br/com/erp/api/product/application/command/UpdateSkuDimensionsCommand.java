@@ -7,6 +7,5 @@ public record UpdateSkuDimensionsCommand(
         Long skuId,
         BigDecimal width,
         BigDecimal height,
-        BigDecimal length,
-        BigDecimal weight
+        BigDecimal length
 ) {}

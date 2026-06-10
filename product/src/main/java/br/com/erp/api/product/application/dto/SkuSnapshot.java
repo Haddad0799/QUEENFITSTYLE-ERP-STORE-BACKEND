@@ -15,7 +15,6 @@ public record SkuSnapshot(
         BigDecimal width,
         BigDecimal height,
         BigDecimal length,
-        BigDecimal weight,
         List<String> imageUrls
 ) {}
 

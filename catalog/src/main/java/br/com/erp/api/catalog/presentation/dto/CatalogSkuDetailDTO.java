@@ -16,7 +16,6 @@ public record CatalogSkuDetailDTO(
         BigDecimal width,
         BigDecimal height,
         BigDecimal length,
-        BigDecimal weight,
         List<String> imageUrls
 ) {}
 

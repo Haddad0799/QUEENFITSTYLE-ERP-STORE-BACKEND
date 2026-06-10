@@ -160,7 +160,7 @@ public class ProductGroupProcessor {
                 SkuCode.of(row.skuCode()),
                 colorId,
                 sizeId,
-                Dimensions.of(row.width(), row.height(), row.length(), row.weight())
+                Dimensions.of(row.width(), row.height(), row.length())
         );
     }
 

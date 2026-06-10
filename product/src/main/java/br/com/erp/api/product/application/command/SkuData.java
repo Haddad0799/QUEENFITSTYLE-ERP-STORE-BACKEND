@@ -9,7 +9,6 @@ public record SkuData(
         BigDecimal width,
         BigDecimal height,
         BigDecimal length,
-        BigDecimal weight,
         Integer stockQuantity,
         BigDecimal costPrice,
         BigDecimal sellingPrice

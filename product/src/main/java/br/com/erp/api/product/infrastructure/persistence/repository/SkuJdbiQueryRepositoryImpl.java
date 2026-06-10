@@ -79,8 +79,7 @@ public class SkuJdbiQueryRepositoryImpl implements SkuQueryRepository {
         sz.label AS size_name,
         s.width,
         s.height,
-        s.length,
-        s.weight
+        s.length
     FROM skus s
     LEFT JOIN colors c ON c.id = s.color_id
     LEFT JOIN sizes sz ON sz.id = s.size_id
@@ -105,8 +104,7 @@ public class SkuJdbiQueryRepositoryImpl implements SkuQueryRepository {
                                 new SkuDimensions(
                                         rs.getBigDecimal("width"),
                                         rs.getBigDecimal("height"),
-                                        rs.getBigDecimal("length"),
-                                        rs.getBigDecimal("weight")
+                                        rs.getBigDecimal("length")
                                 )
                         ))
                         .findOne()

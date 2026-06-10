@@ -27,8 +27,7 @@ public class UpdateSkuDimensionsUseCase {
         sku.changeDimensions(
                 command.width(),
                 command.height(),
-                command.length(),
-                command.weight()
+                command.length()
         );
 
         skuRepository.updateDimensions(sku);

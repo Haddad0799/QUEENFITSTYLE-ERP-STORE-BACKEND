@@ -202,7 +202,6 @@ public class ImportProductsFromFileUseCase {
         validatePositive(row.width(), "width", "Largura", line, name, category, skuCode, errors);
         validatePositive(row.height(), "height", "Altura", line, name, category, skuCode, errors);
         validatePositive(row.length(), "length", "Comprimento", line, name, category, skuCode, errors);
-        validatePositive(row.weight(), "weight", "Peso", line, name, category, skuCode, errors);
 
         validatePositive(row.costPrice(), "costPrice", "Preço de custo", line, name, category, skuCode, errors);
         validatePositive(row.sellingPrice(), "sellingPrice", "Preço de venda", line, name, category, skuCode, errors);

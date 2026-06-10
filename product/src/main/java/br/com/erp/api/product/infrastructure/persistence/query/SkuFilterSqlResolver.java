@@ -55,7 +55,6 @@ public class SkuFilterSqlResolver {
                 s.width,
                 s.height,
                 s.length,
-                s.weight,
                 s.status
         """ + baseSql + whereClause + """
             ORDER BY s.id

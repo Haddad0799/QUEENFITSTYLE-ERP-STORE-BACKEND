@@ -80,8 +80,8 @@ public class Sku {
         this.status = SkuStatus.INCOMPLETE;
     }
 
-    public void changeDimensions(BigDecimal width, BigDecimal height, BigDecimal length, BigDecimal weight) {
-        this.dimensions = this.dimensions.merge(width, height, length, weight);
+    public void changeDimensions(BigDecimal width, BigDecimal height, BigDecimal length) {
+        this.dimensions = this.dimensions.merge(width, height, length);
     }
 
     public boolean isPublished() {

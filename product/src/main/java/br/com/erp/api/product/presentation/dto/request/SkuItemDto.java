@@ -9,7 +9,6 @@ public record SkuItemDto(
         BigDecimal width,
         BigDecimal height,
         BigDecimal length,
-        BigDecimal weight,
         int stockQuantity,
         BigDecimal costPrice,
         BigDecimal sellingPrice

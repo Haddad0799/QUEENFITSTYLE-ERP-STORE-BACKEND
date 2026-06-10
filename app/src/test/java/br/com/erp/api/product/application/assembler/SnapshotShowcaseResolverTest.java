@@ -101,7 +101,6 @@ class SnapshotShowcaseResolverTest {
                 null,
                 null,
                 null,
-                null,
                 List.of()
         );
     }
