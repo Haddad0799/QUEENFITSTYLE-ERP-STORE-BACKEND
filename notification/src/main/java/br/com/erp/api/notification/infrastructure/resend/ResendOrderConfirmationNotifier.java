@@ -1,7 +1,7 @@
 package br.com.erp.api.notification.infrastructure.resend;
 
 import br.com.erp.api.notification.application.port.OrderConfirmationNotifier;
-import br.com.erp.api.order.application.service.WhatsAppUrlService;
+import br.com.erp.api.notification.application.service.WhatsAppNotificationService;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
@@ -41,9 +41,12 @@ public class ResendOrderConfirmationNotifier implements OrderConfirmationNotifie
 
                     <!-- Header -->
                     <tr>
-                      <td style="background:#A0673A;padding:20px 24px;text-align:center;">
-                        <span style="color:#ffffff;font-size:18px;font-weight:bold;
-                                     letter-spacing:0.2em;">QUEENFITSTYLE</span>
+                      <td style="background:#fdf6f1;padding:24px;text-align:center;border-bottom:1px solid #e8d5c4;">
+                        <img src="https://pub-c2b5ff96dcca41228edaffcbc0e93c92.r2.dev/brand/logo-transparent.png"
+                             height="72" alt="QueenFitStyle"
+                             style="display:block;height:72px;margin:0 auto;border:0;"/>
+                        <div style="margin-top:12px;color:#A0673A;font-size:16px;font-weight:bold;
+                                    letter-spacing:0.25em;">QUEENFITSTYLE</div>
                       </td>
                     </tr>
 
@@ -53,8 +56,10 @@ public class ResendOrderConfirmationNotifier implements OrderConfirmationNotifie
                         <p style="margin:0 0 8px;font-size:15px;color:#1a1a1a;">
                           Olá, <strong>{customerName}</strong>!
                         </p>
-                        <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.5;">
-                          Seu pedido foi confirmado. Abaixo está o resumo:
+                        <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.6;">
+                          Seu pagamento foi confirmado e seu pedido já está sendo preparado
+                          com muito carinho para você. Em breve ele chegará até você.
+                          Enquanto isso, confira o resumo da sua compra:
                         </p>
 
                         <!-- Order number badge -->
@@ -81,6 +86,11 @@ public class ResendOrderConfirmationNotifier implements OrderConfirmationNotifie
                         <p style="margin:20px 0 0;font-size:14px;color:#777;line-height:1.5;">
                           Dúvidas? Fale conosco pelo
                           <a href="{whatsappUrl}" style="color:#A0673A;">WhatsApp</a>.
+                        </p>
+
+                        <p style="margin:16px 0 0;font-size:14px;color:#A0673A;line-height:1.6;
+                                  text-align:center;font-style:italic;">
+                          Obrigada por escolher a QueenFitStyle. Você merece se sentir incrível.
                         </p>
                       </td>
                     </tr>
@@ -141,14 +151,14 @@ public class ResendOrderConfirmationNotifier implements OrderConfirmationNotifie
             </td>
             """;
 
-    private final WhatsAppUrlService whatsAppUrlService;
+    private final WhatsAppNotificationService whatsAppNotificationService;
     private final String apiKey;
     private final String from;
 
-    public ResendOrderConfirmationNotifier(WhatsAppUrlService whatsAppUrlService,
+    public ResendOrderConfirmationNotifier(WhatsAppNotificationService whatsAppNotificationService,
                                            @Value("${resend.api-key}") String apiKey,
                                            @Value("${resend.from:onboarding@resend.dev}") String from) {
-        this.whatsAppUrlService = whatsAppUrlService;
+        this.whatsAppNotificationService = whatsAppNotificationService;
         this.apiKey            = apiKey;
         this.from              = from;
     }
@@ -173,7 +183,7 @@ public class ResendOrderConfirmationNotifier implements OrderConfirmationNotifie
                 .replace("{orderId}", String.valueOf(order.getId()))
                 .replace("{itemRows}", buildItemRows(order, currency, imageUrlsByItemId))
                 .replace("{totalAmount}", currency.format(order.getTotalAmount()))
-                .replace("{whatsappUrl}", whatsAppUrlService.buildUrl(order, customer))
+                .replace("{whatsappUrl}", whatsAppNotificationService.buildPostPaymentUrl(order, customer))
                 .replace("{year}", String.valueOf(Year.now().getValue()));
     }
 

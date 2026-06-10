@@ -3,7 +3,7 @@ package br.com.erp.api.order.application.usecase;
 import br.com.erp.api.order.application.port.out.ReservationDetail;
 import br.com.erp.api.order.application.port.out.ReservationValidationPort;
 import br.com.erp.api.order.application.port.out.SkuPricingPort;
-import br.com.erp.api.order.application.service.WhatsAppUrlService;
+import br.com.erp.api.order.application.port.out.WhatsAppMessagePort;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
@@ -38,20 +38,20 @@ public class CreateOrderUseCase {
     private final CustomerRepositoryPort customerRepository;
     private final OrderRepositoryPort orderRepository;
     private final OrderTimelineRepositoryPort timelineRepository;
-    private final WhatsAppUrlService whatsAppUrlService;
+    private final WhatsAppMessagePort whatsAppMessagePort;
 
     public CreateOrderUseCase(ReservationValidationPort reservationValidationPort,
                               SkuPricingPort pricingPort,
                               CustomerRepositoryPort customerRepository,
                               OrderRepositoryPort orderRepository,
                               OrderTimelineRepositoryPort timelineRepository,
-                              WhatsAppUrlService whatsAppUrlService) {
+                              WhatsAppMessagePort whatsAppMessagePort) {
         this.reservationValidationPort = reservationValidationPort;
         this.pricingPort               = pricingPort;
         this.customerRepository        = customerRepository;
         this.orderRepository           = orderRepository;
         this.timelineRepository        = timelineRepository;
-        this.whatsAppUrlService        = whatsAppUrlService;
+        this.whatsAppMessagePort       = whatsAppMessagePort;
     }
 
     public CreateOrderResponse execute(CreateOrderRequest request) {
@@ -113,8 +113,8 @@ public class CreateOrderUseCase {
         );
 
         // 8. Gera mensagem e URL do WhatsApp (requer ID do pedido já persistido)
-        String message = whatsAppUrlService.buildMessageText(order, customer);
-        String url     = whatsAppUrlService.buildUrl(order, customer);
+        String message = whatsAppMessagePort.buildMessageText(order, customer);
+        String url     = whatsAppMessagePort.buildUrl(order, customer);
 
         order.attachWhatsappMessage(message);
         orderRepository.updateWhatsappMessage(order.getId(), message);

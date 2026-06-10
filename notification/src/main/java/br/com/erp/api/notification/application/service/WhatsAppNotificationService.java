@@ -1,4 +1,4 @@
-package br.com.erp.api.order.application.service;
+package br.com.erp.api.notification.application.service;
 
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
@@ -13,17 +13,16 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
-public class WhatsAppUrlService {
+public class WhatsAppNotificationService {
 
     private final String sellerPhone;
 
-    public WhatsAppUrlService(@Value("${whatsapp.seller-phone}") String sellerPhone) {
+    public WhatsAppNotificationService(@Value("${whatsapp.seller-phone}") String sellerPhone) {
         this.sellerPhone = sellerPhone;
     }
 
     public String buildUrl(Order order, Customer customer) {
-        String encoded = URLEncoder.encode(buildMessageText(order, customer), StandardCharsets.UTF_8);
-        return "https://wa.me/" + sellerPhone + "?text=" + encoded;
+        return buildUrlWithText(buildMessageText(order, customer));
     }
 
     public String buildMessageText(Order order, Customer customer) {
@@ -51,6 +50,33 @@ public class WhatsAppUrlService {
         }
         sb.append("\n\nAguardo confirmação!");
         return sb.toString();
+    }
+
+    /**
+     * Mensagem usada no e-mail de confirmação — o pedido já foi pago, então o tom é de
+     * acompanhamento da entrega, não de finalização da compra.
+     */
+    public String buildPostPaymentUrl(Order order, Customer customer) {
+        NumberFormat currency = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+
+        String text = ("""
+                Olá! Recebi a confirmação do meu pedido *#%d* e gostaria de saber mais sobre a entrega.
+
+                *Cliente:* %s
+                *Total:* %s
+
+                Obrigada!""").formatted(
+                order.getId(),
+                customer.getName(),
+                currency.format(order.getTotalAmount())
+        );
+
+        return buildUrlWithText(text);
+    }
+
+    private String buildUrlWithText(String text) {
+        String encoded = URLEncoder.encode(text, StandardCharsets.UTF_8);
+        return "https://wa.me/" + sellerPhone + "?text=" + encoded;
     }
 
     private String variantLabel(OrderItem item) {

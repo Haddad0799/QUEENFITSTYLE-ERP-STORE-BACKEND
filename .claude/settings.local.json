@@ -44,7 +44,8 @@
       "PowerShell(.\\\\mvnw -q -pl app test -Dtest=SnapshotShowcaseResolverTest 2>&1 | Select-Object -Last 30)",
       "PowerShell(.\\\\mvnw -q -pl app -am test -Dtest=SnapshotShowcaseResolverTest 2>&1 | Select-Object -Last 30)",
       "PowerShell(.\\\\mvnw -q -pl app -am test -Dtest=SnapshotShowcaseResolverTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | Select-Object -Last 30)",
-      "PowerShell(.\\\\mvnw -q -pl app -am test \"-Dtest=SnapshotShowcaseResolverTest\" \"-Dsurefire.failIfNoSpecifiedTests=false\" 2>&1 | Select-Object -Last 30)"
+      "PowerShell(.\\\\mvnw -q -pl app -am test \"-Dtest=SnapshotShowcaseResolverTest\" \"-Dsurefire.failIfNoSpecifiedTests=false\" 2>&1 | Select-Object -Last 30)",
+      "PowerShell(.\\\\mvnw -q -pl app -am compile 2>&1 | Select-Object -Last 40)"
     ]
   }
 }
