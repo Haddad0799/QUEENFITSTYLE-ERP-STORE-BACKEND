@@ -37,7 +37,8 @@
       "PowerShell(git remote *)",
       "Bash(./mvnw -q -DskipTests -pl order -am compile)",
       "Bash(echo \"EXIT=$?\")",
-      "Bash(./mvnw -q -DskipTests -pl app -am compile)"
+      "Bash(./mvnw -q -DskipTests -pl app -am compile)",
+      "PowerShell(.\\\\mvnw -q -pl order -am compile 2>&1 | Select-Object -Last 30)"
     ]
   }
 }

@@ -26,13 +26,6 @@ public class OrderAdminFilterSqlResolver {
 
         Map<String, Object> params = new HashMap<>();
         List<String> conditions = new ArrayList<>();
-        boolean joinItems = filter.hasSkuCode();
-
-        if (joinItems) {
-            fromClause.append("JOIN order_items oi ON oi.order_id = o.id\n");
-            conditions.add("oi.sku_code = :skuCode");
-            params.put("skuCode", filter.skuCode());
-        }
 
         if (filter.hasStatus()) {
             conditions.add("o.status = :status");
@@ -42,11 +35,6 @@ public class OrderAdminFilterSqlResolver {
         if (filter.hasCustomerName()) {
             conditions.add("lower(cu.name) LIKE :customerName");
             params.put("customerName", "%" + filter.customerName().toLowerCase() + "%");
-        }
-
-        if (filter.hasPhone()) {
-            conditions.add("cu.phone = :phone");
-            params.put("phone", filter.phone());
         }
 
         if (filter.hasCreatedAtFrom()) {
@@ -65,8 +53,6 @@ public class OrderAdminFilterSqlResolver {
         String whereClause = conditions.isEmpty()
                 ? ""
                 : "WHERE " + String.join(" AND ", conditions) + "\n";
-
-        String distinct = joinItems ? "DISTINCT " : "";
 
         String selectColumns = """
                 o.id              AS order_id,
@@ -94,11 +80,9 @@ public class OrderAdminFilterSqlResolver {
                 LIMIT :limit OFFSET :offset
                 """;
 
-        String selectSql = "SELECT " + distinct + selectColumns + fromClause + whereClause + tail;
+        String selectSql = "SELECT " + selectColumns + fromClause + whereClause + tail;
 
-        String countSql = (joinItems
-                ? "SELECT COUNT(DISTINCT o.id)\n"
-                : "SELECT COUNT(*)\n") + fromClause + whereClause;
+        String countSql = "SELECT COUNT(*)\n" + fromClause + whereClause;
 
         return new OrderAdminPageQuery(selectSql, countSql, params,
                 pageable.getPageSize(), pageable.getOffset());

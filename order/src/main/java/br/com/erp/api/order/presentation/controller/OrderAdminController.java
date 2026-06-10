@@ -65,10 +65,8 @@ public class OrderAdminController {
     public ResponseEntity<PageResponse<OrderSummaryDTO>> list(
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) String customerName,
-            @RequestParam(required = false) String phone,
             @RequestParam(required = false) LocalDate createdAtFrom,
             @RequestParam(required = false) LocalDate createdAtTo,
-            @RequestParam(required = false) String skuCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
@@ -78,7 +76,7 @@ public class OrderAdminController {
         );
 
         OrderAdminFilter filter = new OrderAdminFilter(
-                status, customerName, phone, createdAtFrom, createdAtTo, skuCode
+                status, customerName, createdAtFrom, createdAtTo
         );
 
         Page<OrderSummaryDTO> result = queryService.findAll(filter, pageable);
