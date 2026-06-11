@@ -1,5 +1,6 @@
 package br.com.erp.api.order.application.usecase;
 
+import br.com.erp.api.order.application.event.OrderCreatedEvent;
 import br.com.erp.api.order.application.port.out.ReservationDetail;
 import br.com.erp.api.order.application.port.out.ReservationValidationPort;
 import br.com.erp.api.order.application.port.out.SkuPricingPort;
@@ -19,7 +20,9 @@ import br.com.erp.api.order.domain.valueobject.DeliveryAddress;
 import br.com.erp.api.order.presentation.dto.request.CreateOrderRequest;
 import br.com.erp.api.order.presentation.dto.request.DeliveryAddressRequest;
 import br.com.erp.api.order.presentation.dto.response.CreateOrderResponse;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,21 +42,25 @@ public class CreateOrderUseCase {
     private final OrderRepositoryPort orderRepository;
     private final OrderTimelineRepositoryPort timelineRepository;
     private final WhatsAppMessagePort whatsAppMessagePort;
+    private final ApplicationEventPublisher eventPublisher;
 
     public CreateOrderUseCase(ReservationValidationPort reservationValidationPort,
                               SkuPricingPort pricingPort,
                               CustomerRepositoryPort customerRepository,
                               OrderRepositoryPort orderRepository,
                               OrderTimelineRepositoryPort timelineRepository,
-                              WhatsAppMessagePort whatsAppMessagePort) {
+                              WhatsAppMessagePort whatsAppMessagePort,
+                              ApplicationEventPublisher eventPublisher) {
         this.reservationValidationPort = reservationValidationPort;
         this.pricingPort               = pricingPort;
         this.customerRepository        = customerRepository;
         this.orderRepository           = orderRepository;
         this.timelineRepository        = timelineRepository;
         this.whatsAppMessagePort       = whatsAppMessagePort;
+        this.eventPublisher            = eventPublisher;
     }
 
+    @Transactional
     public CreateOrderResponse execute(CreateOrderRequest request) {
         List<UUID> reservationIds = request.reservations().stream()
                 .map(UUID::fromString)
@@ -126,6 +133,10 @@ public class CreateOrderUseCase {
                 "{\"itemsCount\":%d,\"total\":\"%s\"}".formatted(items.size(), total.toPlainString()),
                 "customer"
         ));
+
+        // Notifica a dona da loja (e-mail) após o commit — efeito colateral desacoplado,
+        // tratado por listener AFTER_COMMIT. Carrega a URL do WhatsApp já montada acima.
+        eventPublisher.publishEvent(new OrderCreatedEvent(order, url));
 
         return new CreateOrderResponse(order.getId(), order.getStatus(), url);
     }
