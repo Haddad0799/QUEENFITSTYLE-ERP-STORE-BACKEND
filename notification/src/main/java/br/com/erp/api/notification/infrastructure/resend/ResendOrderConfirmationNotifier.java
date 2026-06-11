@@ -2,6 +2,7 @@ package br.com.erp.api.notification.infrastructure.resend;
 
 import br.com.erp.api.notification.application.port.OrderConfirmationNotifier;
 import br.com.erp.api.notification.application.service.WhatsAppNotificationService;
+import br.com.erp.api.notification.application.util.CustomerNameFormatter;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
@@ -179,7 +180,7 @@ public class ResendOrderConfirmationNotifier implements OrderConfirmationNotifie
         NumberFormat currency = NumberFormat.getCurrencyInstance(PT_BR);
 
         return EMAIL_TEMPLATE
-                .replace("{customerName}", escape(customer.getName()))
+                .replace("{customerName}", escape(CustomerNameFormatter.toDisplayName(customer.getName())))
                 .replace("{orderId}", String.valueOf(order.getId()))
                 .replace("{itemRows}", buildItemRows(order, currency, imageUrlsByItemId))
                 .replace("{totalAmount}", currency.format(order.getTotalAmount()))

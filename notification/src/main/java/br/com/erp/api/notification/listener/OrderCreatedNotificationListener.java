@@ -1,6 +1,7 @@
 package br.com.erp.api.notification.listener;
 
 import br.com.erp.api.notification.application.port.OrderCreatedNotifier;
+import br.com.erp.api.notification.application.service.OrderItemImageResolver;
 import br.com.erp.api.order.application.event.OrderCreatedEvent;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
@@ -34,11 +35,14 @@ public class OrderCreatedNotificationListener {
 
     private final ObjectProvider<OrderCreatedNotifier> notifierProvider;
     private final CustomerRepositoryPort customerRepository;
+    private final OrderItemImageResolver imageResolver;
 
     public OrderCreatedNotificationListener(ObjectProvider<OrderCreatedNotifier> notifierProvider,
-                                            CustomerRepositoryPort customerRepository) {
+                                            CustomerRepositoryPort customerRepository,
+                                            OrderItemImageResolver imageResolver) {
         this.notifierProvider   = notifierProvider;
         this.customerRepository = customerRepository;
+        this.imageResolver      = imageResolver;
     }
 
     @Async
@@ -58,7 +62,8 @@ public class OrderCreatedNotificationListener {
             Customer customer = customerRepository.findById(order.getCustomerId())
                     .orElseThrow(() -> new IllegalStateException(
                             "Cliente #" + order.getCustomerId() + " não encontrado para o pedido #" + order.getId()));
-            notifier.notify(order, customer, event.customerPhone());
+            notifier.notify(order, customer, event.customerPhone(),
+                    imageResolver.resolveByItemId(order.getId()));
             log.info("Notificação de novo pedido #{} enviada para a dona da loja", order.getId());
         } catch (Exception e) {
             log.error("FALHA EMAIL novo pedido #{} — {}", order.getId(), e.getMessage());

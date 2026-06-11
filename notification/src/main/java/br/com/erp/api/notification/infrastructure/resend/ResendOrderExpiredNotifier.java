@@ -1,6 +1,7 @@
 package br.com.erp.api.notification.infrastructure.resend;
 
 import br.com.erp.api.notification.application.port.OrderExpiredNotifier;
+import br.com.erp.api.notification.application.util.CustomerNameFormatter;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import com.resend.Resend;
@@ -131,7 +132,7 @@ public class ResendOrderExpiredNotifier implements OrderExpiredNotifier {
 
     private String buildHtmlBody(Order order, Customer customer) {
         return EMAIL_TEMPLATE
-                .replace("{customerName}", escape(customer.getName()))
+                .replace("{customerName}", escape(CustomerNameFormatter.toDisplayName(customer.getName())))
                 .replace("{orderId}", String.valueOf(order.getId()))
                 .replace("{storeUrl}", escapeAttr(storeUrl))
                 .replace("{year}", String.valueOf(Year.now().getValue()));

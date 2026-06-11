@@ -1,6 +1,7 @@
 package br.com.erp.api.notification.listener;
 
 import br.com.erp.api.notification.application.port.OrderCancelledNotifier;
+import br.com.erp.api.notification.application.service.OrderItemImageResolver;
 import br.com.erp.api.order.application.event.OrderCancelledEvent;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
@@ -34,11 +35,14 @@ public class OrderCancelledNotificationListener {
 
     private final ObjectProvider<OrderCancelledNotifier> notifierProvider;
     private final CustomerRepositoryPort customerRepository;
+    private final OrderItemImageResolver imageResolver;
 
     public OrderCancelledNotificationListener(ObjectProvider<OrderCancelledNotifier> notifierProvider,
-                                              CustomerRepositoryPort customerRepository) {
+                                              CustomerRepositoryPort customerRepository,
+                                              OrderItemImageResolver imageResolver) {
         this.notifierProvider   = notifierProvider;
         this.customerRepository = customerRepository;
+        this.imageResolver      = imageResolver;
     }
 
     @Async
@@ -58,7 +62,7 @@ public class OrderCancelledNotificationListener {
             Customer customer = customerRepository.findById(order.getCustomerId())
                     .orElseThrow(() -> new IllegalStateException(
                             "Cliente #" + order.getCustomerId() + " não encontrado para o pedido #" + order.getId()));
-            notifier.notify(order, customer);
+            notifier.notify(order, customer, imageResolver.resolveByItemId(order.getId()));
             log.info("Notificação de cancelamento do pedido #{} enviada para {}", order.getId(), customer.getEmail());
         } catch (Exception e) {
             log.error("FALHA EMAIL cancelamento pedido #{} — {}", order.getId(), e.getMessage());
