@@ -4,7 +4,6 @@ import br.com.erp.api.order.application.query.OrderAdminQueryService;
 import br.com.erp.api.order.application.query.filter.OrderAdminFilter;
 import br.com.erp.api.order.application.usecase.CancelOrderUseCase;
 import br.com.erp.api.order.application.usecase.ConfirmOrderUseCase;
-import br.com.erp.api.order.application.usecase.ExpireOrderUseCase;
 import br.com.erp.api.order.application.usecase.MarkOrderDeliveredUseCase;
 import br.com.erp.api.order.application.usecase.MarkOrderReturnedUseCase;
 import br.com.erp.api.order.domain.entity.Order;
@@ -38,25 +37,21 @@ public class OrderAdminController {
 
     private static final int    MAX_PAGE_SIZE   = 100;
     private static final String DEFAULT_ACTOR   = "admin";
-    private static final String SYSTEM_ACTOR    = "system";
 
     private final OrderAdminQueryService    queryService;
     private final ConfirmOrderUseCase       confirmOrderUseCase;
     private final CancelOrderUseCase        cancelOrderUseCase;
-    private final ExpireOrderUseCase        expireOrderUseCase;
     private final MarkOrderDeliveredUseCase markOrderDeliveredUseCase;
     private final MarkOrderReturnedUseCase  markOrderReturnedUseCase;
 
     public OrderAdminController(OrderAdminQueryService queryService,
                                 ConfirmOrderUseCase confirmOrderUseCase,
                                 CancelOrderUseCase cancelOrderUseCase,
-                                ExpireOrderUseCase expireOrderUseCase,
                                 MarkOrderDeliveredUseCase markOrderDeliveredUseCase,
                                 MarkOrderReturnedUseCase markOrderReturnedUseCase) {
         this.queryService              = queryService;
         this.confirmOrderUseCase       = confirmOrderUseCase;
         this.cancelOrderUseCase        = cancelOrderUseCase;
-        this.expireOrderUseCase        = expireOrderUseCase;
         this.markOrderDeliveredUseCase = markOrderDeliveredUseCase;
         this.markOrderReturnedUseCase  = markOrderReturnedUseCase;
     }
@@ -110,16 +105,6 @@ public class OrderAdminController {
     ) {
         String reason = request != null ? request.reason() : null;
         Order order = cancelOrderUseCase.execute(orderId, reason, resolveActor(actor));
-        return ResponseEntity.ok(OrderActionResponse.from(order));
-    }
-
-    @PostMapping("/{orderId}/expire")
-    public ResponseEntity<OrderActionResponse> expire(
-            @PathVariable Long orderId,
-            @RequestHeader(name = "X-Actor", required = false) String actor
-    ) {
-        Order order = expireOrderUseCase.execute(orderId,
-                actor != null && !actor.isBlank() ? actor : SYSTEM_ACTOR);
         return ResponseEntity.ok(OrderActionResponse.from(order));
     }
 

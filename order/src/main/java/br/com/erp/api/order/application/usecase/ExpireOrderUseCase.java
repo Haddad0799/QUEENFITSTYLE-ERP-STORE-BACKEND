@@ -8,7 +8,6 @@ import br.com.erp.api.order.domain.entity.OrderTimelineEvent;
 import br.com.erp.api.order.domain.enumerated.OrderEventType;
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
 import br.com.erp.api.order.domain.exception.InvalidOrderStateTransitionException;
-import br.com.erp.api.order.domain.exception.OrderNotFoundException;
 import br.com.erp.api.order.domain.exception.ReservationOperationFailedException;
 import br.com.erp.api.order.domain.port.OrderRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderTimelineRepositoryPort;
@@ -23,9 +22,8 @@ import java.util.UUID;
 /**
  * Expira pedidos em PENDING_PAYMENT (>24h sem pagamento) e libera as reservas.
  *
- * Usado por:
- *   - {@code ExpireOrdersUseCase} (job @Scheduled), passando cada pedido encontrado
- *   - endpoint POST /erp/orders/{id}/expire (forçar expiração manual)
+ * Usado exclusivamente pelo {@code ExpireOrdersUseCase} (job @Scheduled), que passa cada
+ * pedido vencido encontrado. Não há expiração manual — a expiração ocorre apenas por tempo.
  *
  * Idempotência: pedido já EXPIRED é no-op.
  */
@@ -48,14 +46,6 @@ public class ExpireOrderUseCase {
         this.reservationLifecycle = reservationLifecycle;
         this.timelineRepository   = timelineRepository;
         this.eventPublisher       = eventPublisher;
-    }
-
-    @Transactional
-    public Order execute(Long orderId, String actor) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(orderId));
-
-        return expireOrder(order, actor);
     }
 
     @Transactional
