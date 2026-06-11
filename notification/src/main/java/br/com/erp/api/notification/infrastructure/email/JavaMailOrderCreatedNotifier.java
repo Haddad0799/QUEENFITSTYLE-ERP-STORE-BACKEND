@@ -193,12 +193,13 @@ public class JavaMailOrderCreatedNotifier implements OrderCreatedNotifier {
 
     /**
      * Link {@code wa.me} para a vendedora abrir a conversa direta com a cliente — sem texto
-     * pré-definido, para ela responder como quiser. Mantém apenas os dígitos do telefone e
-     * prefixa o código do Brasil (55), como exige o formato do {@code wa.me}.
+     * pré-definido, para ela responder como quiser. Mantém apenas os dígitos do telefone
+     * (removendo parênteses, espaços e hífens); o número já inclui o código do país, então
+     * nenhum prefixo é adicionado.
      */
     private String customerWhatsAppUrl(String customerPhone) {
         String digits = customerPhone == null ? "" : customerPhone.replaceAll("\\D", "");
-        return "https://wa.me/55" + digits;
+        return "https://wa.me/" + digits;
     }
 
     private String buildItemRows(Order order, NumberFormat currency) {
