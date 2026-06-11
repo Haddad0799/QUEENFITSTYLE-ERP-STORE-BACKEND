@@ -1,5 +1,6 @@
 package br.com.erp.api.order.application.usecase;
 
+import br.com.erp.api.order.application.event.OrderCancelledEvent;
 import br.com.erp.api.order.application.port.out.ReservationLifecyclePort;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
@@ -13,6 +14,7 @@ import br.com.erp.api.order.domain.port.OrderRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderTimelineRepositoryPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,13 +39,16 @@ public class CancelOrderUseCase {
     private final OrderRepositoryPort orderRepository;
     private final ReservationLifecyclePort reservationLifecycle;
     private final OrderTimelineRepositoryPort timelineRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public CancelOrderUseCase(OrderRepositoryPort orderRepository,
                               ReservationLifecyclePort reservationLifecycle,
-                              OrderTimelineRepositoryPort timelineRepository) {
+                              OrderTimelineRepositoryPort timelineRepository,
+                              ApplicationEventPublisher eventPublisher) {
         this.orderRepository      = orderRepository;
         this.reservationLifecycle = reservationLifecycle;
         this.timelineRepository   = timelineRepository;
+        this.eventPublisher       = eventPublisher;
     }
 
     @Transactional
@@ -77,6 +82,10 @@ public class CancelOrderUseCase {
                 null,
                 actor
         ));
+
+        // Avisa a cliente por e-mail após o commit — efeito colateral desacoplado, tratado por
+        // listener AFTER_COMMIT no módulo notification.
+        eventPublisher.publishEvent(new OrderCancelledEvent(order));
 
         log.info("Pedido #{} cancelado por '{}'", orderId, actor);
         return order;
