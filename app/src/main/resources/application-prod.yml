@@ -28,6 +28,9 @@ notification:
   provider: resend
   admin-email: ${NOTIFICATION_ADMIN_EMAIL:lucas.haddad0799@gmail.com}
 
+store:
+  url: ${STORE_URL}
+
 resend:
   api-key: ${RESEND_API_KEY}
   from: onboarding@resend.dev
