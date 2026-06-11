@@ -1,14 +1,15 @@
-package br.com.erp.api.notification.infrastructure.resend;
+package br.com.erp.api.notification.infrastructure.email;
 
 import br.com.erp.api.notification.application.port.OrderCreatedNotifier;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
-import com.resend.Resend;
-import com.resend.services.emails.model.CreateEmailOptions;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Primary;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.text.NumberFormat;
@@ -16,14 +17,17 @@ import java.time.Year;
 import java.util.Locale;
 
 /**
- * Notifica a dona da loja, via Resend, sempre que um novo pedido é criado no e-commerce.
+ * Notifica a dona da loja, via SMTP local (JavaMail), sempre que um novo pedido é criado
+ * no e-commerce. Espelha {@link br.com.erp.api.notification.infrastructure.resend.ResendOrderCreatedNotifier}
+ * para que o fluxo de novo pedido também funcione sob o provider {@code javamail} (ambiente
+ * local), mantendo a simetria com a notificação de confirmação.
+ *
  * O e-mail vai para {@code notification.admin-email} e traz um botão para responder a
  * cliente pela conversa de WhatsApp já montada no checkout.
  */
 @Service
-@Primary
-@ConditionalOnProperty(name = "notification.provider", havingValue = "resend")
-public class ResendOrderCreatedNotifier implements OrderCreatedNotifier {
+@ConditionalOnProperty(name = "notification.provider", havingValue = "javamail", matchIfMissing = true)
+public class JavaMailOrderCreatedNotifier implements OrderCreatedNotifier {
 
     private static final Locale PT_BR = new Locale("pt", "BR");
 
@@ -147,28 +151,31 @@ public class ResendOrderCreatedNotifier implements OrderCreatedNotifier {
             </table>
             """;
 
-    private final String apiKey;
+    private final JavaMailSender mailSender;
     private final String from;
     private final String adminEmail;
 
-    public ResendOrderCreatedNotifier(@Value("${resend.api-key}") String apiKey,
-                                      @Value("${resend.from:onboarding@resend.dev}") String from,
-                                      @Value("${notification.admin-email}") String adminEmail) {
-        this.apiKey     = apiKey;
+    public JavaMailOrderCreatedNotifier(JavaMailSender mailSender,
+                                        @Value("${spring.mail.username:}") String from,
+                                        @Value("${notification.admin-email}") String adminEmail) {
+        this.mailSender = mailSender;
         this.from       = from;
         this.adminEmail = adminEmail;
     }
 
     @Override
-    public void notify(Order order, Customer customer, String customerPhone) throws Exception {
-        Resend resend = new Resend(apiKey);
-        CreateEmailOptions request = CreateEmailOptions.builder()
-                .from(from)
-                .to(adminEmail)
-                .subject("Novo pedido #" + order.getId() + " — responda pelo WhatsApp")
-                .html(buildHtmlBody(order, customer, customerPhone))
-                .build();
-        resend.emails().send(request);
+    public void notify(Order order, Customer customer, String customerPhone) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+
+        if (from != null && !from.isBlank()) {
+            helper.setFrom(from);
+        }
+        helper.setTo(adminEmail);
+        helper.setSubject("Novo pedido #%d — responda pelo WhatsApp".formatted(order.getId()));
+        helper.setText(buildHtmlBody(order, customer, customerPhone), true);
+
+        mailSender.send(message);
     }
 
     private String buildHtmlBody(Order order, Customer customer, String customerPhone) {

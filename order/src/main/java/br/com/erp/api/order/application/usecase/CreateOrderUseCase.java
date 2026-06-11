@@ -135,8 +135,9 @@ public class CreateOrderUseCase {
         ));
 
         // Notifica a dona da loja (e-mail) após o commit — efeito colateral desacoplado,
-        // tratado por listener AFTER_COMMIT. Carrega a URL do WhatsApp já montada acima.
-        eventPublisher.publishEvent(new OrderCreatedEvent(order, url));
+        // tratado por listener AFTER_COMMIT. Carrega a URL do WhatsApp já montada acima e o
+        // telefone da cliente, para o e-mail montar o link de resposta direto à cliente.
+        eventPublisher.publishEvent(new OrderCreatedEvent(order, url, customer.getPhone()));
 
         return new CreateOrderResponse(order.getId(), order.getStatus(), url);
     }

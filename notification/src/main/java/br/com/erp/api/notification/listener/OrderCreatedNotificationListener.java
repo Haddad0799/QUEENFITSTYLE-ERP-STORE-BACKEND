@@ -58,7 +58,7 @@ public class OrderCreatedNotificationListener {
             Customer customer = customerRepository.findById(order.getCustomerId())
                     .orElseThrow(() -> new IllegalStateException(
                             "Cliente #" + order.getCustomerId() + " não encontrado para o pedido #" + order.getId()));
-            notifier.notify(order, customer, event.whatsappUrl());
+            notifier.notify(order, customer, event.customerPhone());
             log.info("Notificação de novo pedido #{} enviada para a dona da loja", order.getId());
         } catch (Exception e) {
             log.error("FALHA EMAIL novo pedido #{} — {}", order.getId(), e.getMessage());
