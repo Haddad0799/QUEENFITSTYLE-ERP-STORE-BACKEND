@@ -9,6 +9,7 @@ import br.com.erp.api.order.domain.enumerated.OrderEventType;
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
 import br.com.erp.api.order.domain.exception.InvalidOrderStateTransitionException;
 import br.com.erp.api.order.domain.exception.OrderNotFoundException;
+import br.com.erp.api.order.domain.exception.ReservationOperationFailedException;
 import br.com.erp.api.order.domain.port.OrderRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderTimelineRepositoryPort;
 import org.slf4j.Logger;
@@ -26,7 +27,9 @@ import java.util.UUID;
  * Caso contrário, confirma todas as reservas vinculadas (consome estoque), atualiza status e grava timeline.
  *
  * Garantias:
- *   - reservas são SEMPRE confirmadas antes do status mudar (se falhar, transação aborta)
+ *   - cada reserva precisa ser efetivamente confirmada (afetando linha) antes de o status mudar;
+ *     se alguma não afetar linha, aborta com {@link ReservationOperationFailedException} e o
+ *     pedido permanece PENDING_PAYMENT — não é marcado como pago com estoque não consumido
  *   - status só transita de PENDING_PAYMENT → PAID
  *   - timeline registra evento RESERVATIONS_CONFIRMED + PAID
  */
@@ -86,11 +89,26 @@ public class ConfirmOrderUseCase {
         return order;
     }
 
+    /**
+     * Confirma todas as reservas e só retorna se cada uma afetou linha. A validação roda antes de
+     * qualquer escrita no pedido (status/timeline) de propósito: o módulo inventory comita em
+     * conexão própria (jdbi.withHandle), fora da transação do pedido, então não existe rollback
+     * que desfaça um consumo de estoque. Garantir aqui que toda confirmação ocorreu é o que impede
+     * o pedido de ser marcado como pago sem o estoque ter sido consumido.
+     */
     private void confirmReservations(Order order, String actor) {
         for (OrderItem item : order.getItems()) {
             UUID reservationId = item.getReservationId();
             boolean confirmed = reservationLifecycle.confirm(reservationId);
-            log.debug("Reserva {} para pedido #{} → confirmada={}", reservationId, order.getId(), confirmed);
+            if (!confirmed) {
+                log.error("Falha ao confirmar reserva {} do pedido #{}: operação não afetou nenhuma linha "
+                                + "(reserva inexistente ou já processada) — confirmação abortada para não marcar o pedido pago sem consumir o estoque",
+                        reservationId, order.getId());
+                throw new ReservationOperationFailedException(
+                        reservationId, "confirm",
+                        "operação não afetou nenhuma linha — reserva inexistente ou já processada");
+            }
+            log.debug("Reserva {} do pedido #{} confirmada", reservationId, order.getId());
         }
 
         timelineRepository.append(OrderTimelineEvent.create(

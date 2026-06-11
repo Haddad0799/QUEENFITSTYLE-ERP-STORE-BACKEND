@@ -12,9 +12,13 @@ import java.util.UUID;
 /**
  * Delegação para os use cases do módulo inventory.
  *
- * Idempotência: o módulo inventory dispara {@link ReservationNotFoundException} quando a reserva
- * não existe OU já foi processada. Aqui interpretamos "já processada" como sucesso silencioso
- * (retorno false) — assim chamadas repetidas pela vendedora não geram 404.
+ * Contrato do retorno booleano: {@code true} quando a operação afetou a reserva; {@code false}
+ * quando o inventory dispara {@link ReservationNotFoundException} — reserva inexistente OU já
+ * processada (nenhuma linha afetada). Cabe a cada use case de order decidir o que um {@code false}
+ * significa: os fluxos de confirmação/expiração/cancelamento/devolução o tratam como falha de
+ * atomicidade (abortam antes de mexer no status), pois a idempotência de chamadas repetidas já é
+ * garantida pelos guard-rails de status do próprio pedido — quando o pedido já está em estado
+ * terminal, o release/confirm sequer é chamado.
  */
 @Component
 public class ReservationLifecycleAdapter implements ReservationLifecyclePort {

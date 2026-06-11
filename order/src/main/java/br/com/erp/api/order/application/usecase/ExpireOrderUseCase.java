@@ -8,6 +8,7 @@ import br.com.erp.api.order.domain.enumerated.OrderEventType;
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
 import br.com.erp.api.order.domain.exception.InvalidOrderStateTransitionException;
 import br.com.erp.api.order.domain.exception.OrderNotFoundException;
+import br.com.erp.api.order.domain.exception.ReservationOperationFailedException;
 import br.com.erp.api.order.domain.port.OrderRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderTimelineRepositoryPort;
 import org.slf4j.Logger;
@@ -80,11 +81,26 @@ public class ExpireOrderUseCase {
         return order;
     }
 
+    /**
+     * Libera todas as reservas e só retorna se cada uma afetou linha. A validação roda antes de
+     * qualquer escrita no pedido (status/timeline) de propósito: o módulo inventory comita em
+     * conexão própria (jdbi.withHandle), fora da transação do pedido, então não existe rollback
+     * que desfaça uma liberação. Garantir aqui que toda liberação ocorreu é o que impede o pedido
+     * de avançar para EXPIRED com o estoque ainda preso.
+     */
     private void releaseReservations(Order order, String actor) {
         for (OrderItem item : order.getItems()) {
             UUID reservationId = item.getReservationId();
             boolean released = reservationLifecycle.release(reservationId);
-            log.debug("Reserva {} para pedido #{} → liberada={}", reservationId, order.getId(), released);
+            if (!released) {
+                log.error("Falha ao liberar reserva {} do pedido #{}: operação não afetou nenhuma linha "
+                                + "(reserva inexistente ou já processada) — expiração abortada para não prender o estoque",
+                        reservationId, order.getId());
+                throw new ReservationOperationFailedException(
+                        reservationId, "release",
+                        "operação não afetou nenhuma linha — reserva inexistente ou já processada");
+            }
+            log.debug("Reserva {} do pedido #{} liberada", reservationId, order.getId());
         }
 
         timelineRepository.append(OrderTimelineEvent.create(

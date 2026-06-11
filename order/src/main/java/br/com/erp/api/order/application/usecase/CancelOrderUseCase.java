@@ -8,6 +8,7 @@ import br.com.erp.api.order.domain.enumerated.OrderEventType;
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
 import br.com.erp.api.order.domain.exception.InvalidOrderStateTransitionException;
 import br.com.erp.api.order.domain.exception.OrderNotFoundException;
+import br.com.erp.api.order.domain.exception.ReservationOperationFailedException;
 import br.com.erp.api.order.domain.port.OrderRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderTimelineRepositoryPort;
 import org.slf4j.Logger;
@@ -23,8 +24,10 @@ import java.util.UUID;
  * Operação idempotente: pedido já CANCELLED é no-op.
  * Pedidos DELIVERED não podem ser cancelados — lança 422.
  *
- * Garantia crítica: as reservas são SEMPRE liberadas. Mesmo se o status já tiver mudado
- * por outro caminho, o ciclo de liberação roda — o adapter trata "já liberada" como sucesso.
+ * Garantia crítica de atomicidade: cada reserva precisa ser efetivamente liberada (release
+ * afetando linha) antes de o pedido transitar para CANCELLED. Se alguma liberação não afetar
+ * nenhuma linha, a operação aborta com {@link ReservationOperationFailedException} e o pedido
+ * permanece PENDING_PAYMENT — evita marcar o pedido como cancelado com o estoque ainda preso.
  */
 @Service
 public class CancelOrderUseCase {
@@ -79,11 +82,26 @@ public class CancelOrderUseCase {
         return order;
     }
 
+    /**
+     * Libera todas as reservas e só retorna se cada uma afetou linha. A validação roda antes de
+     * qualquer escrita no pedido (status/timeline) de propósito: o módulo inventory comita em
+     * conexão própria (jdbi.withHandle), fora da transação do pedido, então não existe rollback
+     * que desfaça uma liberação. Garantir aqui que toda liberação ocorreu é o que impede o pedido
+     * de avançar para CANCELLED com o estoque ainda preso.
+     */
     private void releaseReservations(Order order, String actor) {
         for (OrderItem item : order.getItems()) {
             UUID reservationId = item.getReservationId();
             boolean released = reservationLifecycle.release(reservationId);
-            log.debug("Reserva {} para pedido #{} → liberada={}", reservationId, order.getId(), released);
+            if (!released) {
+                log.error("Falha ao liberar reserva {} do pedido #{}: operação não afetou nenhuma linha "
+                                + "(reserva inexistente ou já processada) — cancelamento abortado para não prender o estoque",
+                        reservationId, order.getId());
+                throw new ReservationOperationFailedException(
+                        reservationId, "release",
+                        "operação não afetou nenhuma linha — reserva inexistente ou já processada");
+            }
+            log.debug("Reserva {} do pedido #{} liberada", reservationId, order.getId());
         }
 
         timelineRepository.append(OrderTimelineEvent.create(

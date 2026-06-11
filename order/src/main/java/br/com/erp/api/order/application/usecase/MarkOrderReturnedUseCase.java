@@ -8,6 +8,7 @@ import br.com.erp.api.order.domain.enumerated.OrderEventType;
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
 import br.com.erp.api.order.domain.exception.InvalidOrderStateTransitionException;
 import br.com.erp.api.order.domain.exception.OrderNotFoundException;
+import br.com.erp.api.order.domain.exception.ReservationOperationFailedException;
 import br.com.erp.api.order.domain.port.OrderRepositoryPort;
 import br.com.erp.api.order.domain.port.OrderTimelineRepositoryPort;
 import org.slf4j.Logger;
@@ -76,11 +77,26 @@ public class MarkOrderReturnedUseCase {
         return order;
     }
 
+    /**
+     * Devolve todas as reservas e só retorna se cada uma afetou linha. A validação roda antes de
+     * qualquer escrita no pedido (status/timeline) de propósito: o módulo inventory comita em
+     * conexão própria (jdbi.withHandle), fora da transação do pedido, então não existe rollback
+     * que desfaça uma reposição. Garantir aqui que toda devolução ocorreu é o que impede o pedido
+     * de ser marcado como RETURNED sem o estoque ter sido reposto.
+     */
     private void returnReservations(Order order, String actor) {
         for (OrderItem item : order.getItems()) {
             UUID reservationId = item.getReservationId();
             boolean returned = reservationLifecycle.returnStock(reservationId);
-            log.debug("Reserva {} para pedido #{} → devolvida={}", reservationId, order.getId(), returned);
+            if (!returned) {
+                log.error("Falha ao devolver reserva {} do pedido #{}: operação não afetou nenhuma linha "
+                                + "(reserva inexistente ou não estava confirmada) — devolução abortada para não repor estoque indevidamente",
+                        reservationId, order.getId());
+                throw new ReservationOperationFailedException(
+                        reservationId, "return",
+                        "operação não afetou nenhuma linha — reserva inexistente ou não estava confirmada");
+            }
+            log.debug("Reserva {} do pedido #{} devolvida", reservationId, order.getId());
         }
 
         timelineRepository.append(OrderTimelineEvent.create(
