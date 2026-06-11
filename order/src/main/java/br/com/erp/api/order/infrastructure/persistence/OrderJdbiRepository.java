@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,30 +61,49 @@ public class OrderJdbiRepository implements OrderRepositoryPort {
                     .mapTo(Long.class)
                     .one();
 
-            var batch = handle.prepareBatch("""
-                    INSERT INTO order_items (
-                        order_id, sku_id, reservation_id, product_name, sku_code,
-                        color_name, size_label, quantity, unit_price, subtotal, created_at
-                    ) VALUES (
-                        :orderId, :skuId, :reservationId, :productName, :skuCode,
-                        :colorName, :sizeLabel, :quantity, :unitPrice, :subtotal, now()
-                    )
-                    """);
-
+            // Insere item a item para capturar o id gerado de cada um (RETURNING id) e devolver
+            // os OrderItem já com id preenchido — consumidores do pedido recém-criado (ex.: a
+            // resolução de imagens da notificação) indexam os itens por id.
+            List<OrderItem> savedItems = new ArrayList<>(order.getItems().size());
             for (OrderItem item : order.getItems()) {
-                batch.bind("orderId",       orderId)
-                     .bind("skuId",         item.getSkuId())
-                     .bind("reservationId", item.getReservationId())
-                     .bind("productName",   item.getProductName())
-                     .bind("skuCode",       item.getSkuCode())
-                     .bind("colorName",     item.getColorName())
-                     .bind("sizeLabel",     item.getSizeLabel())
-                     .bind("quantity",      item.getQuantity())
-                     .bind("unitPrice",     item.getUnitPrice())
-                     .bind("subtotal",      item.getSubtotal())
-                     .add();
+                Long itemId = handle.createUpdate("""
+                        INSERT INTO order_items (
+                            order_id, sku_id, reservation_id, product_name, sku_code,
+                            color_name, size_label, quantity, unit_price, subtotal, created_at
+                        ) VALUES (
+                            :orderId, :skuId, :reservationId, :productName, :skuCode,
+                            :colorName, :sizeLabel, :quantity, :unitPrice, :subtotal, now()
+                        )
+                        """)
+                        .bind("orderId",       orderId)
+                        .bind("skuId",         item.getSkuId())
+                        .bind("reservationId", item.getReservationId())
+                        .bind("productName",   item.getProductName())
+                        .bind("skuCode",       item.getSkuCode())
+                        .bind("colorName",     item.getColorName())
+                        .bind("sizeLabel",     item.getSizeLabel())
+                        .bind("quantity",      item.getQuantity())
+                        .bind("unitPrice",     item.getUnitPrice())
+                        .bind("subtotal",      item.getSubtotal())
+                        .executeAndReturnGeneratedKeys("id")
+                        .mapTo(Long.class)
+                        .one();
+
+                savedItems.add(OrderItem.restore(
+                        itemId,
+                        orderId,
+                        item.getSkuId(),
+                        item.getReservationId(),
+                        item.getProductName(),
+                        item.getSkuCode(),
+                        item.getColorName(),
+                        item.getSizeLabel(),
+                        item.getQuantity(),
+                        item.getUnitPrice(),
+                        item.getSubtotal(),
+                        item.getCreatedAt()
+                ));
             }
-            batch.execute();
 
             return Order.restore(
                     orderId,
@@ -96,7 +116,7 @@ public class OrderJdbiRepository implements OrderRepositoryPort {
                     null, null,
                     order.getCreatedAt(),
                     order.getUpdatedAt(),
-                    order.getItems(),
+                    savedItems,
                     order.getDeliveryAddress()
             );
         });
