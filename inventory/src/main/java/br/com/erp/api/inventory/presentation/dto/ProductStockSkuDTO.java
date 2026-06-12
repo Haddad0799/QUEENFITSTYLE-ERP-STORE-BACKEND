@@ -1,9 +1,8 @@
 package br.com.erp.api.inventory.presentation.dto;
 
-public record StockOverviewItemDTO(
+public record ProductStockSkuDTO(
         Long skuId,
         String skuCode,
-        String productName,
         String colorName,
         String sizeName,
         int quantity,

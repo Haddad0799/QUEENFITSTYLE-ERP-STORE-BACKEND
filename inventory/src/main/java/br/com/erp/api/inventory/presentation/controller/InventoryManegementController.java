@@ -2,18 +2,22 @@ package br.com.erp.api.inventory.presentation.controller;
 
 import br.com.erp.api.inventory.application.usecase.AdjustStockUseCase;
 import br.com.erp.api.inventory.application.usecase.ConfirmReservationUseCase;
+import br.com.erp.api.inventory.application.usecase.GetStockByProductUseCase;
 import br.com.erp.api.inventory.application.usecase.GetStockMovementsUseCase;
-import br.com.erp.api.inventory.application.usecase.GetStockOverviewUseCase;
 import br.com.erp.api.inventory.application.usecase.GetStockUseCase;
 import br.com.erp.api.inventory.application.usecase.ReleaseReservationUseCase;
 import br.com.erp.api.inventory.application.usecase.ReserveStockUseCase;
 import br.com.erp.api.inventory.application.usecase.RestockUseCase;
 import br.com.erp.api.inventory.presentation.dto.InventoryDTO;
+import br.com.erp.api.inventory.presentation.dto.PageResponse;
+import br.com.erp.api.inventory.presentation.dto.ProductStockDTO;
 import br.com.erp.api.inventory.presentation.dto.ReserveStockRequest;
 import br.com.erp.api.inventory.presentation.dto.ReserveStockResponse;
 import br.com.erp.api.inventory.presentation.dto.RestockRequest;
 import br.com.erp.api.inventory.presentation.dto.StockMovementDTO;
-import br.com.erp.api.inventory.presentation.dto.StockOverviewItemDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,13 +29,15 @@ import java.util.UUID;
 @RequestMapping("/erp")
 public class InventoryManegementController {
 
+	private static final int MAX_PAGE_SIZE = 100;
+
 	private final ReserveStockUseCase reserveStockUseCase;
 	private final ConfirmReservationUseCase confirmReservationUseCase;
 	private final ReleaseReservationUseCase releaseReservationUseCase;
 	private final AdjustStockUseCase adjustStockUseCase;
 	private final RestockUseCase restockUseCase;
 	private final GetStockUseCase getStockUseCase;
-	private final GetStockOverviewUseCase getStockOverviewUseCase;
+	private final GetStockByProductUseCase getStockByProductUseCase;
 	private final GetStockMovementsUseCase getStockMovementsUseCase;
 
 	public InventoryManegementController(ReserveStockUseCase reserveStockUseCase,
@@ -40,7 +46,7 @@ public class InventoryManegementController {
 										 AdjustStockUseCase adjustStockUseCase,
 										 RestockUseCase restockUseCase,
 										 GetStockUseCase getStockUseCase,
-										 GetStockOverviewUseCase getStockOverviewUseCase,
+										 GetStockByProductUseCase getStockByProductUseCase,
 										 GetStockMovementsUseCase getStockMovementsUseCase) {
 		this.reserveStockUseCase = reserveStockUseCase;
 		this.confirmReservationUseCase = confirmReservationUseCase;
@@ -48,13 +54,21 @@ public class InventoryManegementController {
 		this.adjustStockUseCase = adjustStockUseCase;
 		this.restockUseCase = restockUseCase;
 		this.getStockUseCase = getStockUseCase;
-		this.getStockOverviewUseCase = getStockOverviewUseCase;
+		this.getStockByProductUseCase = getStockByProductUseCase;
 		this.getStockMovementsUseCase = getStockMovementsUseCase;
 	}
 
-	@GetMapping("/stock")
-	public ResponseEntity<List<StockOverviewItemDTO>> getStockOverview() {
-		return ResponseEntity.ok(getStockOverviewUseCase.execute());
+	@GetMapping("/stock/products")
+	public ResponseEntity<PageResponse<ProductStockDTO>> getStockByProduct(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size,
+			@RequestParam(required = false) String search) {
+		Pageable pageable = PageRequest.of(
+				Math.max(page, 0),
+				Math.clamp(size, 1, MAX_PAGE_SIZE)
+		);
+		Page<ProductStockDTO> result = getStockByProductUseCase.execute(search, pageable);
+		return ResponseEntity.ok(PageResponse.from(result));
 	}
 
 	@GetMapping("/skus/{skuId}/stock")
