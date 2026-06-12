@@ -45,7 +45,19 @@
       "PowerShell(.\\\\mvnw -q -pl app -am test -Dtest=SnapshotShowcaseResolverTest 2>&1 | Select-Object -Last 30)",
       "PowerShell(.\\\\mvnw -q -pl app -am test -Dtest=SnapshotShowcaseResolverTest -Dsurefire.failIfNoSpecifiedTests=false 2>&1 | Select-Object -Last 30)",
       "PowerShell(.\\\\mvnw -q -pl app -am test \"-Dtest=SnapshotShowcaseResolverTest\" \"-Dsurefire.failIfNoSpecifiedTests=false\" 2>&1 | Select-Object -Last 30)",
-      "PowerShell(.\\\\mvnw -q -pl app -am compile 2>&1 | Select-Object -Last 40)"
+      "PowerShell(.\\\\mvnw -q -pl app -am compile 2>&1 | Select-Object -Last 40)",
+      "Bash(./mvnw -q -pl notification -am compile)",
+      "Bash(./mvnw -q -pl order,notification -am compile)",
+      "Bash(./mvnw -q -pl order,notification -am test-compile)",
+      "Bash(./mvnw -q -pl order,app -am test-compile)",
+      "Bash(./mvnw -q clean compile -DskipTests)",
+      "Bash(./mvnw -q compile -pl inventory)",
+      "Bash(./mvnw -q compile -pl inventory -am)",
+      "PowerShell(.\\\\mvnw clean install -DskipTests -pl shared,product,storage,inventory -q)",
+      "PowerShell(.\\\\mvnw clean install -DskipTests -pl inventory -am -q)",
+      "PowerShell(.\\\\mvnw clean install -DskipTests -q)",
+      "PowerShell(.\\\\mvnw test)",
+      "Bash(docker exec *)"
     ]
   }
 }
