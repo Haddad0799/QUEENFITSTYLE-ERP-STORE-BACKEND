@@ -321,9 +321,8 @@ public class InventoryJdbiRepository implements InventoryRepositoryPort {
                         .bind("quantity", newQuantity)
                         .execute();
 
-                // For initial creation, record INITIALIZED when quantity == 0, otherwise ADJUSTMENT
-                String initType = newQuantity == 0 ? "INITIALIZED" : "ADJUSTMENT";
-                int initQty = Math.abs(newQuantity);
+                // Não registra movimentação quando não há entrada real (quantidade inicial == 0)
+                if (newQuantity == 0) return;
 
                 handle.createUpdate("""
                     INSERT INTO stock_movement (
@@ -336,7 +335,7 @@ public class InventoryJdbiRepository implements InventoryRepositoryPort {
                     )
                     VALUES (
                         :skuId,
-                        :type,
+                        'ADJUSTMENT',
                         :quantity,
                         :reason,
                         null,
@@ -344,8 +343,7 @@ public class InventoryJdbiRepository implements InventoryRepositoryPort {
                     )
                     """)
                         .bind("skuId", skuId)
-                        .bind("type", initType)
-                        .bind("quantity", initQty)
+                        .bind("quantity", newQuantity)
                         .bind("reason", reason)
                         .execute();
 
