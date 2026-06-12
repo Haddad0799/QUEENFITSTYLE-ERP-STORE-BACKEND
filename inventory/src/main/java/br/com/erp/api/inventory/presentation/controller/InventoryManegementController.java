@@ -3,7 +3,6 @@ package br.com.erp.api.inventory.presentation.controller;
 import br.com.erp.api.inventory.application.usecase.AdjustStockUseCase;
 import br.com.erp.api.inventory.application.usecase.ConfirmReservationUseCase;
 import br.com.erp.api.inventory.application.usecase.GetStockByProductUseCase;
-import br.com.erp.api.inventory.application.usecase.GetStockMovementsUseCase;
 import br.com.erp.api.inventory.application.usecase.GetStockUseCase;
 import br.com.erp.api.inventory.application.usecase.ReleaseReservationUseCase;
 import br.com.erp.api.inventory.application.usecase.ReserveStockUseCase;
@@ -14,7 +13,6 @@ import br.com.erp.api.inventory.presentation.dto.ProductStockDTO;
 import br.com.erp.api.inventory.presentation.dto.ReserveStockRequest;
 import br.com.erp.api.inventory.presentation.dto.ReserveStockResponse;
 import br.com.erp.api.inventory.presentation.dto.RestockRequest;
-import br.com.erp.api.inventory.presentation.dto.StockMovementDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -38,7 +35,6 @@ public class InventoryManegementController {
 	private final RestockUseCase restockUseCase;
 	private final GetStockUseCase getStockUseCase;
 	private final GetStockByProductUseCase getStockByProductUseCase;
-	private final GetStockMovementsUseCase getStockMovementsUseCase;
 
 	public InventoryManegementController(ReserveStockUseCase reserveStockUseCase,
 										 ConfirmReservationUseCase confirmReservationUseCase,
@@ -46,8 +42,7 @@ public class InventoryManegementController {
 										 AdjustStockUseCase adjustStockUseCase,
 										 RestockUseCase restockUseCase,
 										 GetStockUseCase getStockUseCase,
-										 GetStockByProductUseCase getStockByProductUseCase,
-										 GetStockMovementsUseCase getStockMovementsUseCase) {
+										 GetStockByProductUseCase getStockByProductUseCase) {
 		this.reserveStockUseCase = reserveStockUseCase;
 		this.confirmReservationUseCase = confirmReservationUseCase;
 		this.releaseReservationUseCase = releaseReservationUseCase;
@@ -55,7 +50,6 @@ public class InventoryManegementController {
 		this.restockUseCase = restockUseCase;
 		this.getStockUseCase = getStockUseCase;
 		this.getStockByProductUseCase = getStockByProductUseCase;
-		this.getStockMovementsUseCase = getStockMovementsUseCase;
 	}
 
 	@GetMapping("/stock/products")
@@ -75,11 +69,6 @@ public class InventoryManegementController {
 	public ResponseEntity<InventoryDTO> getStock(@PathVariable Long skuId) {
 		InventoryDTO dto = getStockUseCase.execute(skuId);
 		return ResponseEntity.ok(dto);
-	}
-
-	@GetMapping("/skus/{skuId}/stock/movements")
-	public ResponseEntity<List<StockMovementDTO>> getStockMovements(@PathVariable Long skuId) {
-		return ResponseEntity.ok(getStockMovementsUseCase.execute(skuId));
 	}
 
 	@PostMapping("/skus/{skuCode}/stock/reserve")

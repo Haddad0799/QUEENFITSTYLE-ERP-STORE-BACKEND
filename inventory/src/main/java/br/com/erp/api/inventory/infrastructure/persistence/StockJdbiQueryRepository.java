@@ -3,16 +3,12 @@ package br.com.erp.api.inventory.infrastructure.persistence;
 import br.com.erp.api.inventory.application.query.StockQueryRepository;
 import br.com.erp.api.inventory.application.query.projection.ProductSkuStockRow;
 import br.com.erp.api.inventory.application.query.projection.ProductStockRow;
-import br.com.erp.api.inventory.domain.enumerated.MovementType;
-import br.com.erp.api.inventory.presentation.dto.StockMovementDTO;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -92,9 +88,11 @@ public class StockJdbiQueryRepository implements StockQueryRepository {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""
                         SELECT sk.product_id                  AS product_id,
+                               c.id                           AS color_id,
+                               c."name"                       AS color_name,
+                               c.hex_code                     AS color_hex,
                                s.sku_id                       AS sku_id,
                                sk.sku_code                    AS sku_code,
-                               c."name"                       AS color_name,
                                sz.label                       AS size_name,
                                s.quantity                     AS quantity,
                                s.reserved                     AS reserved,
@@ -111,9 +109,11 @@ public class StockJdbiQueryRepository implements StockQueryRepository {
                         .bindList("productIds", productIds)
                         .map((rs, ctx) -> new ProductSkuStockRow(
                                 rs.getLong("product_id"),
+                                rs.getLong("color_id"),
+                                rs.getString("color_name"),
+                                rs.getString("color_hex"),
                                 rs.getLong("sku_id"),
                                 rs.getString("sku_code"),
-                                rs.getString("color_name"),
                                 rs.getString("size_name"),
                                 rs.getInt("quantity"),
                                 rs.getInt("reserved"),
@@ -123,30 +123,5 @@ public class StockJdbiQueryRepository implements StockQueryRepository {
                         ))
                         .list()
         );
-    }
-
-    @Override
-    public List<StockMovementDTO> findMovementsBySkuId(Long skuId) {
-        return jdbi.withHandle(handle ->
-                handle.createQuery("""
-                        SELECT id, type, quantity, reason, created_at
-                        FROM stock_movement
-                        WHERE sku_id = :skuId
-                        ORDER BY created_at DESC
-                        """)
-                        .bind("skuId", skuId)
-                        .map((rs, ctx) -> new StockMovementDTO(
-                                rs.getLong("id"),
-                                MovementType.valueOf(rs.getString("type")),
-                                rs.getInt("quantity"),
-                                rs.getString("reason"),
-                                toLocalDateTime(rs.getTimestamp("created_at"))
-                        ))
-                        .list()
-        );
-    }
-
-    private LocalDateTime toLocalDateTime(Timestamp timestamp) {
-        return timestamp == null ? null : timestamp.toLocalDateTime();
     }
 }

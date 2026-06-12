@@ -2,9 +2,11 @@ package br.com.erp.api.inventory.application.query.projection;
 
 public record ProductSkuStockRow(
         Long productId,
+        Long colorId,
+        String colorName,
+        String colorHex,
         Long skuId,
         String skuCode,
-        String colorName,
         String sizeName,
         int quantity,
         int reserved,

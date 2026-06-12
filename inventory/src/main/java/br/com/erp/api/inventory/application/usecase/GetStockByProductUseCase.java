@@ -4,6 +4,7 @@ import br.com.erp.api.inventory.application.port.out.ImageUrlResolverPort;
 import br.com.erp.api.inventory.application.query.StockQueryRepository;
 import br.com.erp.api.inventory.application.query.projection.ProductSkuStockRow;
 import br.com.erp.api.inventory.application.query.projection.ProductStockRow;
+import br.com.erp.api.inventory.presentation.dto.ProductStockColorDTO;
 import br.com.erp.api.inventory.presentation.dto.ProductStockDTO;
 import br.com.erp.api.inventory.presentation.dto.ProductStockSkuDTO;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,11 +48,33 @@ public class GetStockByProductUseCase {
     }
 
     private ProductStockDTO toDTO(ProductStockRow product, List<ProductSkuStockRow> skuRows) {
-        List<ProductStockSkuDTO> skus = skuRows.stream()
+        // LinkedHashMap preserva a ordenação por nome da cor vinda da query
+        Map<Long, List<ProductSkuStockRow>> rowsByColor = skuRows.stream()
+                .collect(Collectors.groupingBy(ProductSkuStockRow::colorId,
+                        LinkedHashMap::new, Collectors.toList()));
+
+        List<ProductStockColorDTO> colors = rowsByColor.values().stream()
+                .map(this::toColorDTO)
+                .toList();
+
+        boolean hasLowStock = colors.stream().anyMatch(ProductStockColorDTO::hasLowStock);
+
+        return new ProductStockDTO(
+                product.productId(),
+                product.productName(),
+                imageUrlResolver.resolve(product.primaryImageKey()),
+                hasLowStock,
+                colors
+        );
+    }
+
+    private ProductStockColorDTO toColorDTO(List<ProductSkuStockRow> colorRows) {
+        ProductSkuStockRow first = colorRows.get(0);
+
+        List<ProductStockSkuDTO> skus = colorRows.stream()
                 .map(row -> new ProductStockSkuDTO(
                         row.skuId(),
                         row.skuCode(),
-                        row.colorName(),
                         row.sizeName(),
                         row.quantity(),
                         row.reserved(),
@@ -60,13 +84,15 @@ public class GetStockByProductUseCase {
                 ))
                 .toList();
 
-        boolean hasLowStock = skuRows.stream().anyMatch(ProductSkuStockRow::lowStock);
+        boolean hasLowStock = colorRows.stream().anyMatch(ProductSkuStockRow::lowStock);
+        int totalAvailable = colorRows.stream().mapToInt(ProductSkuStockRow::available).sum();
 
-        return new ProductStockDTO(
-                product.productId(),
-                product.productName(),
-                imageUrlResolver.resolve(product.primaryImageKey()),
+        return new ProductStockColorDTO(
+                first.colorId(),
+                first.colorName(),
+                first.colorHex(),
                 hasLowStock,
+                totalAvailable,
                 skus
         );
     }

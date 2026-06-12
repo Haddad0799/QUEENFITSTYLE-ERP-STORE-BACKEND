@@ -7,5 +7,5 @@ public record ProductStockDTO(
         String productName,
         String primaryImageUrl,
         boolean hasLowStock,
-        List<ProductStockSkuDTO> skus
+        List<ProductStockColorDTO> colors
 ) {}
