@@ -33,8 +33,8 @@ public class OrderAdminFilterSqlResolver {
         }
 
         if (filter.hasCustomerName()) {
-            conditions.add("lower(cu.name) LIKE :customerName");
-            params.put("customerName", "%" + filter.customerName().toLowerCase() + "%");
+            conditions.add("cu.name ILIKE :customerName");
+            params.put("customerName", "%" + filter.customerName() + "%");
         }
 
         if (filter.hasCreatedAtFrom()) {

@@ -5,6 +5,10 @@ import br.com.erp.api.product.domain.enumerated.ProductStatus;
 public record ProductFilter(
         ProductStatus status,
         Long categoryId,
-        boolean includeArchived
+        boolean includeArchived,
+        String search
 ) {
+    public boolean hasSearch() {
+        return search != null && !search.isBlank();
+    }
 }

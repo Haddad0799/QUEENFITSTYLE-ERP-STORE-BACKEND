@@ -36,6 +36,12 @@ public class ProductFilterSqlResolver {
             filterParams.put("categoryId", filter.categoryId());
         }
 
+        if (filter.hasSearch()) {
+            // Busca textual parcial e case-insensitive (ILIKE) por nome do produto
+            baseSql.append(" AND p.name ILIKE :search ");
+            filterParams.put("search", "%" + filter.search().trim() + "%");
+        }
+
         String selectSql = """
         SELECT
             p.id,

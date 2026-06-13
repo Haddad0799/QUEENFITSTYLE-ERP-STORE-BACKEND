@@ -55,9 +55,10 @@ public class ProductController {
             @RequestParam(required = false) ProductStatus status,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "false") boolean includeArchived,
+            @RequestParam(required = false) String search,
             Pageable pageable
     ) {
-        ProductFilter filter = new ProductFilter(status, categoryId, includeArchived);
+        ProductFilter filter = new ProductFilter(status, categoryId, includeArchived, search);
         return PageResponse.from(productAdminQueryService.getAll(filter, pageable));
     }
 
