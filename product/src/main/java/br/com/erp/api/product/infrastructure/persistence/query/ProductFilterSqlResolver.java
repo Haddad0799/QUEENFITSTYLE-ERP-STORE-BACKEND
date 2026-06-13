@@ -32,7 +32,15 @@ public class ProductFilterSqlResolver {
         }
 
         if (filter.categoryId() != null) {
-            baseSql.append(" AND p.category_id = :categoryId ");
+            // Suporta hierarquia: ao filtrar por categoria pai, inclui os produtos
+            // de todas as subcategorias filhas. Para uma subcategoria (folha), a
+            // subconsulta retorna apenas o próprio id, mantendo o comportamento atual.
+            baseSql.append("""
+                     AND p.category_id IN (
+                        SELECT id FROM categories
+                        WHERE id = :categoryId OR parent_id = :categoryId
+                    )
+                    """);
             filterParams.put("categoryId", filter.categoryId());
         }
 
