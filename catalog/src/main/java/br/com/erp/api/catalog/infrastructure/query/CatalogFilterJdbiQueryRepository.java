@@ -96,8 +96,21 @@ public class CatalogFilterJdbiQueryRepository implements CatalogFilterQueryRepos
         }
 
         if (filter.hasSearch()) {
-            where.append(" AND cp.name ILIKE :search");
-            params.put("search", "%" + filter.search() + "%");
+            // Mesma busca por similaridade da listagem, para que os filtros
+            // disponíveis (cores/tamanhos) reflitam o mesmo conjunto de produtos.
+            where.append("""
+                     AND (
+                        cp.name ILIKE :searchLike
+                        OR cp.subcategory_name ILIKE :searchLike
+                        OR cp.parent_category_name ILIKE :searchLike
+                        OR similarity(cp.name, :search) > :searchThreshold
+                        OR similarity(COALESCE(cp.subcategory_name, ''), :search) > :searchThreshold
+                        OR similarity(COALESCE(cp.parent_category_name, ''), :search) > :searchThreshold
+                    )
+                    """);
+            params.put("searchLike", "%" + filter.search() + "%");
+            params.put("search", filter.search());
+            params.put("searchThreshold", CatalogFilterSqlResolver.SEARCH_SIMILARITY_THRESHOLD);
         }
 
         if (includeColorFilter && filter.hasColor()) {

@@ -12,6 +12,10 @@ import java.util.Map;
 @Component
 public class CatalogFilterSqlResolver {
 
+    // Similaridade mínima de trigrama para um termo ser considerado relevante.
+    // Abaixo disso o pg_trgm tende a trazer ruído (correspondências aleatórias).
+    static final double SEARCH_SIMILARITY_THRESHOLD = 0.2;
+
     public CatalogPageQuery build(ResolvedCatalogFilter filter, Pageable pageable) {
 
         Map<String, Object> params = new HashMap<>();
@@ -27,9 +31,21 @@ public class CatalogFilterSqlResolver {
         }
 
         if (filter.hasSearch()) {
-            productFilters.append(" AND cp2.name ILIKE :search ");
-            params.put("search", "%" + filter.search() + "%");
+            // Combina ILIKE (correspondências exatas/parciais) com similaridade de
+            // trigrama (tolerante a erros de digitação) sobre o nome do produto,
+            // da subcategoria e da categoria pai.
+            productFilters.append(searchPredicate("cp2"));
+            params.put("searchLike", "%" + filter.search() + "%");
+            params.put("search", filter.search());
+            params.put("searchThreshold", SEARCH_SIMILARITY_THRESHOLD);
         }
+
+        String innerOrderBy = filter.hasSearch()
+                ? relevanceExpression("cp2") + " DESC, cp2.published_at DESC"
+                : "cp2.published_at DESC";
+        String outerOrderBy = filter.hasSearch()
+                ? relevanceExpression("cp") + " DESC, cp.published_at DESC"
+                : "cp.published_at DESC";
 
         List<String> skuMatchConditions = new ArrayList<>();
 
@@ -77,13 +93,13 @@ public class CatalogFilterSqlResolver {
                 WHERE cs.catalog_product_id = cp2.id
                 AND %s
         )
-            ORDER BY cp2.published_at DESC
+            ORDER BY %s
             LIMIT :limit OFFSET :offset
             ) page
             JOIN catalog_products cp ON cp.id = page.id
             %s
-            ORDER BY cp.published_at DESC
-        """.formatted(selectionQuerySpec.selectClause(), productFilters, skuMatchWhere, selectionQuerySpec.joinClause());
+            ORDER BY %s
+        """.formatted(selectionQuerySpec.selectClause(), productFilters, skuMatchWhere, innerOrderBy, selectionQuerySpec.joinClause(), outerOrderBy);
 
         String countSql = """
             SELECT COUNT(*)
@@ -102,6 +118,29 @@ public class CatalogFilterSqlResolver {
         params.put("offset", pageable.getOffset());
 
         return new CatalogPageQuery(selectSql, countSql, params, listParams);
+    }
+
+    private String searchPredicate(String alias) {
+        return """
+                AND (
+                    %1$s.name ILIKE :searchLike
+                    OR %1$s.subcategory_name ILIKE :searchLike
+                    OR %1$s.parent_category_name ILIKE :searchLike
+                    OR similarity(%1$s.name, :search) > :searchThreshold
+                    OR similarity(COALESCE(%1$s.subcategory_name, ''), :search) > :searchThreshold
+                    OR similarity(COALESCE(%1$s.parent_category_name, ''), :search) > :searchThreshold
+                )
+                """.formatted(alias);
+    }
+
+    private String relevanceExpression(String alias) {
+        return """
+                GREATEST(
+                    similarity(%1$s.name, :search),
+                    similarity(COALESCE(%1$s.subcategory_name, ''), :search),
+                    similarity(COALESCE(%1$s.parent_category_name, ''), :search)
+                )
+                """.formatted(alias);
     }
 
     private SelectionQuerySpec buildShowcaseSelectionSpec() {
