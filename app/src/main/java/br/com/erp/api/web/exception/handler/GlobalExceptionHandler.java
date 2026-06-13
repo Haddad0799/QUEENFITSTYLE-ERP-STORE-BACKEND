@@ -5,6 +5,9 @@ import br.com.erp.api.auth.domain.exception.InvalidCredentialsException;
 import br.com.erp.api.order.domain.exception.InvalidReservationException;
 import br.com.erp.api.order.domain.exception.ReservationAlreadyBoundException;
 import br.com.erp.api.order.domain.exception.SkuWithoutPriceException;
+import br.com.erp.api.attribute.domain.exception.category.CategoryHasAssociatedProductsException;
+import br.com.erp.api.attribute.domain.exception.category.CategoryHasPublishedProductsException;
+import br.com.erp.api.attribute.domain.exception.category.CategoryHasSubcategoriesException;
 import br.com.erp.api.product.application.exception.AiEmptyResponseException;
 import br.com.erp.api.product.application.exception.AiIntegrationException;
 import br.com.erp.api.product.domain.exception.DuplicateSkuCombinationException;
@@ -147,6 +150,30 @@ public class GlobalExceptionHandler {
         headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
 
         return ResponseEntity.unprocessableEntity().headers(headers).body(problem);
+    }
+
+    @ExceptionHandler({
+            CategoryHasSubcategoriesException.class,
+            CategoryHasAssociatedProductsException.class,
+            CategoryHasPublishedProductsException.class
+    })
+    public ResponseEntity<ProblemDetail> handleCategoryDeletionConflict(
+            DomainException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                ex.getMessage()
+        );
+        problem.setTitle("Exclusão não permitida");
+        problem.setType(URI.create("https://example.com/probs/category-deletion-conflict"));
+        problem.setProperty("timestamp", LocalDateTime.now());
+        problem.setProperty("path", request.getRequestURI());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_TYPE, PROBLEM_JSON);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).headers(headers).body(problem);
     }
 
     @ExceptionHandler(DomainException.class)

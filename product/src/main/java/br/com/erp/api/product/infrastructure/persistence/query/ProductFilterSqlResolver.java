@@ -26,6 +26,9 @@ public class ProductFilterSqlResolver {
         if (filter.status() != null) {
             baseSql.append(" AND p.status = :status ");
             filterParams.put("status", filter.status().name());
+        } else if (!filter.includeArchived()) {
+            // Por padrão oculta produtos arquivados (exclusão lógica)
+            baseSql.append(" AND p.status <> 'ARCHIVED' ");
         }
 
         if (filter.categoryId() != null) {

@@ -103,6 +103,15 @@ public class Product {
         this.status = ProductStatus.PUBLISHED;
     }
 
+    /**
+     * Exclusão lógica: usado quando o produto possui vínculo histórico com pedidos
+     * e por isso não pode ser removido fisicamente do banco.
+     */
+    public void archive() {
+        assertDeletable();
+        this.status = ProductStatus.ARCHIVED;
+    }
+
     public void markAsReadyForSale() {
         if (this.status == ProductStatus.DRAFT) {
             this.status = ProductStatus.READY_FOR_SALE;

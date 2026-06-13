@@ -132,6 +132,24 @@ public class CategoryJdbiRepository implements CategoryRepository {
     }
 
     @Override
+    public boolean hasProductsWithOrders(Long categoryId) {
+        return jdbi.withHandle(handle ->
+                handle.createQuery("""
+                    SELECT EXISTS(
+                        SELECT 1
+                        FROM order_items oi
+                        JOIN skus s ON s.id = oi.sku_id
+                        JOIN products p ON p.id = s.product_id
+                        WHERE p.category_id = :categoryId
+                    )
+                """)
+                        .bind("categoryId", categoryId)
+                        .mapTo(Boolean.class)
+                        .one()
+        );
+    }
+
+    @Override
     public boolean hasSubcategories(Long parentId) {
         return jdbi.withHandle(handle ->
                 handle.createQuery("""

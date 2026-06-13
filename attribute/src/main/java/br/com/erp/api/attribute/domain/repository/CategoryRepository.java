@@ -14,6 +14,7 @@ public interface CategoryRepository {
     void deleteById(Long id);
     boolean hasProductsAssociated(Long categoryId);
     boolean hasPublishedProducts(Long categoryId);
+    boolean hasProductsWithOrders(Long categoryId);
     boolean hasSubcategories(Long parentId);
     boolean hasActiveSubcategories(Long parentId);
 }

@@ -54,9 +54,10 @@ public class ProductController {
     public PageResponse<ProductSummaryDTO> getAll(
             @RequestParam(required = false) ProductStatus status,
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "false") boolean includeArchived,
             Pageable pageable
     ) {
-        ProductFilter filter = new ProductFilter(status, categoryId);
+        ProductFilter filter = new ProductFilter(status, categoryId, includeArchived);
         return PageResponse.from(productAdminQueryService.getAll(filter, pageable));
     }
 

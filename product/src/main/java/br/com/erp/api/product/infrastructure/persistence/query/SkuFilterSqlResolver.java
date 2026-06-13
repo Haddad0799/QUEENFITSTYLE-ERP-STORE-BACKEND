@@ -28,6 +28,9 @@ public class SkuFilterSqlResolver {
         if (filter.hasStatus()) {
             conditions.add("s.status = :status");
             params.put("status", filter.status());
+        } else if (!filter.includeArchived()) {
+            // Por padrão oculta SKUs descontinuados (exclusão lógica)
+            conditions.add("s.status <> 'DISCONTINUED'");
         }
 
         if (filter.hasColor()) {
@@ -88,6 +91,9 @@ public class SkuFilterSqlResolver {
         if (filter.hasStatus()) {
             conditions.add("s.status = :status");
             params.put("status", filter.status());
+        } else if (!filter.includeArchived()) {
+            // Por padrão oculta SKUs descontinuados (exclusão lógica)
+            conditions.add("s.status <> 'DISCONTINUED'");
         }
 
         if (filter.hasColor()) {

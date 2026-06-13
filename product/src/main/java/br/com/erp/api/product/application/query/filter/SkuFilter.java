@@ -3,7 +3,8 @@ package br.com.erp.api.product.application.query.filter;
 public record SkuFilter(
         String status,
         Long colorId,
-        Long sizeId
+        Long sizeId,
+        boolean includeArchived
 ) {
     public boolean hasStatus() {
         return status != null && !status.isBlank();

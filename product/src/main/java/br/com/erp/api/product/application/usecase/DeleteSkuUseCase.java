@@ -1,8 +1,10 @@
 package br.com.erp.api.product.application.usecase;
 
 import br.com.erp.api.product.application.exception.ProductNotFoundException;
+import br.com.erp.api.product.application.port.OrderHistoryPort;
 import br.com.erp.api.product.domain.entity.Product;
 import br.com.erp.api.product.domain.entity.Sku;
+import br.com.erp.api.product.domain.enumerated.SkuStatus;
 import br.com.erp.api.product.domain.port.ProductRepositoryPort;
 import br.com.erp.api.product.domain.port.SkuRepositoryPort;
 import org.slf4j.Logger;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class DeleteSkuUseCase {
@@ -20,15 +23,18 @@ public class DeleteSkuUseCase {
     private final ProductRepositoryPort productRepository;
     private final SkuRepositoryPort skuRepository;
     private final EvaluateProductStatusUseCase evaluateProductStatus;
+    private final OrderHistoryPort orderHistoryPort;
 
     public DeleteSkuUseCase(
             ProductRepositoryPort productRepository,
             SkuRepositoryPort skuRepository,
-            EvaluateProductStatusUseCase evaluateProductStatus
+            EvaluateProductStatusUseCase evaluateProductStatus,
+            OrderHistoryPort orderHistoryPort
     ) {
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
         this.evaluateProductStatus = evaluateProductStatus;
+        this.orderHistoryPort = orderHistoryPort;
     }
 
     @Transactional
@@ -48,15 +54,39 @@ public class DeleteSkuUseCase {
                         )))
                 .toList();
 
-        // DELETE em cascata: skus → sku_price, sku_stock → stock_movement
-        skuRepository.deleteByIds(skuIds);
+        // SKUs com vínculo histórico em pedidos → exclusão lógica (DISCONTINUED).
+        // Demais → exclusão física. Um mesmo request pode misturar os dois casos.
+        Set<Long> skuIdsWithOrders = orderHistoryPort.findSkuIdsWithOrders(skuIds);
+
+        List<Long> toDiscontinue = skuIds.stream()
+                .filter(skuIdsWithOrders::contains)
+                .toList();
+
+        List<Long> toDelete = skuIds.stream()
+                .filter(skuId -> !skuIdsWithOrders.contains(skuId))
+                .toList();
+
+        if (!toDiscontinue.isEmpty()) {
+            // Exclusão lógica: mantém o SKU para preservar o histórico de pedidos
+            skuRepository.updateStatusBatch(toDiscontinue, SkuStatus.DISCONTINUED);
+        }
+
+        if (!toDelete.isEmpty()) {
+            // DELETE em cascata: skus → sku_price, sku_stock → stock_movement
+            skuRepository.deleteByIds(toDelete);
+        }
 
         // Reavalia o status do produto (pode voltar para DRAFT se não restar SKU pronto)
         evaluateProductStatus.execute(productId);
 
-        skus.forEach(sku ->
-                log.info("SKU {} (code={}) excluído do produto {}", sku.getId(), sku.getCode().value(), productId)
-        );
+        skus.forEach(sku -> {
+            boolean logical = skuIdsWithOrders.contains(sku.getId());
+            log.info("SKU {} (code={}) {} do produto {}",
+                    sku.getId(),
+                    sku.getCode().value(),
+                    logical ? "descontinuado (exclusão lógica)" : "excluído",
+                    productId);
+        });
     }
 }
 

@@ -83,10 +83,11 @@ public class SkuController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Long colorId,
             @RequestParam(required = false) Long sizeId,
+            @RequestParam(defaultValue = "false") boolean includeArchived,
             Pageable pageable
     ) {
 
-        SkuFilter filter = new SkuFilter(status, colorId, sizeId);
+        SkuFilter filter = new SkuFilter(status, colorId, sizeId, includeArchived);
 
         return PageResponse.from(skuQueryService.findByProductId(productId, filter, pageable));
     }
