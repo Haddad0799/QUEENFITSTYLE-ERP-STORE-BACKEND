@@ -99,4 +99,19 @@ public class UserJdbiRepository implements UserRepositoryPort {
                         .execute()
         );
     }
+
+    @Override
+    public void updateEmail(Long id, String email) {
+        jdbi.useHandle(handle ->
+                handle.createUpdate("""
+                        UPDATE users
+                        SET email      = :email,
+                            updated_at = NOW()
+                        WHERE id = :id
+                        """)
+                        .bind("id",    id)
+                        .bind("email", email)
+                        .execute()
+        );
+    }
 }

@@ -15,4 +15,6 @@ public interface UserRepositoryPort {
     void save(User user);
 
     void updatePassword(Long id, String passwordHash);
+
+    void updateEmail(Long id, String email);
 }

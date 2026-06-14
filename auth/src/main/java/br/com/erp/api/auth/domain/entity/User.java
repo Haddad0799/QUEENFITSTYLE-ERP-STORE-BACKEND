@@ -5,7 +5,7 @@ import br.com.erp.api.auth.domain.enumerated.UserRole;
 public class User {
 
     private Long id;
-    private final String email;
+    private String email;
     private String passwordHash;
     private final UserRole role;
     private final String name;
@@ -36,6 +36,10 @@ public class User {
 
     public void changePassword(String newPasswordHash) {
         this.passwordHash = newPasswordHash;
+    }
+
+    public void changeEmail(String newEmail) {
+        this.email = newEmail;
     }
 
     public Long getId()           { return id; }

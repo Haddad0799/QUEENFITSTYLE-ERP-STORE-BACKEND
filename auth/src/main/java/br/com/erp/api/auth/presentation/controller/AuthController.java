@@ -1,16 +1,21 @@
 package br.com.erp.api.auth.presentation.controller;
 
+import br.com.erp.api.auth.application.usecase.ChangeEmailUseCase;
 import br.com.erp.api.auth.application.usecase.ChangePasswordUseCase;
+import br.com.erp.api.auth.application.usecase.GetCurrentUserUseCase;
 import br.com.erp.api.auth.application.usecase.LoginUseCase;
 import br.com.erp.api.auth.application.usecase.RegisterCustomerUseCase;
+import br.com.erp.api.auth.presentation.dto.ChangeEmailRequest;
 import br.com.erp.api.auth.presentation.dto.ChangePasswordRequest;
 import br.com.erp.api.auth.presentation.dto.LoginRequest;
 import br.com.erp.api.auth.presentation.dto.LoginResponse;
+import br.com.erp.api.auth.presentation.dto.MeResponse;
 import br.com.erp.api.auth.presentation.dto.RegisterRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,13 +29,19 @@ public class AuthController {
     private final LoginUseCase            loginUseCase;
     private final RegisterCustomerUseCase registerCustomerUseCase;
     private final ChangePasswordUseCase   changePasswordUseCase;
+    private final GetCurrentUserUseCase   getCurrentUserUseCase;
+    private final ChangeEmailUseCase      changeEmailUseCase;
 
     public AuthController(LoginUseCase loginUseCase,
                           RegisterCustomerUseCase registerCustomerUseCase,
-                          ChangePasswordUseCase changePasswordUseCase) {
+                          ChangePasswordUseCase changePasswordUseCase,
+                          GetCurrentUserUseCase getCurrentUserUseCase,
+                          ChangeEmailUseCase changeEmailUseCase) {
         this.loginUseCase            = loginUseCase;
         this.registerCustomerUseCase = registerCustomerUseCase;
         this.changePasswordUseCase   = changePasswordUseCase;
+        this.getCurrentUserUseCase   = getCurrentUserUseCase;
+        this.changeEmailUseCase      = changeEmailUseCase;
     }
 
     @PostMapping("/login")
@@ -47,11 +58,26 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<MeResponse> me() {
+        String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var user = getCurrentUserUseCase.execute(Long.parseLong(userId));
+        return ResponseEntity.ok(MeResponse.from(user));
+    }
+
     @PatchMapping("/me/password")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
         String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         changePasswordUseCase.execute(Long.parseLong(userId),
                 request.currentPassword(), request.newPassword());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/email")
+    public ResponseEntity<Void> changeEmail(@Valid @RequestBody ChangeEmailRequest request) {
+        String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        changeEmailUseCase.execute(Long.parseLong(userId),
+                request.newEmail(), request.currentPassword());
         return ResponseEntity.noContent().build();
     }
 }
