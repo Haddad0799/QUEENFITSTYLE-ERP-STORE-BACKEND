@@ -3,7 +3,7 @@ package br.com.erp.api.notification.application.service;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
-import org.springframework.beans.factory.annotation.Value;
+import br.com.erp.api.settings.application.query.StoreSettingsQueryService;
 import org.springframework.stereotype.Service;
 
 import java.net.URLEncoder;
@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 @Service
 public class WhatsAppNotificationService {
 
-    private final String sellerPhone;
+    private final StoreSettingsQueryService storeSettingsQueryService;
 
-    public WhatsAppNotificationService(@Value("${whatsapp.seller-phone}") String sellerPhone) {
-        this.sellerPhone = sellerPhone;
+    public WhatsAppNotificationService(StoreSettingsQueryService storeSettingsQueryService) {
+        this.storeSettingsQueryService = storeSettingsQueryService;
     }
 
     public String buildUrl(Order order, Customer customer) {
@@ -75,7 +75,9 @@ public class WhatsAppNotificationService {
     }
 
     private String buildUrlWithText(String text) {
-        String encoded = URLEncoder.encode(text, StandardCharsets.UTF_8);
+        // Lido a cada chamada para refletir edições feitas pela dona sem redeploy.
+        String sellerPhone = storeSettingsQueryService.current().whatsappPhone();
+        String encoded     = URLEncoder.encode(text, StandardCharsets.UTF_8);
         return "https://wa.me/" + sellerPhone + "?text=" + encoded;
     }
 

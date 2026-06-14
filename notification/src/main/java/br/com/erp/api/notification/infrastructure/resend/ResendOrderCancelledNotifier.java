@@ -5,6 +5,7 @@ import br.com.erp.api.notification.application.util.CustomerNameFormatter;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
+import br.com.erp.api.settings.application.query.StoreSettingsQueryService;
 import com.resend.Resend;
 import com.resend.services.emails.model.CreateEmailOptions;
 import org.springframework.beans.factory.annotation.Value;
@@ -149,16 +150,16 @@ public class ResendOrderCancelledNotifier implements OrderCancelledNotifier {
             </td>
             """;
 
-    private final String apiKey;
-    private final String from;
-    private final String sellerPhone;
+    private final String                    apiKey;
+    private final String                    from;
+    private final StoreSettingsQueryService storeSettingsQueryService;
 
     public ResendOrderCancelledNotifier(@Value("${resend.api-key}") String apiKey,
                                         @Value("${resend.from:onboarding@resend.dev}") String from,
-                                        @Value("${whatsapp.seller-phone}") String sellerPhone) {
-        this.apiKey      = apiKey;
-        this.from        = from;
-        this.sellerPhone = sellerPhone;
+                                        StoreSettingsQueryService storeSettingsQueryService) {
+        this.apiKey                    = apiKey;
+        this.from                      = from;
+        this.storeSettingsQueryService = storeSettingsQueryService;
     }
 
     @Override
@@ -213,7 +214,9 @@ public class ResendOrderCancelledNotifier implements OrderCancelledNotifier {
      * código do país, então nenhum prefixo é adicionado.
      */
     private String sellerWhatsAppUrl() {
-        String digits = sellerPhone == null ? "" : sellerPhone.replaceAll("\\D", "");
+        // Lido de store_settings (editável pela dona), com fallback de env var.
+        String sellerPhone = storeSettingsQueryService.current().whatsappPhone();
+        String digits      = sellerPhone == null ? "" : sellerPhone.replaceAll("\\D", "");
         return "https://wa.me/" + digits;
     }
 

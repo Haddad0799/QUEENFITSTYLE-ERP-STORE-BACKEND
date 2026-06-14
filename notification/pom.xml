@@ -21,6 +21,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- WhatsApp e e-mail de avisos vêm de store_settings (editável pela dona) -->
+        <dependency>
+            <groupId>br.com.erp</groupId>
+            <artifactId>settings</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Provedor de e-mail em produção -->
         <dependency>
             <groupId>com.resend</groupId>

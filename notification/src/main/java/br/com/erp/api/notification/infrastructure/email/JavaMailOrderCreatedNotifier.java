@@ -5,6 +5,7 @@ import br.com.erp.api.notification.application.util.CustomerNameFormatter;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
+import br.com.erp.api.settings.application.query.StoreSettingsQueryService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
@@ -174,21 +175,23 @@ public class JavaMailOrderCreatedNotifier implements OrderCreatedNotifier {
             </td>
             """;
 
-    private final JavaMailSender mailSender;
-    private final String from;
-    private final String adminEmail;
+    private final JavaMailSender            mailSender;
+    private final String                    from;
+    private final StoreSettingsQueryService storeSettingsQueryService;
 
     public JavaMailOrderCreatedNotifier(JavaMailSender mailSender,
                                         @Value("${spring.mail.username:}") String from,
-                                        @Value("${notification.admin-email}") String adminEmail) {
-        this.mailSender = mailSender;
-        this.from       = from;
-        this.adminEmail = adminEmail;
+                                        StoreSettingsQueryService storeSettingsQueryService) {
+        this.mailSender                = mailSender;
+        this.from                      = from;
+        this.storeSettingsQueryService = storeSettingsQueryService;
     }
 
     @Override
     public void notify(Order order, Customer customer, String customerPhone,
                        Map<Long, String> imageUrls) throws MessagingException {
+        // Destinatário lido de store_settings (editável pela dona), com fallback de env var.
+        String adminEmail = storeSettingsQueryService.current().notificationEmail();
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 
