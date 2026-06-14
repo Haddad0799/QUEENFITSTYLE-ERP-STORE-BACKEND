@@ -5,6 +5,7 @@ import br.com.erp.api.notification.application.util.CustomerNameFormatter;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
+import br.com.erp.api.settings.application.query.StoreSettingsQueryService;
 import com.resend.Resend;
 import com.resend.services.emails.model.CreateEmailOptions;
 import org.springframework.beans.factory.annotation.Value;
@@ -170,21 +171,23 @@ public class ResendOrderCreatedNotifier implements OrderCreatedNotifier {
             </td>
             """;
 
-    private final String apiKey;
-    private final String from;
-    private final String adminEmail;
+    private final String                    apiKey;
+    private final String                    from;
+    private final StoreSettingsQueryService storeSettingsQueryService;
 
     public ResendOrderCreatedNotifier(@Value("${resend.api-key}") String apiKey,
                                       @Value("${resend.from:onboarding@resend.dev}") String from,
-                                      @Value("${notification.admin-email}") String adminEmail) {
-        this.apiKey     = apiKey;
-        this.from       = from;
-        this.adminEmail = adminEmail;
+                                      StoreSettingsQueryService storeSettingsQueryService) {
+        this.apiKey                    = apiKey;
+        this.from                      = from;
+        this.storeSettingsQueryService = storeSettingsQueryService;
     }
 
     @Override
     public void notify(Order order, Customer customer, String customerPhone,
                        Map<Long, String> imageUrls) throws Exception {
+        // Destinatário lido de store_settings (editável pela dona), com fallback de env var.
+        String adminEmail = storeSettingsQueryService.current().notificationEmail();
         Resend resend = new Resend(apiKey);
         CreateEmailOptions request = CreateEmailOptions.builder()
                 .from(from)

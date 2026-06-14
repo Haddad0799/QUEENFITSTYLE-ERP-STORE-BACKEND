@@ -1,6 +1,6 @@
 package br.com.erp.api.notification.infrastructure.resend;
 
-import br.com.erp.api.notification.application.port.OrderCancelledNotifier;
+import br.com.erp.api.notification.application.port.OrderCancelledStoreOwnerNotifier;
 import br.com.erp.api.notification.application.util.CustomerNameFormatter;
 import br.com.erp.api.order.domain.entity.Customer;
 import br.com.erp.api.order.domain.entity.Order;
@@ -18,14 +18,14 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Notifica a cliente, via Resend, quando seu pedido é cancelado pela vendedora. O e-mail
- * lista os itens cancelados (com imagem, para contextualizar qual pedido foi cancelado) e traz
- * um botão "Falar no WhatsApp" apontando para {@code wa.me/{whatsapp.seller-phone}}, para a
- * cliente tirar dúvidas com a vendedora.
+ * Notifica a dona da loja, via Resend, quando um pedido é cancelado pela própria cliente no
+ * e-commerce. O e-mail vai para {@code store_settings.notification_email} (com fallback para a
+ * variável de ambiente) e lista os dados básicos do pedido cancelado, deixando claro que o
+ * estoque já foi devolvido — então a vendedora não precisa aguardar contato pelo WhatsApp.
  */
 @Service
 @ConditionalOnProperty(name = "notification.provider", havingValue = "resend")
-public class ResendOrderCancelledNotifier implements OrderCancelledNotifier {
+public class ResendOrderCancelledStoreOwnerNotifier implements OrderCancelledStoreOwnerNotifier {
 
     private static final Locale PT_BR = new Locale("pt", "BR");
 
@@ -58,8 +58,8 @@ public class ResendOrderCancelledNotifier implements OrderCancelledNotifier {
                     <!-- Body -->
                     <tr>
                       <td style="padding:20px 24px;">
-                        <p style="margin:0 0 8px;font-size:15px;color:#1a1a1a;">
-                          Olá, <strong>{customerName}</strong>!
+                        <p style="margin:0 0 8px;font-size:18px;color:#1a1a1a;font-weight:bold;">
+                          Pedido cancelado pela cliente
                         </p>
 
                         <!-- Order number badge -->
@@ -70,27 +70,31 @@ public class ResendOrderCancelledNotifier implements OrderCancelledNotifier {
                           </span>
                         </div>
 
-                        <p style="margin:0 0 20px;font-size:14px;color:#555;line-height:1.6;">
-                          Seu pedido foi cancelado. Se tiver dúvidas, entre em contato pelo
-                          WhatsApp.
+                        <!-- Customer -->
+                        <p style="margin:0 0 20px;font-size:14px;color:#1a1a1a;">
+                          <strong>Cliente:</strong> {customerName}
                         </p>
 
                         <!-- Item cards -->
                         {itemRows}
 
-                        <!-- WhatsApp button -->
+                        <!-- Total -->
                         <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
                           <tr>
-                            <td align="center" style="padding:4px 0 8px;">
-                              <a href="{sellerWhatsAppUrl}"
-                                 style="display:inline-block;background:#25D366;color:#ffffff;
-                                        text-decoration:none;font-size:16px;font-weight:bold;
-                                        padding:14px 32px;border-radius:6px;">
-                                Falar no WhatsApp
-                              </a>
+                            <td style="padding:16px 0 0;border-top:2px solid #e8e0d8;
+                                       text-align:right;font-size:15px;font-weight:bold;color:#1a1a1a;">
+                              Total: <span style="color:#A0673A;">{totalAmount}</span>
                             </td>
                           </tr>
                         </table>
+
+                        <!-- Note -->
+                        <p style="margin:24px 0 8px;font-size:14px;color:#555;line-height:1.6;
+                                  text-align:center;">
+                          A cliente cancelou este pedido antes de finalizar pelo WhatsApp. O
+                          estoque já foi devolvido automaticamente — não é preciso aguardar
+                          contato.
+                        </p>
                       </td>
                     </tr>
 
@@ -154,9 +158,9 @@ public class ResendOrderCancelledNotifier implements OrderCancelledNotifier {
     private final String                    from;
     private final StoreSettingsQueryService storeSettingsQueryService;
 
-    public ResendOrderCancelledNotifier(@Value("${resend.api-key}") String apiKey,
-                                        @Value("${resend.from:onboarding@resend.dev}") String from,
-                                        StoreSettingsQueryService storeSettingsQueryService) {
+    public ResendOrderCancelledStoreOwnerNotifier(@Value("${resend.api-key}") String apiKey,
+                                                  @Value("${resend.from:onboarding@resend.dev}") String from,
+                                                  StoreSettingsQueryService storeSettingsQueryService) {
         this.apiKey                    = apiKey;
         this.from                      = from;
         this.storeSettingsQueryService = storeSettingsQueryService;
@@ -164,11 +168,13 @@ public class ResendOrderCancelledNotifier implements OrderCancelledNotifier {
 
     @Override
     public void notify(Order order, Customer customer, Map<Long, String> imageUrls) throws Exception {
+        // Destinatário lido de store_settings (editável pela dona), com fallback de env var.
+        String adminEmail = storeSettingsQueryService.current().notificationEmail();
         Resend resend = new Resend(apiKey);
         CreateEmailOptions request = CreateEmailOptions.builder()
                 .from(from)
-                .to(customer.getEmail())
-                .subject("Seu pedido #" + order.getId() + " foi cancelado — QueenFitStyle")
+                .to(adminEmail)
+                .subject("Pedido #" + order.getId() + " cancelado pela cliente")
                 .html(buildHtmlBody(order, customer, imageUrls))
                 .build();
         resend.emails().send(request);
@@ -178,10 +184,10 @@ public class ResendOrderCancelledNotifier implements OrderCancelledNotifier {
         NumberFormat currency = NumberFormat.getCurrencyInstance(PT_BR);
 
         return EMAIL_TEMPLATE
-                .replace("{customerName}", escape(CustomerNameFormatter.toDisplayName(customer.getName())))
                 .replace("{orderId}", String.valueOf(order.getId()))
+                .replace("{customerName}", escape(CustomerNameFormatter.toDisplayName(customer.getName())))
                 .replace("{itemRows}", buildItemRows(order, currency, imageUrlsByItemId))
-                .replace("{sellerWhatsAppUrl}", escapeAttr(sellerWhatsAppUrl()))
+                .replace("{totalAmount}", currency.format(order.getTotalAmount()))
                 .replace("{year}", String.valueOf(Year.now().getValue()));
     }
 
@@ -206,18 +212,6 @@ public class ResendOrderCancelledNotifier implements OrderCancelledNotifier {
         return IMAGE_CELL_TEMPLATE
                 .replace("{imageUrl}", escapeAttr(imageUrl))
                 .replace("{alt}", escapeAttr(productName));
-    }
-
-    /**
-     * Link {@code wa.me} para a cliente abrir a conversa com a vendedora — sem texto
-     * pré-definido. Mantém apenas os dígitos do telefone configurado; o número já inclui o
-     * código do país, então nenhum prefixo é adicionado.
-     */
-    private String sellerWhatsAppUrl() {
-        // Lido de store_settings (editável pela dona), com fallback de env var.
-        String sellerPhone = storeSettingsQueryService.current().whatsappPhone();
-        String digits      = sellerPhone == null ? "" : sellerPhone.replaceAll("\\D", "");
-        return "https://wa.me/" + digits;
     }
 
     private String variantLabel(OrderItem item) {

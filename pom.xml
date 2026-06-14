@@ -41,6 +41,7 @@
 		<module>order</module>
 		<module>notification</module>
 		<module>auth</module>
+		<module>settings</module>
     </modules>
 
 	<dependencyManagement>

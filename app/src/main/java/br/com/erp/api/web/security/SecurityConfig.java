@@ -55,6 +55,12 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
+
+                // Configurações da loja para o e-commerce — exige service token (ou admin),
+                // não é público aberto. Declarado antes do permitAll geral de /store/**.
+                .requestMatchers(HttpMethod.GET, "/store/settings")
+                .hasAnyRole("ADMIN", "SERVICE")
+
                 .requestMatchers(HttpMethod.GET, "/store/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/store/orders").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
