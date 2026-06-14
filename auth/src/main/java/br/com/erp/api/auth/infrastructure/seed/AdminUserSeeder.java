@@ -17,10 +17,10 @@ public class AdminUserSeeder implements SmartInitializingSingleton {
     private final UserRepositoryPort userRepository;
     private final PasswordEncoder    passwordEncoder;
 
-    @Value("${admin.email}")
+    @Value("${admin.email:}")
     private String adminEmail;
 
-    @Value("${admin.password}")
+    @Value("${admin.password:}")
     private String adminPassword;
 
     public AdminUserSeeder(UserRepositoryPort userRepository, PasswordEncoder passwordEncoder) {
@@ -30,6 +30,13 @@ public class AdminUserSeeder implements SmartInitializingSingleton {
 
     @Override
     public void afterSingletonsInstantiated() {
+        // Bootstrap opcional: sem as variáveis de ambiente, apenas pula o seed (não quebra o boot).
+        // Útil para recriar o admin caso o banco seja resetado; em ambiente já provisionado, ignorável.
+        if (adminEmail.isBlank() || adminPassword.isBlank()) {
+            log.info("Admin seed pulado: ADMIN_EMAIL/ADMIN_PASSWORD não configurados");
+            return;
+        }
+
         if (userRepository.existsByEmail(adminEmail)) return;
 
         String hash  = passwordEncoder.encode(adminPassword);

@@ -56,7 +56,9 @@ nextjs:
     secret: ${NEXTJS_REVALIDATE_SECRET}
 
 whatsapp:
-  seller-phone: ${WHATSAPP_SELLER_PHONE}
+  # Fonte primária é a tabela store_settings; esta var é apenas fallback/seed.
+  # Default vazio para que a ausência da var não quebre o boot.
+  seller-phone: ${WHATSAPP_SELLER_PHONE:}
 
 store:
   # URL pública da loja (Next.js). Usada em links de e-mail para a cliente.
@@ -81,8 +83,10 @@ jwt:
   expiration-ms: ${JWT_EXPIRATION_MS}
 
 admin:
-  email: ${ADMIN_EMAIL}
-  password: ${ADMIN_PASSWORD}
+  # Bootstrap de recuperação do usuário admin (AdminUserSeeder, idempotente).
+  # Defaults vazios: se as vars não existirem, o seed é apenas ignorado, sem quebrar o boot.
+  email: ${ADMIN_EMAIL:}
+  password: ${ADMIN_PASSWORD:}
 
 service:
   client-id: ${SERVICE_CLIENT_ID}
