@@ -48,11 +48,11 @@
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
 
-        <!-- Test utilities (JUnit 5, Mockito, AssertJ) -->
+        <!-- HttpServletRequest no controller para identificar o papel autenticado (isUserInRole) -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

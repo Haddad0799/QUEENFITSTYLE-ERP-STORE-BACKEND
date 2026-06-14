@@ -7,7 +7,9 @@ import br.com.erp.api.order.application.usecase.ConfirmOrderUseCase;
 import br.com.erp.api.order.application.usecase.MarkOrderDeliveredUseCase;
 import br.com.erp.api.order.application.usecase.MarkOrderReturnedUseCase;
 import br.com.erp.api.order.domain.entity.Order;
+import br.com.erp.api.order.domain.enumerated.CancellationOrigin;
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
+import jakarta.servlet.http.HttpServletRequest;
 import br.com.erp.api.order.presentation.dto.request.CancelOrderRequest;
 import br.com.erp.api.order.presentation.dto.response.OrderActionResponse;
 import br.com.erp.api.order.presentation.dto.response.OrderDetailsDTO;
@@ -101,10 +103,16 @@ public class OrderAdminController {
     public ResponseEntity<OrderActionResponse> cancel(
             @PathVariable Long orderId,
             @Valid @RequestBody(required = false) CancelOrderRequest request,
-            @RequestHeader(name = "X-Actor", required = false) String actor
+            @RequestHeader(name = "X-Actor", required = false) String actor,
+            HttpServletRequest httpRequest
     ) {
         String reason = request != null ? request.reason() : null;
-        Order order = cancelOrderUseCase.execute(orderId, reason, resolveActor(actor));
+        // A origem vem do papel autenticado, não de um header: o e-commerce cancela em nome da
+        // cliente com token de serviço (ROLE_SERVICE); a vendedora cancela como ADMIN no ERP.
+        CancellationOrigin origin = httpRequest.isUserInRole("SERVICE")
+                ? CancellationOrigin.CUSTOMER
+                : CancellationOrigin.ADMIN;
+        Order order = cancelOrderUseCase.execute(orderId, reason, resolveCancelActor(actor, origin), origin);
         return ResponseEntity.ok(OrderActionResponse.from(order));
     }
 
@@ -130,5 +138,15 @@ public class OrderAdminController {
 
     private String resolveActor(String actor) {
         return (actor != null && !actor.isBlank()) ? actor : DEFAULT_ACTOR;
+    }
+
+    /**
+     * Sem {@code X-Actor} explícito, rotula a timeline conforme a origem: {@code "customer"}
+     * para cancelamento da cliente (e-commerce), {@value #DEFAULT_ACTOR} para a vendedora — para
+     * que o histórico reflita quem de fato cancelou.
+     */
+    private String resolveCancelActor(String actor, CancellationOrigin origin) {
+        if (actor != null && !actor.isBlank()) return actor;
+        return origin == CancellationOrigin.CUSTOMER ? CancellationOrigin.CUSTOMER_ACTOR : DEFAULT_ACTOR;
     }
 }

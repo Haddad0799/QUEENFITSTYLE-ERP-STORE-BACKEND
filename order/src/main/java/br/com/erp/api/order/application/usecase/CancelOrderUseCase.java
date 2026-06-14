@@ -53,7 +53,7 @@ public class CancelOrderUseCase {
     }
 
     @Transactional
-    public Order execute(Long orderId, String reason, String actor) {
+    public Order execute(Long orderId, String reason, String actor, CancellationOrigin origin) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
 
@@ -85,9 +85,10 @@ public class CancelOrderUseCase {
         ));
 
         // Efeitos colaterais (e-mails) desacoplados, tratados por listeners AFTER_COMMIT no módulo
-        // notification. A origem deriva do actor: cancelamento da cliente (e-commerce) avisa também
-        // a dona da loja; cancelamento da vendedora (ERP) não gera esse aviso.
-        eventPublisher.publishEvent(new OrderCancelledEvent(order, CancellationOrigin.fromActor(actor)));
+        // notification. A origem (definida pelo controller a partir do papel autenticado) decide
+        // quem é avisado: cancelamento da cliente (e-commerce) avisa também a dona da loja;
+        // cancelamento da vendedora (ERP) não gera esse aviso.
+        eventPublisher.publishEvent(new OrderCancelledEvent(order, origin));
 
         log.info("Pedido #{} cancelado por '{}'", orderId, actor);
         return order;
