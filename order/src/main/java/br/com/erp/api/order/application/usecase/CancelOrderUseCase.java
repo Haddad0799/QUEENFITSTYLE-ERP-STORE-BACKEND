@@ -5,6 +5,7 @@ import br.com.erp.api.order.application.port.out.ReservationLifecyclePort;
 import br.com.erp.api.order.domain.entity.Order;
 import br.com.erp.api.order.domain.entity.OrderItem;
 import br.com.erp.api.order.domain.entity.OrderTimelineEvent;
+import br.com.erp.api.order.domain.enumerated.CancellationOrigin;
 import br.com.erp.api.order.domain.enumerated.OrderEventType;
 import br.com.erp.api.order.domain.enumerated.OrderStatus;
 import br.com.erp.api.order.domain.exception.InvalidOrderStateTransitionException;
@@ -83,9 +84,10 @@ public class CancelOrderUseCase {
                 actor
         ));
 
-        // Avisa a cliente por e-mail após o commit — efeito colateral desacoplado, tratado por
-        // listener AFTER_COMMIT no módulo notification.
-        eventPublisher.publishEvent(new OrderCancelledEvent(order));
+        // Efeitos colaterais (e-mails) desacoplados, tratados por listeners AFTER_COMMIT no módulo
+        // notification. A origem deriva do actor: cancelamento da cliente (e-commerce) avisa também
+        // a dona da loja; cancelamento da vendedora (ERP) não gera esse aviso.
+        eventPublisher.publishEvent(new OrderCancelledEvent(order, CancellationOrigin.fromActor(actor)));
 
         log.info("Pedido #{} cancelado por '{}'", orderId, actor);
         return order;
