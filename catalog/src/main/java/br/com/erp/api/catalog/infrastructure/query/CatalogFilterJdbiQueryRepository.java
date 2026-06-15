@@ -103,9 +103,9 @@ public class CatalogFilterJdbiQueryRepository implements CatalogFilterQueryRepos
                         cp.name ILIKE :searchLike
                         OR cp.subcategory_name ILIKE :searchLike
                         OR cp.parent_category_name ILIKE :searchLike
-                        OR similarity(cp.name, :search) > :searchThreshold
-                        OR similarity(COALESCE(cp.subcategory_name, ''), :search) > :searchThreshold
-                        OR similarity(COALESCE(cp.parent_category_name, ''), :search) > :searchThreshold
+                        OR word_similarity(:search, cp.name) > :searchThreshold
+                        OR word_similarity(:search, COALESCE(cp.subcategory_name, '')) > :searchThreshold
+                        OR word_similarity(:search, COALESCE(cp.parent_category_name, '')) > :searchThreshold
                     )
                     """);
             params.put("searchLike", "%" + filter.search() + "%");

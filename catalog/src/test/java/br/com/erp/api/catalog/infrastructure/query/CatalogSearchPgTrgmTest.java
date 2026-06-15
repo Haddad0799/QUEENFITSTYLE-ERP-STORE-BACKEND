@@ -73,6 +73,26 @@ class CatalogSearchPgTrgmTest {
                 .doesNotContain("Legging Power");
     }
 
+    @Test
+    void shouldNotReturnNoiseForShortUnrelatedTerm() {
+        // "rosa" não aparece em nenhum nome/categoria. É uma cor (filtro próprio),
+        // não deve trazer produtos pelo ruído de similaridade de termos curtos.
+        Page<CatalogProductSummaryDTO> page = search("rosa");
+
+        assertThat(page.getContent()).isEmpty();
+    }
+
+    @Test
+    void shouldRankLiteralMatchesBeforeSimilarityOnly() {
+        // "Conjunto Vital" casa por ILIKE; "Conjunto Run" só por similaridade.
+        // A correspondência literal deve vir primeiro.
+        Page<CatalogProductSummaryDTO> page = search("conjunto vital");
+
+        assertThat(page.getContent())
+                .extracting(CatalogProductSummaryDTO::name)
+                .containsExactly("Conjunto Vital", "Conjunto Run");
+    }
+
     private Page<CatalogProductSummaryDTO> search(String term) {
         return repository.findAll(
                 new ResolvedCatalogFilter(null, List.of(), null, null, null, null, term),
