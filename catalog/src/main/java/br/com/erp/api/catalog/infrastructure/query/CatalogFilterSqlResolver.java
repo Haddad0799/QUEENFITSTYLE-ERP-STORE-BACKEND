@@ -136,7 +136,6 @@ public class CatalogFilterSqlResolver {
                     OR %1$s.parent_category_name ILIKE :searchLike
                     OR word_similarity(:search, %1$s.name) > :searchThreshold
                     OR word_similarity(:search, COALESCE(%1$s.subcategory_name, '')) > :searchThreshold
-                    OR word_similarity(:search, COALESCE(%1$s.parent_category_name, '')) > :searchThreshold
                 )
                 """.formatted(alias);
     }
@@ -152,8 +151,7 @@ public class CatalogFilterSqlResolver {
                        THEN 1 ELSE 0 END)
                  + GREATEST(
                     word_similarity(:search, %1$s.name),
-                    word_similarity(:search, COALESCE(%1$s.subcategory_name, '')),
-                    word_similarity(:search, COALESCE(%1$s.parent_category_name, ''))
+                    word_similarity(:search, COALESCE(%1$s.subcategory_name, ''))
                 ))
                 """.formatted(alias);
     }
