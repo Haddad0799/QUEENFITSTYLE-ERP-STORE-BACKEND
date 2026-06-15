@@ -12,9 +12,14 @@ import java.util.Map;
 @Component
 public class CatalogFilterSqlResolver {
 
-    // Similaridade mínima de trigrama para um termo ser considerado relevante.
-    // Abaixo disso o pg_trgm tende a trazer ruído (correspondências aleatórias).
-    static final double SEARCH_SIMILARITY_THRESHOLD = 0.2;
+    // Similaridade mínima de trigrama para uma correspondência apenas por similaridade
+    // ser considerada relevante. Usamos word_similarity (e não similarity), que mede o
+    // quanto o termo aparece em alguma parte do texto, ignorando o restante do nome.
+    // Isso normaliza naturalmente o tamanho do termo: erros de digitação reais pontuam
+    // 0.55+ (ex.: "conjuto"→"Conjunto" = 0.62), enquanto termos curtos sem relação ficam
+    // <= 0.25 (ex.: "rosa" contra qualquer nome). Por isso um corte fixo de 0.4 já separa
+    // sinal de ruído, sem precisar de threshold relativo ao tamanho do termo.
+    static final double SEARCH_SIMILARITY_THRESHOLD = 0.4;
 
     public CatalogPageQuery build(ResolvedCatalogFilter filter, Pageable pageable) {
 
@@ -121,25 +126,35 @@ public class CatalogFilterSqlResolver {
     }
 
     private String searchPredicate(String alias) {
+        // Correspondência literal (ILIKE) é resultado forte: se o termo aparece no nome,
+        // subcategoria ou categoria pai, o produto sempre entra. word_similarity entra
+        // apenas como complemento, para tolerar erros de digitação.
         return """
                 AND (
                     %1$s.name ILIKE :searchLike
                     OR %1$s.subcategory_name ILIKE :searchLike
                     OR %1$s.parent_category_name ILIKE :searchLike
-                    OR similarity(%1$s.name, :search) > :searchThreshold
-                    OR similarity(COALESCE(%1$s.subcategory_name, ''), :search) > :searchThreshold
-                    OR similarity(COALESCE(%1$s.parent_category_name, ''), :search) > :searchThreshold
+                    OR word_similarity(:search, %1$s.name) > :searchThreshold
+                    OR word_similarity(:search, COALESCE(%1$s.subcategory_name, '')) > :searchThreshold
+                    OR word_similarity(:search, COALESCE(%1$s.parent_category_name, '')) > :searchThreshold
                 )
                 """.formatted(alias);
     }
 
     private String relevanceExpression(String alias) {
+        // Correspondências literais (ILIKE) recebem +1 e sempre ordenam antes das
+        // correspondências apenas por similaridade; entre pares, ordena pela maior
+        // word_similarity.
         return """
-                GREATEST(
-                    similarity(%1$s.name, :search),
-                    similarity(COALESCE(%1$s.subcategory_name, ''), :search),
-                    similarity(COALESCE(%1$s.parent_category_name, ''), :search)
-                )
+                ((CASE WHEN %1$s.name ILIKE :searchLike
+                            OR %1$s.subcategory_name ILIKE :searchLike
+                            OR %1$s.parent_category_name ILIKE :searchLike
+                       THEN 1 ELSE 0 END)
+                 + GREATEST(
+                    word_similarity(:search, %1$s.name),
+                    word_similarity(:search, COALESCE(%1$s.subcategory_name, '')),
+                    word_similarity(:search, COALESCE(%1$s.parent_category_name, ''))
+                ))
                 """.formatted(alias);
     }
 
