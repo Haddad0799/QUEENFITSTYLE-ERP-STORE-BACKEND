@@ -21,6 +21,7 @@ import br.com.erp.api.shared.application.projection.IdNameProjection;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -149,7 +150,10 @@ public class AddSkuToProductUseCase {
 
         priceGateway.initializePrices(prices);
 
-        skuCodeToId.values().forEach(evaluateSkuCompletenessUseCase::execute);
+        //Avalia a completude de todos os skus de uma vez: faz uma única avaliação de
+        //status do produto e, se ele estiver publicado, dispara um único evento para o
+        //catálogo (evita N eventos/revalidações ao cadastrar N skus).
+        evaluateSkuCompletenessUseCase.executeBatch(new ArrayList<>(skuCodeToId.values()));
     }
 
 
